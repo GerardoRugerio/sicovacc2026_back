@@ -1,0 +1,51 @@
+{
+    "name": "sicovacc",
+    "version": "1.0.0",
+    "description": "Backend del Sistema de Cómputos y Validaciones para las Consultas Ciudadanas 2026 y 2027",
+    "homepage": "https://github.com/GerardoRugerio/sicovacc2026_back#readme",
+    "bugs": {
+        "url": "https://github.com/GerardoRugerio/sicovacc2026_back/issues"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/GerardoRugerio/sicovacc2026_back.git"
+    },
+    "license": "ISC",
+    "author": "",
+    "type": "module",
+    "main": "index.js",
+    "scripts": {
+        "start": "node index.js",
+        "start:dev": "cls && nodemon index.js",
+        "pm2": "pm2 start pm2.config.cjs --env dev",
+        "pm2:cluster": "pm2 start pm2.config.cjs",
+        "pm2:reset": "pm2 stop SICOVACC && pm2 delete SICOVACC",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "dependencies": {
+        "@socket.io/redis-adapter": "8.3.0",
+        "bcrypt": "5.1.1",
+        "cors": "2.8.5",
+        "crypto-js": "4.2.0",
+        "docxtemplater": "3.54.0",
+        "dotenv": "16.4.5",
+        "exceljs": "4.4.0",
+        "express": "4.19.2",
+        "express-validator": "7.1.0",
+        "jsonwebtoken": "9.0.2",
+        "pako": "2.1.0",
+        "pdfkit": "0.15.0",
+        "pizzip": "3.1.7",
+        "redis": "5.9.0",
+        "request": "2.88.2",
+        "sequelize": "6.37.3",
+        "socket.io": "4.8.1",
+        "tedious": "18.2.1",
+        "useragent": "2.3.0",
+        "yamlparser": "0.0.2"
+    },
+    "devDependencies": {
+        "@types/cors": "2.8.17",
+        "@types/express": "5.0.0"
+    }
+}
