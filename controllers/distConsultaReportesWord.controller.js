@@ -1,9 +1,10 @@
 import DocxTemplater from 'docxtemplater';
+import ImageModule from 'docxtemplater-image-module-free';
 import { request, response } from 'express';
 import fs from 'fs';
 import path from 'path';
 import PizZip from 'pizzip';
-import { anioN, plantillas } from '../helpers/Constantes.js';
+import { anioN, AveAzteca, plantillas, SerpienteAzteca } from '../helpers/Constantes.js';
 import { ConsultaClaveColonia, ConsultaDelegacion, ConsultaDistrito, ConsultaTipoEleccion, FechaServer, InformacionConstancia } from '../helpers/Consultas.js';
 import { NumAMes, NumAText } from '../helpers/Funciones.js';
 import { SICOVACC } from '../models/consulta_usuarios_sicovacc.model.js';
@@ -91,8 +92,8 @@ export const ActaValidacionWord = async (req = request, res = response) => {
         const { nombre_delegacion } = await ConsultaDelegacion(id_distrito, clave_colonia);
         const { nombre_colonia } = await ConsultaClaveColonia(clave_colonia);
         const { direccion, coordinador, coordinador_puesto, secretario, secretario_puesto } = await ConsultaDistrito(id_distrito);
-        const X = await ConsultaTipoEleccion(anio);
-        const eleccion1 = `CONSULTA DE ${X.toUpperCase()}`, eleccion2 = `Consulta de ${X}`;
+        const eleccion = await ConsultaTipoEleccion(anio);
+        const eleccion1 = eleccion.toUpperCase();
         const consulta = (await SICOVACC.sequelize.query(`SELECT secuencial, SUM(total_votos) AS total_votos
         FROM consulta_actas_VVS
         WHERE anio = ${anio} AND id_distrito = ${id_distrito} AND clave_colonia = '${clave_colonia}'
@@ -120,25 +121,37 @@ export const ActaValidacionWord = async (req = request, res = response) => {
                 });
 
             const zip = new PizZip(content);
-            const docx = new DocxTemplater(zip, { linebreaks: true, paragraphLoop: true });
+            const imageModule = new ImageModule({
+                getImage: function (tagValue) {
+                    return fs.readFileSync(tagValue);
+                },
+                getSize: function () {
+                    return [anio == 2 ? 50 : 80, 50];
+                }
+            });
+            const docx = new DocxTemplater(zip, { linebreaks: true, paragraphLoop: true, modules: [imageModule] });
+
+            const logo = anio == 2 ? AveAzteca : SerpienteAzteca;
 
             const data = {
+                eleccion,
                 eleccion1,
-                eleccion2,
+                logo,
+                nm: anio == 2 ? '26' : '27',
                 demarcacion: nombre_delegacion,
                 dd: id_distrito,
                 ut: clave_colonia,
                 colonia: nombre_colonia,
                 hora: hora.substring(0, hora.length - 3),
-                dia: fecha.split('/')[0],
+                dia: +fecha.split('/')[0],
                 mes: NumAMes(+fecha.split('/')[1]).toLowerCase(),
+                anio: +fecha.split('/')[2],
                 direccion,
                 proyectos,
                 nulas: bol_nulas,
                 nulasL: NumAText(bol_nulas),
                 total,
                 totalL: NumAText(total),
-                titulo: 'Número de proyecto',
                 coordinador,
                 coordinador_puesto,
                 secretario,

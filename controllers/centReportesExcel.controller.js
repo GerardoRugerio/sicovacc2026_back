@@ -1,7 +1,7 @@
 import ExcelJs from 'exceljs';
 import { request, response } from 'express';
 import path from 'path';
-import { autor, contenidoStyle, fill, iecmLogo, plantillas, titulos } from '../helpers/Constantes.js';
+import { autor, contenidoStyle, fill, IECMLogo, plantillas, titulos } from '../helpers/Constantes.js';
 import { FechaServer } from '../helpers/Consultas.js';
 import { SICOVACC } from '../models/consulta_usuarios_sicovacc.model.js';
 
@@ -22,8 +22,8 @@ export const InicioCierreValidacion = async (req = request, res = response) => {
             .then(() => {
                 workbook.creator = autor;
                 const worksheet = workbook.getWorksheet(1);
-                let fila = 11;
-                const iecm = workbook.addImage({ filename: iecmLogo, extension: 'png' });
+                let fila = 13;
+                const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
                 worksheet.getCell('A2').value = titulos[0];
                 if (!worksheet.getCell('A2').isMerged)
@@ -37,19 +37,20 @@ export const InicioCierreValidacion = async (req = request, res = response) => {
                 worksheet.getCell('A6').value = 'REPORTE DE ASISTENCIA DE INICIO Y CIERRE DE LA VALIDACIÓN';
                 if (!worksheet.getCell('A6').isMerged)
                     worksheet.mergeCells('A6:M6');
-                worksheet.getCell('L7').value = `Fecha: ${fecha}`;
-                worksheet.getCell('L8').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
-                worksheet.getCell('A9').value = 'DEOEyG';
-                worksheet.getCell('A9').style = fill;
-                worksheet.getCell('B9').value = 'Asistencia de Inicio';
-                worksheet.getCell('B9').style = fill;
-                if (!worksheet.getCell('B9').isMerged)
-                    worksheet.mergeCells('B9:K9')
-                worksheet.getCell('L9').value = 'Asistencia de Cierre';
-                worksheet.getCell('L9').style = fill;
-                if (!worksheet.getCell('L9').isMerged)
-                    worksheet.mergeCells('L9:U9')
-                worksheet.getCell('A10').value = 'Distrito';
+                worksheet.getCell('T8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('T9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
+                worksheet.getCell('A8').value = 'DEOEyG';
+                worksheet.getCell('A8').style = fill;
+                if (!worksheet.getCell('A11').isMerged)
+                    worksheet.mergeCells('A11:A12');
+                worksheet.getCell('B11').value = 'Asistencia de Inicio';
+                worksheet.getCell('B11').style = fill;
+                if (!worksheet.getCell('B11').isMerged)
+                    worksheet.mergeCells('B11:K11')
+                worksheet.getCell('L11').value = 'Asistencia de Cierre';
+                worksheet.getCell('L11').style = fill;
+                if (!worksheet.getCell('L11').isMerged)
+                    worksheet.mergeCells('L11:U11')
                 validacion.forEach(val => {
                     Object.keys(val).forEach((key, index) => {
                         worksheet.getCell(fila, index + 1).value = val[key];
@@ -114,8 +115,8 @@ export const Incidentes = async (req = request, res = response) => {
             .then(() => {
                 workbook.creator = autor;
                 const worksheet = workbook.getWorksheet(1);
-                let fila = 12, inc = [0, 0, 0, 0, 0];
-                const iecm = workbook.addImage({ filename: iecmLogo, extension: 'png' });
+                let fila = 13, inc = [0, 0, 0, 0, 0];
+                const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
                 worksheet.getCell('A2').value = titulos[0];
                 if (!worksheet.getCell('A2').isMerged)
@@ -126,42 +127,41 @@ export const Incidentes = async (req = request, res = response) => {
                 worksheet.getCell('A5').value = 'PENDIENTE';
                 if (!worksheet.getCell('A5').isMerged)
                     worksheet.mergeCells('A5:O5');
-                worksheet.getCell('A7').value = 'INCIDENTES PRESENTADOS DURANTE LA VALIDACIÓN DE LA ELECCIÓN Y LA CONSULTA';
-                if (!worksheet.getCell('A7').isMerged)
-                    worksheet.mergeCells('A7:O7');
-                worksheet.getCell('N9').value = `Fecha: ${fecha}`;
-                worksheet.getCell('N10').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
-                worksheet.getCell('G10').value = 'CAUSAS';
-                worksheet.getCell('G10').style = fill;
-                if (!worksheet.getCell('G10').isMerged)
-                    worksheet.mergeCells('G10:K10');
+                worksheet.getCell('A6').value = 'INCIDENTES PRESENTADOS DURANTE LA VALIDACIÓN DE LA ELECCIÓN Y LA CONSULTA';
+                if (!worksheet.getCell('A6').isMerged)
+                    worksheet.mergeCells('A6:O6');
+                worksheet.getCell('N8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('N9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
+                if (!worksheet.getCell('A11').isMerged)
+                    worksheet.mergeCells('A11:A12');
+                if (!worksheet.getCell('B11').isMerged)
+                    worksheet.mergeCells('B11:B12');
+                if (!worksheet.getCell('C11').isMerged)
+                    worksheet.mergeCells('C11:C12');
+                if (!worksheet.getCell('D11').isMerged)
+                    worksheet.mergeCells('D11:D12');
+                if (!worksheet.getCell('E11').isMerged)
+                    worksheet.mergeCells('E11:E12');
+                if (!worksheet.getCell('F11').isMerged)
+                    worksheet.mergeCells('F11:F12');
+                worksheet.getCell('G11').value = 'CAUSAS';
+                worksheet.getCell('G11').style = fill;
+                if (!worksheet.getCell('G11').isMerged)
+                    worksheet.mergeCells('G11:K11');
+                if (!worksheet.getCell('L11').isMerged)
+                    worksheet.mergeCells('L11:L12');
+                if (!worksheet.getCell('M11').isMerged)
+                    worksheet.mergeCells('M11:M12');
+                if (!worksheet.getCell('N11').isMerged)
+                    worksheet.mergeCells('N11:N12');
+                if (!worksheet.getCell('O11').isMerged)
+                    worksheet.mergeCells('O11:O12');
                 incidentes.forEach(incidente => {
                     Object.keys(incidente).forEach((key, i) => {
                         worksheet.getCell(fila, i + 1).value = incidente[key];
                         worksheet.getCell(fila, i + 1).style = contenidoStyle;
                         if (['i1', 'i2', 'i3', 'i4', 'i5'].includes(key))
-                            switch (key) {
-                                case 'i1':
-                                    if (incidente[key] == 'X')
-                                        inc[0]++;
-                                    break;
-                                case 'i2':
-                                    if (incidente[key] == 'X')
-                                        inc[1]++;
-                                    break;
-                                case 'i3':
-                                    if (incidente[key] == 'X')
-                                        inc[2]++;
-                                    break;
-                                case 'i4':
-                                    if (incidente[key] == 'X')
-                                        inc[3]++;
-                                    break;
-                                case 'i5':
-                                    if (incidente[key] == 'X')
-                                        inc[4]++;
-                                    break;
-                            }
+                            inc[+key.replace('i', '') - 1] += incidente[key] == 'X' ? 1 : 0;
                     });
                     fila++;
                 });

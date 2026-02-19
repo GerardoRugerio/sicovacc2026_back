@@ -1,10 +1,10 @@
 import { request, Router } from 'express';
 import { body, param } from 'express-validator';
 import { ActasAlerta, CandidaturasEmpate, ComputoTotalUT, ConcentradoParticipantes, LevantadaDistrito, MesasComputadas, MesasNoComputadas, ResultadoComputoTotalMesa, ResultadoComputoTotalUT, ResultadosMesa, UTConComputo, UTSinComputo } from '../controllers/distEleccionReportesExcel.controller.js';
+import { ActaComputoTotalPDF } from '../controllers/distEleccionReportesPDF.controller.js';
+import { ActaComputoTotalWord } from '../controllers/distEleccionReporteWord.controller.js';
 import { chkDistrito, StatusReporte } from '../middlewares/dist-middleware.js';
 import { Validator } from '../validators/validator.js';
-import { ActaValidacionPDF } from '../controllers/distEleccionReportesPDF.controller.js';
-import { ActaValidacionWord } from '../controllers/distEleccionReporteWord.controller.js';
 
 const router = Router();
 
@@ -104,9 +104,9 @@ router.get('/actasAlerta/:id_distrito', [
     Validator
 ], ActasAlerta);
 
-//? Acta de Validación - PDF - Word
+//? Acta de Cómputo Total - PDF - Word
 
-router.post('/actaValidacion/:id_distrito', [
+router.post('/actaComputoTotal/:id_distrito', [
     param('id_distrito').exists().notEmpty(),
     chkDistrito('1'),
     body('clave_colonia').exists().notEmpty().isString(),
@@ -116,9 +116,9 @@ router.post('/actaValidacion/:id_distrito', [
 ], async (req = request, res = response) => {
     const { tipo } = req.body;
     if (tipo.toLowerCase() == 'pdf')
-        ActaValidacionPDF(req, res);
+        ActaComputoTotalPDF(req, res);
     else
-        ActaValidacionWord(req, res);
+        ActaComputoTotalWord(req, res);
 });
 
 export { router as distEleccionReportesRouter };

@@ -105,23 +105,29 @@ export const ImportarProyectosAprobados = async (req = request, res = response) 
     }
 }
 
+export const ImportarParticipantesAprobados = async (req = request, res = response) => {
+    res.json({
+        success: false,
+        msg: 'En preparación me encuentro'
+    });
+}
+
 export const DatosProyectos = async (req = request, res = response) => {
     const { id_distrito, clave_colonia, anio } = req.body;
     try {
-        const proyectos = await SICOVACC.sequelize.query(`SELECT CPP.id_proyecto, UPPER(CCD.nombre_delegacion) AS nombre_delegacion, CPP.num_proyecto, UPPER(CPP.nom_proyecto) AS nom_proyecto, UPPER(CPP.folio_proy_web) AS folio
-        FROM consulta_prelacion_proyectos CPP
-        LEFT JOIN consulta_cat_delegacion CCD ON CPP.id_delegacion = CCD.id_delegacion
-        LEFT JOIN ${aniosCAT[anio]} CCC ON CPP.clave_colonia = CCC.clave_colonia
-        WHERE CPP.estatus = 1 AND CPP.anio = ${anio} AND CPP.id_distrito = ${id_distrito} AND CPP.clave_colonia = '${clave_colonia}'
-        ORDER BY CPP.num_proyecto`);
-        if (proyectos[1] == 0)
+        const datos = (await SICOVACC.sequelize.query(`SELECT id_proyecto, UPPER(D.nombre_delegacion) AS nombre_delegacion, secuencial, nom_proyecto, folio
+        FROM consulta_prelacion_proyectos_VVS P
+        LEFT JOIN consulta_cat_delegacion D ON P.id_delegacion = D.id_delegacion
+        WHERE id_distrito = ${id_distrito} AND clave_colonia = '${clave_colonia}' AND anio = ${anio}
+        ORDER BY secuencial ASC`))[0];
+        if (!datos.length)
             return res.status(404).json({
                 success: false,
                 msg: 'No se han encontrado proyectos'
             });
         res.json({
             success: true,
-            datos: proyectos[0]
+            datos
         });
     } catch (err) {
         console.error(`Error en DatosProyectos: ${err}`);
@@ -150,6 +156,56 @@ export const EliminarProyecto = async (req = request, res = response) => {
         });
     } catch (err) {
         console.error(`Error en EliminarProyecto: ${err}`);
+        res.status(500).json({
+            success: false,
+            msg: 'Error desconocido'
+        });
+    }
+}
+
+export const DatosParticipantes = async (req = request, res = response) => {
+    const { id_distrito, clave_colonia } = req.body;
+    try {
+        const datos = (await SICOVACC.sequelize.query(`SELECT idFormulas, UPPER(D.nombre_delegacion) AS nombre_delegacion, secuencial, CONCAT(nombre, ' ', paterno, ' ', materno) AS nombre, folio
+        FROM copaco_formulas F
+        LEFT JOIN consulta_cat_delegacion D ON F.id_delegacion = D.id_delegacion
+        WHERE estatus = 1 AND secuencial IS NOT NULL AND id_distrito = ${id_distrito} AND clave_colonia = '${clave_colonia}'
+        ORDER BY secuencial ASC`))[0];
+        if (!datos.length)
+            return res.status(404).json({
+                success: false,
+                msg: 'No se han encontrado participantes'
+            });
+        res.json({
+            success: true,
+            datos
+        })
+    } catch (err) {
+        console.error(`Error en DatosParticipantes: ${err}`);
+        res.status(500).json({
+            success: false,
+            msg: 'Error desconocido'
+        });
+    }
+}
+
+export const EliminarParticipante = async (req = request, res = response) => {
+    const { id_transaccion, id_usuario, id_distrito } = req.data;
+    const { idFormulas } = req.body;
+    try {
+        const resp = SICOVACC.sequelize.query(`UPDATE copaco_formulas SET estatus = 0 WHERE idFormulas = ${idFormulas}`);
+        if (resp[1] == 0)
+            return res.status(404).json({
+                success: false,
+                msg: 'Participante no encontrado'
+            });
+        await Audit(id_transaccion, id_usuario, id_distrito, `ELIMINÓ EL PARTICIPANTE ${idFormulas}`);
+        res.json({
+            success: true,
+            msg: 'Participante eliminado'
+        });
+    } catch (err) {
+        console.error(`Error en EliminarParticipante: ${err}`);
         res.status(500).json({
             success: false,
             msg: 'Error desconocido'

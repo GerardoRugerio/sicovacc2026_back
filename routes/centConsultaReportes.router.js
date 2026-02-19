@@ -33,7 +33,7 @@ router.get('/consultaCiudadanaDetalle/:id_distrito', [
     Validator
 ], ConsultaCiudadanaDetalle);
 
-//? F5 - Resultado de Opiniones por Mesa - Excel
+//? F5 - Resultados de Opiniones por Mesa - Excel
 
 router.get('/opinionesMesa/:id_distrito', [
     param('id_distrito').exists().notEmpty(),

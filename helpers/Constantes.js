@@ -1,6 +1,9 @@
-export const iecmLogo = './resources/Emblema IECM byn.png';
-export const iecmLogoBN = './resources/Emblema IECM Calado Blanco.png';
-export const emblemaEC = './resources/Emblema Enchula tu colonia byn.png';
+export const IECMLogo = './resources/Emblema IECM byn.png';
+export const IECMLogoBN = './resources/Emblema IECM Calado Blanco.png';
+export const EmblemaEC = './resources/Emblema Enchula tu colonia byn.png';
+export const CalendarioAzteca = './resources/Calendario Azteca.png';
+export const AveAzteca = './resources/Ave Azteca.png';
+export const SerpienteAzteca = './resources/Serpiente Azteca.png';
 
 export const anioN = {
     2: 2026,

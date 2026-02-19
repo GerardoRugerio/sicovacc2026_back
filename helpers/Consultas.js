@@ -97,14 +97,12 @@ export const ConsultaVerificaProyectos = async (id_distrito, clave_colonia, anio
 
 //? Regresa el total de mesas instaladas en la Unidad Territorial
 export const MesasI = async (distrito, clave_colonia, anio) => {
-    const campo = aniosCAT[0][anio];
-    const consulta = await SICOVACC.sequelize.query(`SELECT CAST(CASE WHEN COUNT(num_mro) > 0 THEN 1 ELSE 0 END AS BIT) AS mesasI FROM consulta_mros WHERE ${campo} = 1 AND id_distrito = ${distrito} AND clave_colonia = '${clave_colonia}'`);
+    const consulta = await SICOVACC.sequelize.query(`SELECT CAST(CASE WHEN COUNT(num_mro) > 0 THEN 1 ELSE 0 END AS BIT) AS mesasI FROM consulta_mros WHERE estatus = 1 AND id_distrito = ${distrito} AND clave_colonia = '${clave_colonia}'`);
     return consulta[0][0];
 }
 
 //? Regresa el estado de la Unidad Territorial, si ya fueron capturadas todas las actas
 export const EstadoUT = async (clave_colonia, anio) => {
-    const campo = aniosCAT[0][anio];
     const consulta = await SICOVACC.sequelize.query(`SELECT CAST(CASE WHEN A.cantidad = B.cantidad THEN 1 ELSE 0 END AS BIT) AS validada
     FROM (
         SELECT id_distrito, id_delegacion, clave_colonia, COUNT(num_mro) AS cantidad
@@ -115,7 +113,7 @@ export const EstadoUT = async (clave_colonia, anio) => {
     LEFT JOIN (
         SELECT id_distrito, id_delegacion, clave_colonia, COUNT(num_mro) AS cantidad
         FROM consulta_mros
-        WHERE ${campo} = 1
+        WHERE estatus = 1
         GROUP BY id_distrito, id_delegacion, clave_colonia
     ) AS B ON A.id_distrito = B.id_distrito AND A.id_delegacion = B.id_delegacion AND A.clave_colonia = B.clave_colonia
     WHERE A.clave_colonia = '${clave_colonia}'`);
@@ -124,8 +122,7 @@ export const EstadoUT = async (clave_colonia, anio) => {
 
 //? Regresa información de las mesas faltantes de la Unidad Territorial
 export const MesasFalt = async (id_distrito, clave_colonia, anio) => {
-    const campo = aniosCAT[0][anio];
-    const consulta = await SICOVACC.sequelize.query(`SELECT * FROM consulta_mros M WHERE ${campo} = 1 AND id_distrito = ${id_distrito} AND clave_colonia = '${clave_colonia}'
+    const consulta = await SICOVACC.sequelize.query(`SELECT * FROM consulta_mros M WHERE estatus = 1 AND id_distrito = ${id_distrito} AND clave_colonia = '${clave_colonia}'
     AND NOT EXISTS (SELECT 1 FROM ${anio == 1 ? 'copaco' : 'consulta'}_actas WHERE modalidad = 1 AND estatus = 1${anio != 1 ? ` AND anio = ${anio}` : ''} AND id_distrito = M.id_distrito AND clave_colonia = M.clave_colonia AND num_mro = M.num_mro AND tipo_mro = M.tipo_mro)`);
     return consulta[1];
 }

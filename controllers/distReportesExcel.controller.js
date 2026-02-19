@@ -1,7 +1,7 @@
 import ExcelJs from 'exceljs';
 import { request, response } from 'express';
 import path from 'path';
-import { autor, contenidoStyle, fill, iecmLogo, plantillas, titulos } from '../helpers/Constantes.js';
+import { autor, contenidoStyle, fill, IECMLogo, plantillas, titulos } from '../helpers/Constantes.js';
 import { FechaServer } from '../helpers/Consultas.js';
 import { SICOVACC } from '../models/consulta_usuarios_sicovacc.model.js';
 
@@ -25,9 +25,9 @@ export const InicioCierreValidacion = async (req = request, res = response) => {
                 workbook.creator = autor;
                 const worksheet = workbook.getWorksheet(1);
                 worksheet.spliceColumns(1, 1);
-                const iecm = workbook.addImage({ filename: iecmLogo, extension: 'png' });
+                const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
-                let fila = 11;
+                let fila = 13;
                 worksheet.getCell('A2').value = titulos[0];
                 if (!worksheet.getCell('A2').isMerged)
                     worksheet.mergeCells('A2:T2');
@@ -40,18 +40,18 @@ export const InicioCierreValidacion = async (req = request, res = response) => {
                 worksheet.getCell('A6').value = 'REPORTE DE ASISTENCIA DE INICIO Y CIERRE DE LA VALIDACIÓN';
                 if (!worksheet.getCell('A6').isMerged)
                     worksheet.mergeCells('A6:T6');
-                worksheet.getCell('A9').value = `DIRECCIÓN DISTRITAL: ${id_distrito}`;
-                worksheet.getCell('A9').style = { ...fill, font: { ...fill.font, size: 12 } };
-                worksheet.getCell('B9').value = 'Asistencia de Inicio';
-                worksheet.getCell('B9').style = fill;
-                if (!worksheet.getCell('B9').isMerged)
-                    worksheet.mergeCells('B9:J9');
-                worksheet.getCell('K9').value = 'Asistencia de Cierre';
-                worksheet.getCell('K9').style = fill;
-                if (!worksheet.getCell('K9').isMerged)
-                    worksheet.mergeCells('K9:T9');
-                worksheet.getCell('S7').value = `Fecha: ${fecha}`;
-                worksheet.getCell('S8').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
+                worksheet.getCell('A8').value = `DIRECCIÓN DISTRITAL: ${id_distrito}`;
+                worksheet.getCell('A8').style = { ...fill, font: { ...fill.font, size: 12 } };
+                worksheet.getCell('S8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('S9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
+                worksheet.getCell('A11').value = 'Asistencia de Inicio';
+                worksheet.getCell('A11').style = fill;
+                if (!worksheet.getCell('A11').isMerged)
+                    worksheet.mergeCells('A11:J11');
+                worksheet.getCell('K11').value = 'Asistencia de Cierre';
+                worksheet.getCell('K11').style = fill;
+                if (!worksheet.getCell('K11').isMerged)
+                    worksheet.mergeCells('K11:T11');
                 validacion.forEach(val => {
                     Object.keys(val).forEach((key, index) => {
                         worksheet.getCell(fila, index + 1).value = val[key];
@@ -59,11 +59,11 @@ export const InicioCierreValidacion = async (req = request, res = response) => {
                     });
                     fila++;
                 });
-                worksheet.columns.forEach((column, index) => {
-                    if (index == 10 || index == 21) {
+                worksheet.columns.forEach((column, i) => {
+                    if ([10, 21].includes(i)) {
                         let maxLength = 0;
-                        column.eachCell({ includeEmpty: false }, (cell, index) => {
-                            if (index >= 9)
+                        column.eachCell({ includeEmpty: false }, (cell, j) => {
+                            if (j >= 12)
                                 if (cell.value) {
                                     const length = cell.value.toString().length;
                                     if (length > maxLength)
@@ -138,9 +138,9 @@ export const IncidentesDistrito = async (req = request, res = response) => {
             .then(() => {
                 workbook.creator = autor;
                 const worksheet = workbook.getWorksheet(1);
-                let fila = 12, inc = [0, 0, 0, 0, 0];
+                let fila = 13, inc = [0, 0, 0, 0, 0];
                 worksheet.spliceColumns(1, 1);
-                const iecm = workbook.addImage({ filename: iecmLogo, extension: 'png' });
+                const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
                 worksheet.getCell('A2').value = titulos[0];
                 worksheet.getCell('A3').value = titulos[1];
@@ -151,44 +151,41 @@ export const IncidentesDistrito = async (req = request, res = response) => {
                 worksheet.getCell('A5').value = 'PENDIENTE';
                 if (!worksheet.getCell('A5').isMerged)
                     worksheet.mergeCells('A5:N5');
-                worksheet.getCell('A7').value = 'INCIDENTES PRESENTADOS DURANTE LA VALIDACIÓN DE LA ELECCIÓN Y LA CONSULTA';
-                if (!worksheet.getCell('A7').isMerged)
-                    worksheet.mergeCells('A7:N7');
-                worksheet.getCell('A9').value = `Dirección Distrital: ${id_distrito}`;
-                worksheet.getCell('A9').style = { ...fill, font: { ...fill.font, size: 12 } };
-                worksheet.getCell('M9').value = `Fecha: ${fecha}`;
-                worksheet.getCell('M10').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
-                worksheet.getCell('F10').value = 'CAUSAS';
-                worksheet.getCell('F10').style = fill;
-                if (!worksheet.getCell('F10').isMerged)
-                    worksheet.mergeCells('F10:J10');
+                worksheet.getCell('A6').value = 'INCIDENTES PRESENTADOS DURANTE LA VALIDACIÓN DE LA ELECCIÓN Y LA CONSULTA';
+                if (!worksheet.getCell('A6').isMerged)
+                    worksheet.mergeCells('A6:N6');
+                worksheet.getCell('A8').value = `Dirección Distrital: ${id_distrito}`;
+                worksheet.getCell('A8').style = { ...fill, font: { ...fill.font, size: 12 } };
+                worksheet.getCell('M8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('M9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
+                if (!worksheet.getCell('A11').isMerged)
+                    worksheet.mergeCells('A11:A12');
+                if (!worksheet.getCell('B11').isMerged)
+                    worksheet.mergeCells('B11:B12');
+                if (!worksheet.getCell('C11').isMerged)
+                    worksheet.mergeCells('C11:C12');
+                if (!worksheet.getCell('D11').isMerged)
+                    worksheet.mergeCells('D11:D12');
+                if (!worksheet.getCell('E11').isMerged)
+                    worksheet.mergeCells('E11:E12');
+                worksheet.getCell('F11').value = 'CAUSAS';
+                worksheet.getCell('F11').style = fill;
+                if (!worksheet.getCell('F11').isMerged)
+                    worksheet.mergeCells('F11:J11');
+                if (!worksheet.getCell('K11').isMerged)
+                    worksheet.mergeCells('K11:K12');
+                if (!worksheet.getCell('L11').isMerged)
+                    worksheet.mergeCells('L11:L12');
+                if (!worksheet.getCell('M11').isMerged)
+                    worksheet.mergeCells('M11:M12');
+                if (!worksheet.getCell('N11').isMerged)
+                    worksheet.mergeCells('N11:N12');
                 incidentes.forEach(incidente => {
                     Object.keys(incidente).forEach((key, index) => {
                         worksheet.getCell(fila, index + 1).value = incidente[key];
                         worksheet.getCell(fila, index + 1).style = contenidoStyle;
                         if (['i1', 'i2', 'i3', 'i4', 'i5'].includes(key))
-                            switch (key) {
-                                case 'i1':
-                                    if (incidente[key] == 'X')
-                                        inc[0]++;
-                                    break;
-                                case 'i2':
-                                    if (incidente[key] == 'X')
-                                        inc[1]++;
-                                    break;
-                                case 'i3':
-                                    if (incidente[key] == 'X')
-                                        inc[2]++;
-                                    break;
-                                case 'i4':
-                                    if (incidente[key] == 'X')
-                                        inc[3]++;
-                                    break;
-                                case 'i5':
-                                    if (incidente[key] == 'X')
-                                        inc[4]++;
-                                    break;
-                            }
+                            inc[+key.replace('i', '') - 1] += incidente[key] == 'X' ? 1 : 0;
                     });
                     fila++;
                 });
@@ -201,11 +198,11 @@ export const IncidentesDistrito = async (req = request, res = response) => {
                 worksheet.getCell(fila, 6).style = fill;
                 worksheet.getCell(fila, 7).value = inc.reduce((sum, i) => sum + i, 0);
                 worksheet.getCell(fila, 7).style = { ...contenidoStyle, numFmt: '#,##0' };
-                worksheet.columns.forEach((column, index) => {
-                    if (index == 0 || index == 2 || (index >= 9 && index <= 11)) {
+                worksheet.columns.forEach((column, i) => {
+                    if ([0, 2, 9, 11].includes(i)) {
                         let maxLength = 0;
-                        column.eachCell({ includeEmpty: false }, (cell, index) => {
-                            if (index >= 10)
+                        column.eachCell({ includeEmpty: false }, (cell, j) => {
+                            if (j >= 12)
                                 if (cell.value) {
                                     const length = cell.value.toString().length;
                                     if (length > maxLength)

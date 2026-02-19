@@ -45,7 +45,7 @@ export const ColoniasConActas = async (req = request, res = response) => {
         const colonias = await SICOVACC.sequelize.query(`SELECT clave_colonia AS id, UPPER(nombre_colonia) AS nombre
         FROM consulta_cat_colonia_cc1
         WHERE ${campo} = 1 AND id_distrito = ${id_distrito} AND clave_colonia IN (SELECT clave_colonia FROM ${anio == 1 ? 'copaco' : 'consulta'}_actas WHERE modalidad = 1 AND estatus = 1${anio != 1 ? ` AND anio = ${anio}` : ''}) AND 
-        clave_colonia IN (SELECT clave_colonia FROM consulta_mros WHERE ${campo} = 1)
+        clave_colonia IN (SELECT clave_colonia FROM consulta_mros WHERE estatus = 1)
         ORDER BY nombre_colonia`);
         if (colonias[1] == 0)
             return res.status(404).json({
@@ -75,9 +75,9 @@ export const ColoniasSinActas = async (req = request, res = response) => {
         WHERE ${campo} = 1 AND id_distrito = ${id_distrito} AND clave_colonia NOT IN (
             SELECT A.clave_colonia
             FROM (SELECT clave_colonia, COUNT(clave_colonia) AS cantidad FROM ${anio == 1 ? 'copaco' : 'consulta'}_actas WHERE modalidad = 1 AND estatus = 1${anio != 1 ? ` AND anio = ${anio}` : ''} GROUP BY clave_colonia) AS A
-            LEFT JOIN (SELECT clave_colonia, COUNT(clave_colonia) AS total FROM consulta_mros WHERE ${campo} = 1 GROUP BY clave_colonia) AS B ON A.clave_colonia = B.clave_colonia
+            LEFT JOIN (SELECT clave_colonia, COUNT(clave_colonia) AS total FROM consulta_mros WHERE estatus = 1 GROUP BY clave_colonia) AS B ON A.clave_colonia = B.clave_colonia
             WHERE A.cantidad = B.total
-        ) AND clave_colonia IN (SELECT clave_colonia FROM consulta_mros WHERE ${campo} = 1)
+        ) AND clave_colonia IN (SELECT clave_colonia FROM consulta_mros WHERE estatus = 1)
         ORDER BY nombre_colonia`))[0];
         if (!datos)
             return res.status(404).json({
@@ -107,9 +107,9 @@ export const ColoniasValidadas = async (req = request, res = response) => {
         WHERE ${campo} = 1 AND id_distrito = ${id_distrito} AND clave_colonia IN (
             SELECT A.clave_colonia
             FROM (SELECT clave_colonia, COUNT(clave_colonia) AS cantidad FROM ${anio == 1 ? 'copaco' : 'consulta'}_actas WHERE modalidad = 1 AND estatus = 1${anio != 1 ? ` AND anio = ${anio}` : ''} GROUP BY clave_colonia) AS A
-            LEFT JOIN (SELECT clave_colonia, COUNT(clave_colonia) AS total FROM consulta_mros WHERE ${campo} = 1 GROUP BY clave_colonia) AS B ON A.clave_colonia = B.clave_colonia
+            LEFT JOIN (SELECT clave_colonia, COUNT(clave_colonia) AS total FROM consulta_mros WHERE estatus = 1 GROUP BY clave_colonia) AS B ON A.clave_colonia = B.clave_colonia
             WHERE A.cantidad = B.total
-        ) AND clave_colonia IN (SELECT clave_colonia FROM consulta_mros WHERE ${campo} = 1)
+        ) AND clave_colonia IN (SELECT clave_colonia FROM consulta_mros WHERE estatus = 1)
         ORDER BY nombre_colonia`);
         if (colonias[1] == 0)
             return res.status(404).json({
@@ -152,10 +152,9 @@ export const Delegacion = async (req = request, res = response) => {
 
 export const Mesas = async (req = request, res = response) => {
     const { id_distrito } = req.data;
-    const { clave_colonia, anio } = req.body;
-    const campo = aniosCAT[0][anio];
+    const { clave_colonia } = req.body;
     try {
-        const datos = (await SICOVACC.sequelize.query(`SELECT num_mro AS id, tipo_mro AS tipo, CONCAT('M', RIGHT('00' + num_mro, 2)) AS nombre FROM consulta_mros WHERE ${campo} = 1 AND id_distrito = ${id_distrito} AND clave_colonia = '${clave_colonia}' ORDER BY num_mro, tipo_mro`))[0];
+        const datos = (await SICOVACC.sequelize.query(`SELECT num_mro AS id, tipo_mro AS tipo, CONCAT('M', RIGHT('00' + num_mro, 2)) AS nombre FROM consulta_mros WHERE estatus = 1 AND id_distrito = ${id_distrito} AND clave_colonia = '${clave_colonia}' ORDER BY num_mro, tipo_mro`))[0];
         if (!datos)
             return res.status(404).json({
                 success: false,
@@ -176,10 +175,9 @@ export const Mesas = async (req = request, res = response) => {
 
 export const MesasConActas = async (req = request, res = response) => {
     const { id_distrito, clave_colonia, anio } = req.body;
-    const campo = aniosCAT[0][anio];
     try {
         const mesas = await SICOVACC.sequelize.query(`SELECT num_mro AS id, tipo_mro AS tipo, CONCAT('M', RIGHT('00' + num_mro, 2)) AS nombre FROM consulta_mros M
-        WHERE ${campo} = 1 AND id_distrito = ${id_distrito} AND clave_colonia = '${clave_colonia}' AND EXISTS (
+        WHERE estatus = 1 AND id_distrito = ${id_distrito} AND clave_colonia = '${clave_colonia}' AND EXISTS (
             SELECT 1 FROM ${anio == 1 ? 'copaco' : 'consulta'}_actas A
             WHERE A.modalidad = 1 AND A.estatus = 1 AND A.id_distrito = M.id_distrito AND A.clave_colonia = M.clave_colonia
             AND A.num_mro = M.num_mro AND A.tipo_mro = M.tipo_mro${anio != 1 ? ` AND A.anio = ${anio}` : ''}
@@ -205,10 +203,9 @@ export const MesasConActas = async (req = request, res = response) => {
 export const MesaSinActas = async (req = request, res = response) => {
     const { id_distrito } = req.data;
     const { clave_colonia, anio } = req.body;
-    const campo = aniosCAT[0][anio];
     try {
         const mesas = await SICOVACC.sequelize.query(`SELECT num_mro AS id, tipo_mro AS tipo, CONCAT('M', RIGHT('00' + num_mro, 2)) AS nombre FROM consulta_mros M
-        WHERE ${campo} = 1 AND id_distrito = ${id_distrito} AND clave_colonia = '${clave_colonia}' AND NOT EXISTS (
+        WHERE estatus = 1 AND id_distrito = ${id_distrito} AND clave_colonia = '${clave_colonia}' AND NOT EXISTS (
             SELECT 1 FROM ${anio == 1 ? 'copaco' : 'consulta'}_actas A
             WHERE A.modalidad = 1 AND A.estatus = 1 AND A.id_distrito = M.id_distrito AND A.clave_colonia = M.clave_colonia
             AND A.num_mro = M.num_mro AND A.tipo_mro = M.tipo_mro${anio != 1 ? ` AND A.anio = ${anio}` : ''}

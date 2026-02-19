@@ -1,7 +1,7 @@
 import ExcelJs from 'exceljs';
 import { request, response } from 'express';
 import path from 'path';
-import { aniosCAT, autor, contenidoStyle, fill, iecmLogo, plantillas, titulos, tituloStyle } from '../helpers/Constantes.js';
+import { aniosCAT, autor, contenidoStyle, fill, IECMLogo, plantillas, titulos, tituloStyle } from '../helpers/Constantes.js';
 import { ConsultaTipoEleccion, FechaServer } from '../helpers/Consultas.js';
 import { SICOVACC } from '../models/consulta_usuarios_sicovacc.model.js';
 
@@ -10,7 +10,6 @@ import { SICOVACC } from '../models/consulta_usuarios_sicovacc.model.js';
 export const UTValidadas = async (req = request, res = response) => {
     const { id_distrito } = req.params;
     const { anio } = req.query;
-    const campo = aniosCAT[0][anio];
     const workbook = new ExcelJs.Workbook();
     try {
         const colonias = (await SICOVACC.sequelize.query(`SELECT UPPER(D.nombre_delegacion) AS nombre_delegacion, C.clave_colonia, UPPER(C.nombre_colonia) AS nombre_colonia
@@ -23,10 +22,10 @@ export const UTValidadas = async (req = request, res = response) => {
                 FROM consulta_actas A
                 WHERE modalidad = 1 AND estatus = 1 AND anio = ${anio}
                 GROUP BY clave_colonia
-                HAVING COUNT(*) = (SELECT COUNT(*) FROM consulta_mros WHERE ${campo} = 1 AND clave_colonia = A.clave_colonia)
+                HAVING COUNT(*) = (SELECT COUNT(*) FROM consulta_mros WHERE estatus = 1 AND clave_colonia = A.clave_colonia)
             ) X
             WHERE X.clave_colonia = C.clave_colonia
-        ) AND EXISTS (SELECT 1 FROM consulta_mros WHERE id_distrito = C.id_distrito AND clave_colonia = C.clave_colonia AND ${campo} = 1)
+        ) AND EXISTS (SELECT 1 FROM consulta_mros WHERE id_distrito = C.id_distrito AND clave_colonia = C.clave_colonia AND estatus = 1)
         ORDER BY nombre_delegacion, nombre_colonia`))[0]
         if (!colonias.length)
             return res.status(404).json({
@@ -39,8 +38,8 @@ export const UTValidadas = async (req = request, res = response) => {
             .then(() => {
                 workbook.creator = autor;
                 const worksheet = workbook.getWorksheet(1);
-                let fila = 13;
-                const iecm = workbook.addImage({ filename: iecmLogo, extension: 'png' });
+                let fila = 12;
+                const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
                 worksheet.getCell('B2').value = titulos[0];
                 worksheet.getCell('B3').value = titulos[1];
@@ -54,10 +53,9 @@ export const UTValidadas = async (req = request, res = response) => {
                     worksheet.mergeCells('B5:C5');
                 if (!worksheet.getCell('B6').isMerged)
                     worksheet.mergeCells('B6:C6');
-                worksheet.getCell('A10').value = `Dirección Distrital: ${id_distrito}`;
-                worksheet.getCell('C7').value = 'FORMATO 8';
-                worksheet.getCell('C9').value = `Fecha: ${fecha}`;
-                worksheet.getCell('C10').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
+                worksheet.getCell('A8').value = `Dirección Distrital: ${id_distrito}`;
+                worksheet.getCell('C8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('C9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 colonias.forEach(colonia => {
                     Object.keys(colonia).forEach((key, index) => {
                         worksheet.getCell(fila, index + 1).value = colonia[key];
@@ -68,7 +66,7 @@ export const UTValidadas = async (req = request, res = response) => {
                 worksheet.getCell(fila, 2).value = 'Total:';
                 worksheet.getCell(fila, 2).style = fill;
                 worksheet.getCell(fila, 3).value = colonias.length;
-                worksheet.getCell(fila, 3).style = { ...contenidoStyle, numFmt: '#,##0' };
+                worksheet.getCell(fila, 3).style = { ...fill, numFmt: '#,##0' };
                 return workbook.xlsx.writeBuffer();
             })
             .then(buffer => {
@@ -99,7 +97,6 @@ export const UTValidadas = async (req = request, res = response) => {
 export const UTPorValidar = async (req = request, res = response) => {
     const { id_distrito } = req.params;
     const { anio } = req.query;
-    const campo = aniosCAT[0][anio];
     const workbook = new ExcelJs.Workbook();
     try {
         const colonias = (await SICOVACC.sequelize.query(`SELECT UPPER(D.nombre_delegacion) AS nombre_delegacion, C.clave_colonia, UPPER(C.nombre_colonia) AS nombre_colonia
@@ -112,10 +109,10 @@ export const UTPorValidar = async (req = request, res = response) => {
                 FROM consulta_actas A
                 WHERE modalidad = 1 AND estatus = 1 AND anio = ${anio}
                 GROUP BY clave_colonia
-                HAVING COUNT(*) = (SELECT COUNT(*) FROM consulta_mros WHERE ${campo} = 1 AND clave_colonia = A.clave_colonia)
+                HAVING COUNT(*) = (SELECT COUNT(*) FROM consulta_mros WHERE estatus = 1 AND clave_colonia = A.clave_colonia)
             ) X
             WHERE X.clave_colonia = C.clave_colonia
-        ) AND EXISTS (SELECT 1 FROM consulta_mros WHERE id_distrito = C.id_distrito AND clave_colonia = C.clave_colonia AND ${campo} = 1)
+        ) AND EXISTS (SELECT 1 FROM consulta_mros WHERE id_distrito = C.id_distrito AND clave_colonia = C.clave_colonia AND estatus = 1)
         ORDER BY nombre_delegacion, nombre_colonia`))[0];
         if (!colonias.length)
             return res.status(404).json({
@@ -128,8 +125,8 @@ export const UTPorValidar = async (req = request, res = response) => {
             .then(() => {
                 workbook.creator = autor;
                 const worksheet = workbook.getWorksheet(1);
-                let fila = 13;
-                const iecm = workbook.addImage({ filename: iecmLogo, extension: 'png' });
+                let fila = 12;
+                const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
                 worksheet.getCell('B2').value = titulos[0];
                 worksheet.getCell('B3').value = titulos[1];
@@ -143,10 +140,9 @@ export const UTPorValidar = async (req = request, res = response) => {
                     worksheet.mergeCells('B5:C5');
                 if (!worksheet.getCell('B6').isMerged)
                     worksheet.mergeCells('B6:C6');
-                worksheet.getCell('A10').value = `Dirección Distrital: ${id_distrito}`;
-                worksheet.getCell('C7').value = 'FORMATO 9';
-                worksheet.getCell('C9').value = `Fecha: ${fecha}`;
-                worksheet.getCell('C10').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
+                worksheet.getCell('A8').value = `Dirección Distrital: ${id_distrito}`;
+                worksheet.getCell('C8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('C9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 colonias.forEach(colonia => {
                     Object.keys(colonia).forEach((key, index) => {
                         worksheet.getCell(fila, index + 1).value = colonia[key];
@@ -157,7 +153,7 @@ export const UTPorValidar = async (req = request, res = response) => {
                 worksheet.getCell(fila, 2).value = 'Total:';
                 worksheet.getCell(fila, 2).style = fill;
                 worksheet.getCell(fila, 3).value = colonias.length;
-                worksheet.getCell(fila, 3).style = { ...contenidoStyle, numFmt: '#,##0' };
+                worksheet.getCell(fila, 3).style = { ...fill, numFmt: '#,##0' };
                 return workbook.xlsx.writeBuffer();
             })
             .then(buffer => {
@@ -192,27 +188,13 @@ export const ListadoProyectos = async (req = request, res = response) => {
     const { anio } = req.query;
     const workbook = new ExcelJs.Workbook();
     try {
-        const proyectos = (await SICOVACC.sequelize.query(`SELECT UPPER(Del.nombre_delegacion) AS nombre_delegacion, Proys.clave_colonia, UPPER(Cols.nombre_colonia) AS nombre_colonia, Proys.num_proyecto, UPPER(Proys.folio_proy_web) AS folio_proy_web,
-        UPPER(STUFF((
-            SELECT ', ' + rubro
-            FROM (VALUES
-                (CASE WHEN rubro1 = 1 THEN CASE WHEN tipo_rubro = 1 THEN 'Mejoramiento de espacios públicos' ELSE 'Mejoramiento' END ELSE NULL END),
-                (CASE WHEN rubro2 = 1 THEN CASE WHEN tipo_rubro = 1 THEN 'Equipamiento e infraestructura urbana' ELSE 'Mantenimiento' END ELSE NULL END),
-                (CASE WHEN rubro3 = 1 THEN 'Obras' ELSE NULL END),
-                (CASE WHEN rubro4 = 1 THEN CASE WHEN tipo_rubro = 1 THEN 'Servicios' ELSE 'Reparaciones en áreas y bienes de uso común' END ELSE NULL END),
-                (CASE WHEN rubro5 = 1 THEN CASE WHEN tipo_rubro = 1 THEN 'Actividades deportivas' ELSE 'Servicios' END ELSE NULL END),
-                (CASE WHEN rubro6 = 1 THEN CASE WHEN tipo_rubro = 1 THEN 'Actividades recreativas' ELSE 'Actividades deportivas' END ELSE NULL END),
-                (CASE WHEN rubro7 = 1 THEN CASE WHEN tipo_rubro = 1 THEN 'Actividades culturales' ELSE 'Actividades recreativas' END ELSE NULL END),
-                (CASE WHEN rubro8 = 1 THEN CASE WHEN tipo_rubro = 1 THEN NULL ELSE 'Actividades culturales' END ELSE NULL END)
-            ) AS sub(rubro)
-            WHERE rubro IS NOT NULL
-            FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 2, '')
-        ) AS rubro_general, UPPER(Proys.nom_proyecto) AS nom_proyecto
-        FROM consulta_prelacion_proyectos Proys
-        LEFT JOIN consulta_cat_colonia_cc1 Cols ON Proys.clave_colonia = Cols.clave_colonia
-        LEFT JOIN consulta_cat_delegacion Del ON Cols.id_delegacion = Del.id_delegacion
-        WHERE Proys.estatus = 1 AND Proys.anio = ${anio} AND Cols.id_distrito = ${id_distrito}
-        ORDER BY Del.nombre_delegacion, Cols.nombre_colonia, Proys.num_proyecto`))[0];
+        const proyectos = (await SICOVACC.sequelize.query(`SELECT UPPER(D.nombre_delegacion) AS nombre_delegacion, P.clave_colonia, UPPER(C.nombre_colonia) AS nombre_colonia, UPPER(P.folio_proy_web) AS folio_proy_web, P.num_proyecto,
+        UPPER(P.nom_proyecto) AS nom_proyecto
+        FROM consulta_prelacion_proyectos P
+        LEFT JOIN consulta_cat_colonia_cc1 C ON P.clave_colonia = C.clave_colonia
+        LEFT JOIN consulta_cat_delegacion D ON C.id_delegacion = D.id_delegacion
+        WHERE P.estatus = 1 AND P.anio = ${anio} AND C.id_distrito = ${id_distrito}
+        ORDER BY D.nombre_delegacion, C.nombre_colonia, P.num_proyecto`))[0];
         if (!proyectos.length)
             return res.status(404).json({
                 success: false,
@@ -224,14 +206,26 @@ export const ListadoProyectos = async (req = request, res = response) => {
             .then(() => {
                 workbook.creator = autor;
                 const worksheet = workbook.getWorksheet(1);
-                let fila = 11;
-                const iecm = workbook.addImage({ filename: iecmLogo, extension: 'png' });
+                let fila = 12;
+                worksheet.spliceColumns(1, 1);
+                const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
+                worksheet.getCell('A2').value = titulos[0];
+                worksheet.getCell('A3').value = titulos[1];
                 worksheet.getCell('A5').value = subtitulo;
                 worksheet.getCell('A6').value = 'CONCENTRADO DE PROYECTOS PARTICIPANTES POR UNIDAD TERRITORIAL';
-                worksheet.getCell('B8').value = `Dirección Distrital: ${id_distrito}`;
-                worksheet.getCell('G8').value = `Fecha: ${fecha}`;
-                worksheet.getCell('G9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
+                worksheet.getCell('A8').value = `Dirección Distrital: ${id_distrito}`;
+                worksheet.getCell('A8').style = { ...fill, font: { ...fill.font, size: 12 } };
+                worksheet.getCell('F8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('F9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
+                if (!worksheet.getCell('A2').isMerged)
+                    worksheet.mergeCells('A2:F2');
+                if (!worksheet.getCell('A3').isMerged)
+                    worksheet.mergeCells('A3:F3');
+                if (!worksheet.getCell('A5').isMerged)
+                    worksheet.mergeCells('A5:F5');
+                if (!worksheet.getCell('A6').isMerged)
+                    worksheet.mergeCells('A6:F6');
                 proyectos.forEach(proyecto => {
                     Object.keys(proyecto).forEach((key, index) => {
                         worksheet.getCell(fila, index + 1).value = proyecto[key];
@@ -243,11 +237,11 @@ export const ListadoProyectos = async (req = request, res = response) => {
                 worksheet.getCell(fila, 2).style = fill;
                 worksheet.getCell(fila, 3).value = proyectos.length;
                 worksheet.getCell(fila, 3).style = { ...contenidoStyle, numFmt: '#,##0' };
-                worksheet.columns.forEach((column, index) => {
-                    if (index == 0 || index == 2 || index == 5 || index == 6) {
+                worksheet.columns.forEach((column, i) => {
+                    if ([0, 2, 3, 5].includes(i)) {
                         let maxLength = 0;
-                        column.eachCell({ includeEmpty: false }, (cell, index) => {
-                            if (index >= 9)
+                        column.eachCell({ includeEmpty: false }, (cell, j) => {
+                            if (j >= 11)
                                 if (cell.value) {
                                     const length = cell.value.toString().length;
                                     if (length > maxLength)
@@ -295,7 +289,6 @@ export const ListadoProyectos = async (req = request, res = response) => {
 export const ValidacionResultados = async (req = request, res = response) => {
     const { id_distrito } = req.params;
     const { clave_colonia, anio } = req.body;
-    const campo = aniosCAT[0][anio];
     const workbook = new ExcelJs.Workbook();
     try {
         const actas = (await SICOVACC.sequelize.query(`;WITH CA AS (
@@ -314,7 +307,7 @@ export const ValidacionResultados = async (req = request, res = response) => {
         MesasEsperadas aS (
             SELECT id_distrito, clave_colonia, COUNT(*) AS total
             FROM consulta_mros
-            WHERE estatus_cc1 = 1
+            WHERE estatus = 1
             GROUP BY id_distrito, clave_colonia
         ),
         MesasCapturadas AS (
@@ -364,33 +357,33 @@ export const ValidacionResultados = async (req = request, res = response) => {
                 workbook.creator = autor;
                 const worksheet = workbook.getWorksheet(1);
                 const celdasTotales = 13 + (max * 3);
-                let fila = 10, celda = 6;
+                let fila = 13, celda = 6;
                 worksheet.spliceColumns(1, 1);
-                const iecm = workbook.addImage({ filename: iecmLogo, extension: 'png' });
+                const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
                 worksheet.getCell('A2').value = titulos[0];
                 worksheet.getCell('A3').value = titulos[1];
                 worksheet.getCell('A5').value = subtitulo;
                 worksheet.getCell('A6').value = 'VALIDACIÓN DE RESULTADOS DE LA CONSULTA POR UNIDAD TERRITORIAL';
-                worksheet.getCell('A7').value = `Dirección Distrital: ${id_distrito}`;
-                worksheet.getCell('A7').style = { ...fill, font: { ...fill.font, size: 12 } };
-                worksheet.getCell('L7').value = `Fecha: ${fecha}`;
-                worksheet.getCell('L8').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
+                worksheet.getCell('A8').value = `Dirección Distrital: ${id_distrito}`;
+                worksheet.getCell('A8').style = { ...fill, font: { ...fill.font, size: 12 } };
+                worksheet.getCell('L8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('L9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 for (let i = 1; i <= max; i++) {
                     for (let j = 1; j <= 3; j++)
                         worksheet.spliceColumns(celda, 0, [null]);
-                    if (!worksheet.getCell(8, celda).isMerged)
-                        worksheet.mergeCells(8, celda, 8, celda + 2);
+                    if (!worksheet.getCell(11, celda).isMerged)
+                        worksheet.mergeCells(11, celda, 11, celda + 2);
                     for (let j = celda; j <= celda + 2; j++)
-                        worksheet.getCell(8, j).style = contenidoStyle;
-                    worksheet.getCell(8, celda).value = i;
-                    worksheet.getCell(8, celda).style = fill;
-                    worksheet.getCell(9, celda).value = 'Opiniones Mesa';
-                    worksheet.getCell(9, celda).style = fill;
-                    worksheet.getCell(9, celda + 1).value = 'Opiniones (SEI)';
-                    worksheet.getCell(9, celda + 1).style = fill;
-                    worksheet.getCell(9, celda + 2).value = `Total de Opiniones Proyecto ${i}`;
-                    worksheet.getCell(9, celda + 2).style = fill;
+                        worksheet.getCell(11, j).style = contenidoStyle;
+                    worksheet.getCell(11, celda).value = i;
+                    worksheet.getCell(11, celda).style = fill;
+                    worksheet.getCell(12, celda).value = 'Opiniones Mesa';
+                    worksheet.getCell(12, celda).style = fill;
+                    worksheet.getCell(12, celda + 1).value = 'Opiniones (SEI)';
+                    worksheet.getCell(12, celda + 1).style = fill;
+                    worksheet.getCell(12, celda + 2).value = `Total de Opiniones Proyecto ${i}`;
+                    worksheet.getCell(12, celda + 2).style = fill;
                     celda += 3;
                 }
                 if (!worksheet.getCell(2, 1).isMerged)
@@ -401,6 +394,32 @@ export const ValidacionResultados = async (req = request, res = response) => {
                     worksheet.mergeCells(5, 1, 5, celdasTotales);
                 if (!worksheet.getCell(6, 1).isMerged)
                     worksheet.mergeCells(6, 1, 6, celdasTotales);
+                if (!worksheet.getCell(11, 1).isMerged)
+                    worksheet.mergeCells(11, 1, 12, 1);
+                if (!worksheet.getCell(11, 2).isMerged)
+                    worksheet.mergeCells(11, 2, 12, 2);
+                if (!worksheet.getCell(11, 3).isMerged)
+                    worksheet.mergeCells(11, 3, 12, 3);
+                if (!worksheet.getCell(11, 4).isMerged)
+                    worksheet.mergeCells(11, 4, 12, 4);
+                if (!worksheet.getCell(11, 5).isMerged)
+                    worksheet.mergeCells(11, 5, 12, 5);
+                if (!worksheet.getCell(11, 6 + (max * 3)).isMerged)
+                    worksheet.mergeCells(11, 6 + (max * 3), 12, 6 + (max * 3));
+                if (!worksheet.getCell(11, 7 + (max * 3)).isMerged)
+                    worksheet.mergeCells(11, 7 + (max * 3), 12, 7 + (max * 3));
+                if (!worksheet.getCell(11, 8 + (max * 3)).isMerged)
+                    worksheet.mergeCells(11, 8 + (max * 3), 12, 8 + (max * 3));
+                if (!worksheet.getCell(11, 9 + (max * 3)).isMerged)
+                    worksheet.mergeCells(11, 9 + (max * 3), 12, 9 + (max * 3));
+                if (!worksheet.getCell(11, 10 + (max * 3)).isMerged)
+                    worksheet.mergeCells(11, 10 + (max * 3), 12, 10 + (max * 3));
+                if (!worksheet.getCell(11, 11 + (max * 3)).isMerged)
+                    worksheet.mergeCells(11, 11 + (max * 3), 12, 11 + (max * 3));
+                if (!worksheet.getCell(11, 12 + (max * 3)).isMerged)
+                    worksheet.mergeCells(11, 12 + (max * 3), 12, 12 + (max * 3));
+                if (!worksheet.getCell(11, 13 + (max * 3)).isMerged)
+                    worksheet.mergeCells(11, 13 + (max * 3), 12, 13 + (max * 3));
                 const imprimir = (index, text) => {
                     worksheet.getCell(fila, index).value = text;
                     worksheet.getCell(fila, index).style = index > 3 && index < celdasTotales - 1 ? { ...contenidoStyle, numFmt: '#,##0' } : contenidoStyle;
@@ -434,11 +453,15 @@ export const ValidacionResultados = async (req = request, res = response) => {
                     });
                     fila++;
                 });
-                worksheet.columns.forEach((column, index) => {
-                    if (index == 0 || index == 2) {
+                worksheet.getCell(fila, 3).value = 'TOTAL';
+                worksheet.getCell(fila, 3).style = fill;
+                worksheet.getCell(fila, 4).value = actas.length;
+                worksheet.getCell(fila, 4).style = { ...fill, numFmt: '#,##0' };
+                worksheet.columns.forEach((column, i) => {
+                    if ([0, 2].includes(i)) {
                         let maxLength = 0;
-                        column.eachCell({ includeEmpty: false }, (cell, index) => {
-                            if (index >= 8)
+                        column.eachCell({ includeEmpty: false }, (cell, j) => {
+                            if (j >= 11)
                                 if (cell.value) {
                                     const length = cell.value.toString().length;
                                     if (length > maxLength)
@@ -446,16 +469,14 @@ export const ValidacionResultados = async (req = request, res = response) => {
                                 }
                         });
                         maxLength += 14;
-                        if (index == 0 || index == 2) {
-                            if (maxLength > 70)
-                                column.width = 70;
-                            else if (maxLength < (index == 0 ? 21 : 36))
-                                column.width = index == 0 ? 21 : 36;
-                            else
-                                column.width = maxLength;
-                        }
+                        if (maxLength > 70)
+                            column.width = 70;
+                        else if (maxLength < (i == 0 ? 21 : 36))
+                            column.width = i == 0 ? 21 : 36;
+                        else
+                            column.width = maxLength;
                     }
-                    if (index > 4 && index <= 4 + max * 3)
+                    if (i > 4 && i <= 4 + max * 3)
                         column.width = 15;
                 });
                 return workbook.xlsx.writeBuffer();
@@ -490,7 +511,6 @@ export const ValidacionResultados = async (req = request, res = response) => {
 export const ValidacionResultadosDetalle = async (req = request, res = response) => {
     const { id_distrito } = req.params;
     const { clave_colonia, anio } = req.body;
-    const campo = aniosCAT[0][anio];
     const workbook = new ExcelJs.Workbook();
     try {
         const actas = (await SICOVACC.sequelize.query(`;WITH CA AS (
@@ -512,7 +532,7 @@ export const ValidacionResultadosDetalle = async (req = request, res = response)
         MesasEsperadas AS (
             SELECT id_distrito, clave_colonia, COUNT(*) AS total
             FROM consulta_mros
-            WHERE ${campo} = 1
+            WHERE estatus = 1
             GROUP BY id_distrito, clave_colonia
         ),
         MesasCapturadas AS (
@@ -538,7 +558,7 @@ export const ValidacionResultadosDetalle = async (req = request, res = response)
             FROM consulta_actas_VVS V1
             GROUP BY id_distrito, clave_colonia, num_mro, tipo_mro, anio
         )
-        SELECT A1.nombre_delegacion, A1.clave_colonia, A1.nombre_colonia, A1.mesa, A1.bol_recibidas, A1.bol_adicionales, A1.bol_sobrantes, LD.ciudadania, LD.distrito, P.proyectos, A1.bol_nulas, COALESCE(A2.bol_nulas, 0) AS bol_nulas_sei,
+        SELECT A1.nombre_delegacion, A1.clave_colonia, A1.nombre_colonia, A1.mesa, A1.bol_sobrantes, LD.ciudadania, LD.distrito, P.proyectos, A1.bol_nulas, COALESCE(A2.bol_nulas, 0) AS bol_nulas_sei,
         A1.bol_nulas + COALESCE(A2.bol_nulas, 0) AS total_nulas, A1.votacion_total_emitida , COALESCE(A2.votacion_total_emitida, 0) AS votacion_total_emitida_sei, A1.votacion_total_emitida + COALESCE(A2.votacion_total_emitida, 0) AS total_computada,
         CASE A1.coordinador_sino WHEN 1 THEN 'SI' ELSE 'NO' END AS coordinador_sino, COALESCE(A1.num_integrantes, 0) AS num_integrantes, CASE A1.observador_sino WHEN 1 THEN 'SI' ELSE 'NO' END AS observador_sino
         FROM CA A1
@@ -559,34 +579,34 @@ export const ValidacionResultadosDetalle = async (req = request, res = response)
             .then(() => {
                 workbook.creator = autor;
                 const worksheet = workbook.getWorksheet(1);
-                const celdasTotales = 18 + (max * 3);
-                let fila = 10, celda = 10;
+                const celdasTotales = 16 + (max * 3);
+                let fila = 13, celda = 8;
                 worksheet.spliceColumns(1, 1);
-                const iecm = workbook.addImage({ filename: iecmLogo, extension: 'png' });
+                const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
                 worksheet.getCell('A2').value = titulos[0];
                 worksheet.getCell('A3').value = titulos[1];
                 worksheet.getCell('A5').value = subtitulo;
                 worksheet.getCell('A6').value = 'VALIDACIÓN DE RESULTADOS DE LA CONSULTA DETALLE MESA';
-                worksheet.getCell('A7').value = `Dirección Distrital: ${id_distrito}`;
-                worksheet.getCell('A7').style = fill;
-                worksheet.getCell('Q7').value = `Fecha: ${fecha}`;
-                worksheet.getCell('Q8').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
+                worksheet.getCell('A8').value = `Dirección Distrital: ${id_distrito}`;
+                worksheet.getCell('A8').style = { ...fill, font: { ...fill.font, size: 12 } };
+                worksheet.getCell('O8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('O9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 for (let i = 1; i <= max; i++) {
                     for (let j = 1; j <= 3; j++)
                         worksheet.spliceColumns(celda, 0, [null]);
-                    if (!worksheet.getCell(8, celda).isMerged)
-                        worksheet.mergeCells(8, celda, 8, celda + 2);
+                    if (!worksheet.getCell(11, celda).isMerged)
+                        worksheet.mergeCells(11, celda, 11, celda + 2);
                     for (let j = celda; j <= celda + 2; j++)
-                        worksheet.getCell(8, j).style = contenidoStyle;
-                    worksheet.getCell(8, celda).value = i;
-                    worksheet.getCell(8, celda).style = fill;
-                    worksheet.getCell(9, celda).value = 'Opiniones Mesa';
-                    worksheet.getCell(9, celda).style = fill;
-                    worksheet.getCell(9, celda + 1).value = 'Opiniones (SEI)';
-                    worksheet.getCell(9, celda + 1).style = fill;
-                    worksheet.getCell(9, celda + 2).value = `Total de Opiniones Proyecto ${i}`;
-                    worksheet.getCell(9, celda + 2).style = fill;
+                        worksheet.getCell(11, j).style = contenidoStyle;
+                    worksheet.getCell(11, celda).value = i;
+                    worksheet.getCell(11, celda).style = fill;
+                    worksheet.getCell(12, celda).value = 'Opiniones Mesa';
+                    worksheet.getCell(12, celda).style = fill;
+                    worksheet.getCell(12, celda + 1).value = 'Opiniones (SEI)';
+                    worksheet.getCell(12, celda + 1).style = fill;
+                    worksheet.getCell(12, celda + 2).value = `Total de Opiniones Proyecto ${i}`;
+                    worksheet.getCell(12, celda + 2).style = fill;
                     celda += 3;
                 }
                 if (!worksheet.getCell(2, 1).isMerged)
@@ -597,6 +617,38 @@ export const ValidacionResultadosDetalle = async (req = request, res = response)
                     worksheet.mergeCells(5, 1, 5, celdasTotales);
                 if (!worksheet.getCell(6, 1).isMerged)
                     worksheet.mergeCells(6, 1, 6, celdasTotales);
+                if (!worksheet.getCell(11, 1).isMerged)
+                    worksheet.mergeCells(11, 1, 12, 1);
+                if (!worksheet.getCell(11, 2).isMerged)
+                    worksheet.mergeCells(11, 2, 12, 2);
+                if (!worksheet.getCell(11, 3).isMerged)
+                    worksheet.mergeCells(11, 3, 12, 3);
+                if (!worksheet.getCell(11, 4).isMerged)
+                    worksheet.mergeCells(11, 4, 12, 4);
+                if (!worksheet.getCell(11, 5).isMerged)
+                    worksheet.mergeCells(11, 5, 12, 5);
+                if (!worksheet.getCell(11, 6).isMerged)
+                    worksheet.mergeCells(11, 6, 12, 6);
+                if (!worksheet.getCell(11, 7).isMerged)
+                    worksheet.mergeCells(11, 7, 12, 7);
+                if (!worksheet.getCell(11, 8  + (max * 3)).isMerged)
+                    worksheet.mergeCells(11, 8 + (max * 3), 12, 8 + (max * 3));
+                if (!worksheet.getCell(11, 9 + (max * 3)).isMerged)
+                    worksheet.mergeCells(11, 9 + (max * 3), 12, 9 + (max * 3));
+                if (!worksheet.getCell(11, 10 + (max * 3)).isMerged)
+                    worksheet.mergeCells(11, 10 + (max * 3), 12, 10 + (max * 3));
+                if (!worksheet.getCell(11, 11 + (max * 3)).isMerged)
+                    worksheet.mergeCells(11, 11 + (max * 3), 12, 11 + (max * 3));
+                if (!worksheet.getCell(11, 12 + (max * 3)).isMerged)
+                    worksheet.mergeCells(11, 12 + (max * 3), 12, 12 + (max * 3));
+                if (!worksheet.getCell(11, 13 + (max * 3)).isMerged)
+                    worksheet.mergeCells(11, 13 + (max * 3), 12, 13 + (max * 3));
+                if (!worksheet.getCell(11, 14 + (max * 3)).isMerged)
+                    worksheet.mergeCells(11, 14 + (max * 3), 12, 14 + (max * 3));
+                if (!worksheet.getCell(11, 15 + (max * 3)).isMerged)
+                    worksheet.mergeCells(11, 15 + (max * 3), 12, 15 + (max * 3));
+                if (!worksheet.getCell(11, 16 + (max * 3)).isMerged)
+                    worksheet.mergeCells(11, 16 + (max * 3), 12, 16 + (max * 3));
                 const imprimir = (index, text) => {
                     worksheet.getCell(fila, index).value = text;
                     worksheet.getCell(fila, index).style = (index > 4 && index < celdasTotales - 2) || index == celdasTotales - 1 ? { ...contenidoStyle, numFmt: '#,##0' } : contenidoStyle;
@@ -630,11 +682,11 @@ export const ValidacionResultadosDetalle = async (req = request, res = response)
                     });
                     fila++;
                 });
-                worksheet.columns.forEach((column, index) => {
-                    if (index == 0 || index == 2) {
+                worksheet.columns.forEach((column, i) => {
+                    if ([0, 2].includes(i)) {
                         let maxLength = 0;
-                        column.eachCell({ includeEmpty: false }, (cell, index) => {
-                            if (index >= 8)
+                        column.eachCell({ includeEmpty: false }, (cell, j) => {
+                            if (j >= 11)
                                 if (cell.value) {
                                     const length = cell.value.toString().length;
                                     if (length > maxLength)
@@ -642,16 +694,14 @@ export const ValidacionResultadosDetalle = async (req = request, res = response)
                                 }
                         });
                         maxLength += 14;
-                        if (index == 0 || index == 2) {
-                            if (maxLength > 70)
-                                column.width = 70;
-                            else if (maxLength < (index == 0 ? 21 : 36))
-                                column.width = index == 0 ? 21 : 36;
-                            else
-                                column.width = maxLength;
-                        }
+                        if (maxLength > 70)
+                            column.width = 70;
+                        else if (maxLength < (i == 0 ? 21 : 36))
+                            column.width = i == 0 ? 21 : 36;
+                        else
+                            column.width = maxLength;
                     }
-                    if (index > 8 && index <= 8 + (max * 3))
+                    if (i >= 7 && i <= 7 + (max * 3))
                         column.width = 15;
                 });
                 return workbook.xlsx.writeBuffer();
@@ -686,7 +736,6 @@ export const ValidacionResultadosDetalle = async (req = request, res = response)
 export const ValidacionResultadosNombre = async (req = request, res = response) => {
     const { id_distrito } = req.params;
     const { clave_colonia, anio } = req.body;
-    const campo = aniosCAT[0][anio];
     const workbook = new ExcelJs.Workbook();
     try {
         const actas = (await SICOVACC.sequelize.query(`;WITH CA AS (
@@ -705,7 +754,7 @@ export const ValidacionResultadosNombre = async (req = request, res = response) 
         MesasEsperadas aS (
             SELECT id_distrito, clave_colonia, COUNT(*) AS total
             FROM consulta_mros
-            WHERE ${campo} = 1
+            WHERE estatus = 1
             GROUP BY id_distrito, clave_colonia
         ),
         MesasCapturadas AS (
@@ -749,34 +798,35 @@ export const ValidacionResultadosNombre = async (req = request, res = response) 
             });
         const { fecha, hora } = await FechaServer();
         const subtitulo = `CONSULTA DE ${(await ConsultaTipoEleccion(anio)).toUpperCase()}`;
+        const ProyT = JSON.parse(actas[0].proyectos).length;
         workbook.xlsx.readFile(path.join(plantillas[2], 'Validacion_Resultados_Nombre.xlsx'))
             .then(() => {
                 workbook.creator = autor;
                 const worksheet = workbook.getWorksheet(1);
-                const celdasTotales = 13 + (JSON.parse(actas[0].proyectos).length * 3);
-                let fila = 10, celda = 6;
-                const iecm = workbook.addImage({ filename: iecmLogo, extension: 'png' });
+                const celdasTotales = 13 + (ProyT * 3);
+                let fila = 13, celda = 6;
+                const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
                 worksheet.getCell('A5').value = subtitulo;
-                worksheet.getCell('B7').value = id_distrito;
-                worksheet.getCell('L7').value = `Fecha: ${fecha}`;
-                worksheet.getCell('L8').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
+                worksheet.getCell('B8').value = id_distrito;
+                worksheet.getCell('L8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('L9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 for (const [i, proyecto] of JSON.parse(actas[0].proyectos).entries()) {
                     const { proyecto: nom } = proyecto;
                     for (let j = 1; j <= 3; j++)
                         worksheet.spliceColumns(celda, 0, [null]);
-                    if (!worksheet.getCell(8, celda).isMerged)
-                        worksheet.mergeCells(8, celda, 8, celda + 2);
+                    if (!worksheet.getCell(11, celda).isMerged)
+                        worksheet.mergeCells(11, celda, 11, celda + 2);
                     for (let j = celda; j <= celda + 2; j++)
-                        worksheet.getCell(8, j).style = contenidoStyle;
-                    worksheet.getCell(8, celda).value = nom.trim();
-                    worksheet.getCell(8, celda).style = fill
-                    worksheet.getCell(9, celda).value = 'Opiniones Mesa';
-                    worksheet.getCell(9, celda).style = fill;
-                    worksheet.getCell(9, celda + 1).value = 'Opiniones (SEI: vía remota)';
-                    worksheet.getCell(9, celda + 1).style = fill;
-                    worksheet.getCell(9, celda + 2).value = `Total de Opiniones Proyecto ${i + 1}`;
-                    worksheet.getCell(9, celda + 2).style = fill;
+                        worksheet.getCell(11, j).style = contenidoStyle;
+                    worksheet.getCell(11, celda).value = nom.trim();
+                    worksheet.getCell(11, celda).style = fill
+                    worksheet.getCell(12, celda).value = 'Opiniones Mesa';
+                    worksheet.getCell(12, celda).style = fill;
+                    worksheet.getCell(12, celda + 1).value = 'Opiniones (SEI: vía remota)';
+                    worksheet.getCell(12, celda + 1).style = fill;
+                    worksheet.getCell(12, celda + 2).value = `Total de Opiniones Proyecto ${i + 1}`;
+                    worksheet.getCell(12, celda + 2).style = fill;
                     celda += 3;
                 }
                 if (!worksheet.getCell(2, 1).isMerged)
@@ -787,6 +837,32 @@ export const ValidacionResultadosNombre = async (req = request, res = response) 
                     worksheet.mergeCells(5, 1, 5, celdasTotales);
                 if (!worksheet.getCell(6, 1).isMerged)
                     worksheet.mergeCells(6, 1, 6, celdasTotales);
+                if (!worksheet.getCell(11, 1).isMerged)
+                    worksheet.mergeCells(11, 1, 12, 1);
+                if (!worksheet.getCell(11, 2).isMerged)
+                    worksheet.mergeCells(11, 2, 12, 2);
+                if (!worksheet.getCell(11, 3).isMerged)
+                    worksheet.mergeCells(11, 3, 12, 3);
+                if (!worksheet.getCell(11, 4).isMerged)
+                    worksheet.mergeCells(11, 4, 12, 4);
+                if (!worksheet.getCell(11, 5).isMerged)
+                    worksheet.mergeCells(11, 5, 12, 5);
+                if (!worksheet.getCell(11, 6 + (ProyT * 3)).isMerged)
+                    worksheet.mergeCells(11, 6 + (ProyT * 3), 12, 6 + (ProyT * 3));
+                if (!worksheet.getCell(11, 7 + (ProyT * 3)).isMerged)
+                    worksheet.mergeCells(11, 7 + (ProyT * 3), 12, 7 + (ProyT * 3));
+                if (!worksheet.getCell(11, 8 + (ProyT * 3)).isMerged)
+                    worksheet.mergeCells(11, 8 + (ProyT * 3), 12, 8 + (ProyT * 3));
+                if (!worksheet.getCell(11, 9 + (ProyT * 3)).isMerged)
+                    worksheet.mergeCells(11, 9 + (ProyT * 3), 12, 9 + (ProyT * 3));
+                if (!worksheet.getCell(11, 10 + (ProyT * 3)).isMerged)
+                    worksheet.mergeCells(11, 10 + (ProyT * 3), 12, 10 + (ProyT * 3));
+                if (!worksheet.getCell(11, 11 + (ProyT * 3)).isMerged)
+                    worksheet.mergeCells(11, 11 + (ProyT * 3), 12, 11 + (ProyT * 3));
+                if (!worksheet.getCell(11, 12 + (ProyT * 3)).isMerged)
+                    worksheet.mergeCells(11, 12 + (ProyT * 3), 12, 12 + (ProyT * 3));
+                if (!worksheet.getCell(11, 13 + (ProyT * 3)).isMerged)
+                    worksheet.mergeCells(11, 13 + (ProyT * 3), 12, 13 + (ProyT * 3));
                 const imprimir = (index, text) => {
                     worksheet.getCell(fila, index).value = text;
                     worksheet.getCell(fila, index).style = index > 3 && index < celdasTotales - 3 ? { ...contenidoStyle, numFmt: '#,##0' } : contenidoStyle;
@@ -815,11 +891,11 @@ export const ValidacionResultadosNombre = async (req = request, res = response) 
                     });
                     fila++;
                 });
-                worksheet.columns.forEach((column, index) => {
-                    if (index == 0 || index == 2) {
+                worksheet.columns.forEach((column, i) => {
+                    if ([0, 2].includes(i)) {
                         let maxLength = 0;
-                        column.eachCell({ includeEmpty: false }, (cell, index) => {
-                            if (index >= 8)
+                        column.eachCell({ includeEmpty: false }, (cell, j) => {
+                            if (j >= 12)
                                 if (cell.value) {
                                     const length = cell.value.toString().length;
                                     if (length > maxLength)
@@ -834,7 +910,7 @@ export const ValidacionResultadosNombre = async (req = request, res = response) 
                         else
                             column.width = maxLength;
                     }
-                    if (index > 4 && index <= 4 + (actas[0].proyectos.length * 3))
+                    if (i > 4 && i <= 4 + (ProyT * 3))
                         column.width = 15;
                 });
                 return workbook.xlsx.writeBuffer();
@@ -869,7 +945,6 @@ export const ValidacionResultadosNombre = async (req = request, res = response) 
 export const ValidacionResultadosNombreDetalle = async (req = request, res = response) => {
     const { id_distrito } = req.params;
     const { clave_colonia, anio } = req.body;
-    const campo = aniosCAT[0][anio];
     const workbook = new ExcelJs.Workbook();
     try {
         const actas = (await SICOVACC.sequelize.query(`;WITH CA AS (
@@ -889,7 +964,7 @@ export const ValidacionResultadosNombreDetalle = async (req = request, res = res
         MesasEsperadas aS (
             SELECT id_distrito, clave_colonia, COUNT(*) AS total
             FROM consulta_mros
-            WHERE ${campo} = 1
+            WHERE estatus = 1
             GROUP BY id_distrito, clave_colonia
         ),
         MesasCapturadas AS (
@@ -930,34 +1005,35 @@ export const ValidacionResultadosNombreDetalle = async (req = request, res = res
             });
         const { fecha, hora } = await FechaServer();
         const subtitulo = `CONSULTA DE ${(await ConsultaTipoEleccion(anio)).toUpperCase()}`;
+        const ProyT = JSON.parse(actas[0].proyectos).length;
         workbook.xlsx.readFile(path.join(plantillas[2], 'Validacion_Resultados_Nombre_Detalle.xlsx'))
             .then(() => {
                 workbook.creator = autor;
                 const worksheet = workbook.getWorksheet(1);
-                const celdasTotales = 18 + (JSON.parse(actas[0].proyectos).length * 3);
-                let fila = 10, celda = 10;
-                const iecm = workbook.addImage({ filename: iecmLogo, extension: 'png' });
+                const celdasTotales = 18 + (ProyT * 3);
+                let fila = 13, celda = 10;
+                const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
                 worksheet.getCell('A5').value = subtitulo;
-                worksheet.getCell('B7').value = id_distrito;
-                worksheet.getCell('Q7').value = `Fecha: ${fecha}`;
-                worksheet.getCell('Q8').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
+                worksheet.getCell('B8').value = id_distrito;
+                worksheet.getCell('Q8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('Q9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 for (const [i, proyecto] of JSON.parse(actas[0].proyectos).entries()) {
                     const { proyecto: nom } = proyecto;
                     for (let j = 1; j <= 3; j++)
                         worksheet.spliceColumns(celda, 0, [null]);
-                    if (!worksheet.getCell(8, celda).isMerged)
-                        worksheet.mergeCells(8, celda, 8, celda + 2);
+                    if (!worksheet.getCell(11, celda).isMerged)
+                        worksheet.mergeCells(11, celda, 11, celda + 2);
                     for (let j = celda; j <= celda + 2; j++)
-                        worksheet.getCell(8, j).style = contenidoStyle;
-                    worksheet.getCell(8, celda).value = nom.trim();
-                    worksheet.getCell(8, celda).style = fill;
-                    worksheet.getCell(9, celda).value = 'Opiniones Mesa';
-                    worksheet.getCell(9, celda).style = fill;
-                    worksheet.getCell(9, celda + 1).value = 'Opiniones (SEI: vía remota)';
-                    worksheet.getCell(9, celda + 1).style = fill;
-                    worksheet.getCell(9, celda + 2).value = `total de Opiniones Proyecto ${i}`;
-                    worksheet.getCell(9, celda + 2).style = fill;
+                        worksheet.getCell(11, j).style = contenidoStyle;
+                    worksheet.getCell(11, celda).value = nom.trim();
+                    worksheet.getCell(11, celda).style = fill;
+                    worksheet.getCell(12, celda).value = 'Opiniones Mesa';
+                    worksheet.getCell(12, celda).style = fill;
+                    worksheet.getCell(12, celda + 1).value = 'Opiniones (SEI: vía remota)';
+                    worksheet.getCell(12, celda + 1).style = fill;
+                    worksheet.getCell(12, celda + 2).value = `total de Opiniones Proyecto ${i}`;
+                    worksheet.getCell(12, celda + 2).style = fill;
                     celda += 3;
                 }
                 if (!worksheet.getCell(2, 1).isMerged)
@@ -968,6 +1044,42 @@ export const ValidacionResultadosNombreDetalle = async (req = request, res = res
                     worksheet.mergeCells(5, 1, 5, celdasTotales);
                 if (!worksheet.getCell(6, 1).isMerged)
                     worksheet.mergeCells(6, 1, 6, celdasTotales);
+                if (!worksheet.getCell(11, 1).isMerged)
+                    worksheet.mergeCells(11, 1, 12, 1);
+                if (!worksheet.getCell(11, 2).isMerged)
+                    worksheet.mergeCells(11, 2, 12, 2);
+                if (!worksheet.getCell(11, 3).isMerged)
+                    worksheet.mergeCells(11, 3, 12, 3);
+                if (!worksheet.getCell(11, 4).isMerged)
+                    worksheet.mergeCells(11, 4, 12, 4);
+                if (!worksheet.getCell(11, 5).isMerged)
+                    worksheet.mergeCells(11, 5, 12, 5);
+                if (!worksheet.getCell(11, 6).isMerged)
+                    worksheet.mergeCells(11, 6, 12, 6);
+                if (!worksheet.getCell(11, 7).isMerged)
+                    worksheet.mergeCells(11, 7, 12, 7);
+                if (!worksheet.getCell(11, 8).isMerged)
+                    worksheet.mergeCells(11, 8, 12, 8);
+                if (!worksheet.getCell(11, 9).isMerged)
+                    worksheet.mergeCells(11, 9, 12, 9);
+                if (!worksheet.getCell(11, 10 + (ProyT * 3)).isMerged)
+                    worksheet.mergeCells(11, 10 + (ProyT * 3), 12, 10 + (ProyT * 3));
+                if (!worksheet.getCell(11, 11 + (ProyT * 3)).isMerged)
+                    worksheet.mergeCells(11, 11 + (ProyT * 3), 12, 11 + (ProyT * 3));
+                if (!worksheet.getCell(11, 12 + (ProyT * 3)).isMerged)
+                    worksheet.mergeCells(11, 12 + (ProyT * 3), 12, 12 + (ProyT * 3));
+                if (!worksheet.getCell(11, 13 + (ProyT * 3)).isMerged)
+                    worksheet.mergeCells(11, 13 + (ProyT * 3), 12, 13 + (ProyT * 3));
+                if (!worksheet.getCell(11, 14 + (ProyT * 3)).isMerged)
+                    worksheet.mergeCells(11, 14 + (ProyT * 3), 12, 14 + (ProyT * 3));
+                if (!worksheet.getCell(11, 15 + (ProyT * 3)).isMerged)
+                    worksheet.mergeCells(11, 15 + (ProyT * 3), 12, 15 + (ProyT * 3));
+                if (!worksheet.getCell(11, 16 + (ProyT * 3)).isMerged)
+                    worksheet.mergeCells(11, 16 + (ProyT * 3), 12, 16 + (ProyT * 3));
+                if (!worksheet.getCell(11, 17 + (ProyT * 3)).isMerged)
+                    worksheet.mergeCells(11, 17 + (ProyT * 3), 12, 17 + (ProyT * 3));
+                if (!worksheet.getCell(11, 18 + (ProyT * 3)).isMerged)
+                    worksheet.mergeCells(11, 18 + (ProyT * 3), 12, 18 + (ProyT * 3));
                 const imprimir = (index, text) => {
                     worksheet.getCell(fila, index).value = text;
                     worksheet.getCell(fila, index).style = index > 3 && index < celdasTotales - 3 ? { ...contenidoStyle, numFmt: '#,##0' } : contenidoStyle;
@@ -996,11 +1108,11 @@ export const ValidacionResultadosNombreDetalle = async (req = request, res = res
                     });
                     fila++;
                 });
-                worksheet.columns.forEach((column, index) => {
-                    if (index == 0 || index == 2) {
+                worksheet.columns.forEach((column, i) => {
+                    if ([0, 2].includes(i)) {
                         let maxLength = 0;
-                        column.eachCell({ includeEmpty: false }, (cell, index) => {
-                            if (index >= 8)
+                        column.eachCell({ includeEmpty: false }, (cell, j) => {
+                            if (j >= 12)
                                 if (cell.value) {
                                     const length = cell.value.toString().length;
                                     if (length > maxLength)
@@ -1015,7 +1127,7 @@ export const ValidacionResultadosNombreDetalle = async (req = request, res = res
                         else
                             column.width = maxLength;
                     }
-                    if (index > 8 && index <= 8 + (actas[0].proyectos.length * 3))
+                    if (i > 8 && i <= 8 + (ProyT * 3))
                         column.width = 15;
                 });
                 return workbook.xlsx.writeBuffer()
@@ -1050,7 +1162,6 @@ export const ValidacionResultadosNombreDetalle = async (req = request, res = res
 export const MesasConComputo = async (req = request, res = response) => {
     const { id_distrito } = req.params;
     const { anio } = req.query;
-    const campo = aniosCAT[0][anio];
     const workbook = new ExcelJs.Workbook();
     try {
         const resultado = (await SICOVACC.sequelize.query(`SELECT UPPER(D.nombre_delegacion) AS nombre_delegacion, M.clave_colonia, UPPER(C.nombre_colonia) AS nombre_colonia, CONCAT(M.num_mro, NULLIF(CONCAT(' ', TP.mesa), '')) AS mesa
@@ -1058,7 +1169,7 @@ export const MesasConComputo = async (req = request, res = response) => {
         LEFT JOIN consulta_tipo_mesa_V TP ON M.tipo_mro = TP.tipo_mro
         LEFT JOIN consulta_cat_delegacion D ON M.id_delegacion = D.id_delegacion
         LEFT JOIN consulta_cat_colonia_cc1 C ON M.clave_colonia = C.clave_colonia
-        WHERE M.${campo} = 1 AND M.id_distrito = ${id_distrito} AND EXISTS (SELECT 1 FROM consulta_actas WHERE modalidad = 1 AND estatus = 1 AND anio = ${anio} AND clave_colonia = M.clave_colonia AND num_mro = M.num_mro AND tipo_mro = M.tipo_mro)
+        WHERE M.estatus = 1 AND M.id_distrito = ${id_distrito} AND EXISTS (SELECT 1 FROM consulta_actas WHERE modalidad = 1 AND estatus = 1 AND anio = ${anio} AND clave_colonia = M.clave_colonia AND num_mro = M.num_mro AND tipo_mro = M.tipo_mro)
         ORDER BY D.nombre_delegacion, C.nombre_colonia, M.num_mro, M.tipo_mro ASC`))[0];
         if (!resultado.length)
             return res.status(404).json({
@@ -1071,9 +1182,9 @@ export const MesasConComputo = async (req = request, res = response) => {
             .then(() => {
                 workbook.creator = autor;
                 const worksheet = workbook.getWorksheet(1);
-                let fila = 13;
+                let fila = 12;
                 worksheet.spliceColumns(1, 1);
-                const iecm = workbook.addImage({ filename: iecmLogo, extension: 'png' });
+                const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
                 worksheet.getCell('B2').value = titulos[0];
                 worksheet.getCell('B3').value = titulos[1];
@@ -1087,11 +1198,10 @@ export const MesasConComputo = async (req = request, res = response) => {
                     worksheet.mergeCells('B5:C5');
                 if (!worksheet.getCell('B6').isMerged)
                     worksheet.mergeCells('B6:C6');
-                worksheet.getCell('C7').value = 'FORMATO 8';
-                worksheet.getCell('A10').value = `Dirección Distrital: ${id_distrito}`;
-                worksheet.getCell('A10').style = { ...fill, font: { ...fill.font, size: 12 } };
-                worksheet.getCell('C9').value = `Fecha: ${fecha}`;
-                worksheet.getCell('C10').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
+                worksheet.getCell('A8').value = `Dirección Distrital: ${id_distrito}`;
+                worksheet.getCell('A8').style = { ...fill, font: { ...fill.font, size: 12 } };
+                worksheet.getCell('C8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('C9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 resultado.forEach(res => {
                     Object.keys(res).forEach((key, index) => {
                         worksheet.getCell(fila, index + 1).value = res[key];
@@ -1103,11 +1213,11 @@ export const MesasConComputo = async (req = request, res = response) => {
                 worksheet.getCell(fila, 2).style = fill;
                 worksheet.getCell(fila, 3).value = resultado.length;
                 worksheet.getCell(fila, 3).style = { ...fill, numFmt: '#,##0' };
-                worksheet.columns.forEach((column, index) => {
-                    if (index == 0) {
+                worksheet.columns.forEach((column, i) => {
+                    if ([0].includes(i)) {
                         let maxLength = 0;
-                        column.eachCell({ includeEmpty: false }, (cell, index) => {
-                            if (index >= 11)
+                        column.eachCell({ includeEmpty: false }, (cell, j) => {
+                            if (j >= 11)
                                 if (cell.value) {
                                     const length = cell.value.toString().length;
                                     if (length > maxLength)
@@ -1155,7 +1265,6 @@ export const MesasConComputo = async (req = request, res = response) => {
 export const MesasSinComputo = async (req = request, res = response) => {
     const { id_distrito } = req.params;
     const { anio } = req.query;
-    const campo = aniosCAT[0][anio];
     const workbook = new ExcelJs.Workbook();
     try {
         const resultado = (await SICOVACC.sequelize.query(`SELECT UPPER(D.nombre_delegacion) AS nombre_delegacion, M.clave_colonia, UPPER(C.nombre_colonia) AS nombre_colonia, CONCAT(M.num_mro, NULLIF(CONCAT(' ', TP.mesa), '')) AS mesa
@@ -1163,7 +1272,7 @@ export const MesasSinComputo = async (req = request, res = response) => {
         LEFT JOIN consulta_tipo_mesa_V TP ON M.tipo_mro = TP.tipo_mro
         LEFT JOIN consulta_cat_delegacion D ON M.id_delegacion = D.id_delegacion
         LEFT JOIN consulta_cat_colonia_cc1 C ON M.clave_colonia = C.clave_colonia
-        WHERE M.${campo} = 1 AND M.id_distrito = ${id_distrito} AND NOT EXISTS (SELECT 1 FROM consulta_actas WHERE modalidad = 1 AND estatus = 1 AND anio = ${anio} AND clave_colonia = M.clave_colonia AND num_mro = M.num_mro AND tipo_mro = M.tipo_mro)
+        WHERE M.estatus = 1 AND M.id_distrito = ${id_distrito} AND NOT EXISTS (SELECT 1 FROM consulta_actas WHERE modalidad = 1 AND estatus = 1 AND anio = ${anio} AND clave_colonia = M.clave_colonia AND num_mro = M.num_mro AND tipo_mro = M.tipo_mro)
         ORDER BY D.nombre_delegacion, C.nombre_colonia, M.num_mro, M.tipo_mro ASC`))[0];
         if (!resultado.length)
             return res.status(404).json({
@@ -1176,9 +1285,9 @@ export const MesasSinComputo = async (req = request, res = response) => {
             .then(() => {
                 workbook.creator = autor;
                 const worksheet = workbook.getWorksheet(1);
-                let fila = 13;
+                let fila = 12;
                 worksheet.spliceColumns(1, 1);
-                const iecm = workbook.addImage({ filename: iecmLogo, extension: 'png' });
+                const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
                 worksheet.getCell('B2').value = titulos[0];
                 worksheet.getCell('B3').value = titulos[1];
@@ -1192,11 +1301,10 @@ export const MesasSinComputo = async (req = request, res = response) => {
                     worksheet.mergeCells('B5:C5');
                 if (!worksheet.getCell('B6').isMerged)
                     worksheet.mergeCells('B6:C6');
-                worksheet.getCell('C7').value = 'FORMATO 9';
-                worksheet.getCell('A10').value = `Dirección Distrital: ${id_distrito}`;
-                worksheet.getCell('A10').style = { ...fill, font: { ...fill.font, size: 12 } };
-                worksheet.getCell('C9').value = `Fecha: ${fecha}`;
-                worksheet.getCell('C10').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
+                worksheet.getCell('A8').value = `Dirección Distrital: ${id_distrito}`;
+                worksheet.getCell('A8').style = { ...fill, font: { ...fill.font, size: 12 } };
+                worksheet.getCell('C8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('C9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 resultado.forEach(res => {
                     Object.keys(res).forEach((key, index) => {
                         worksheet.getCell(fila, index + 1).value = res[key];
@@ -1208,11 +1316,11 @@ export const MesasSinComputo = async (req = request, res = response) => {
                 worksheet.getCell(fila, 2).style = fill;
                 worksheet.getCell(fila, 3).value = resultado.length;
                 worksheet.getCell(fila, 3).style = { ...fill, numFmt: '#,##0' };
-                worksheet.columns.forEach((column, index) => {
-                    if (index == 0) {
+                worksheet.columns.forEach((column, i) => {
+                    if ([0].includes(i)) {
                         let maxLength = 0;
-                        column.eachCell({ includeEmpty: false }, (cell, index) => {
-                            if (index >= 11)
+                        column.eachCell({ includeEmpty: false }, (cell, j) => {
+                            if (j >= 11)
                                 if (cell.value) {
                                     const length = cell.value.toString().length;
                                     if (length > maxLength)
@@ -1260,7 +1368,6 @@ export const MesasSinComputo = async (req = request, res = response) => {
 export const ResultadosOpiMesa = async (req = request, res = response) => {
     const { id_distrito } = req.params;
     const { anio } = req.query;
-    const campo = aniosCAT[0][anio];
     const workbook = new ExcelJs.Workbook();
     try {
         const actas = (await SICOVACC.sequelize.query(`;WITH CA AS (
@@ -1274,7 +1381,7 @@ export const ResultadosOpiMesa = async (req = request, res = response) => {
         MesasEsperadas aS (
             SELECT id_distrito, clave_colonia, COUNT(*) AS total
             FROM consulta_mros
-            WHERE ${campo} = 1
+            WHERE estatus = 1
             GROUP BY id_distrito, clave_colonia
         ),
         MesasCapturadas AS (
@@ -1317,9 +1424,9 @@ export const ResultadosOpiMesa = async (req = request, res = response) => {
             .then(() => {
                 workbook.creator = autor;
                 const worksheet = workbook.getWorksheet(1);
-                let fila = 10;
+                let fila = 12;
                 worksheet.spliceColumns(1, 1);
-                const iecm = workbook.addImage({ filename: iecmLogo, extension: 'png' });
+                const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
                 worksheet.getCell('A2').value = titulos[0];
                 if (!worksheet.getCell('A2').isMerged)
@@ -1333,15 +1440,14 @@ export const ResultadosOpiMesa = async (req = request, res = response) => {
                 worksheet.getCell('A6').value = 'RESULTADOS DE OPINIONES POR MESA';
                 if (!worksheet.getCell('A6').isMerged)
                     worksheet.mergeCells('A6:I6');
-                worksheet.getCell('A7').value = 'Dirección Distrital';
-                worksheet.getCell('A7').style = { ...fill, font: { ...fill.font, size: 12 } };
-                worksheet.getCell('B7').value = id_distrito;
-                worksheet.getCell('B7').style = { ...contenidoStyle, font: { ...contenidoStyle.font, size: 12 } };
-                worksheet.getCell('I4').value = 'FORMATO 10';
-                worksheet.getCell('I7').value = fecha;
-                worksheet.getCell('I8').value = hora.substring(0, hora.length - 3);
-                worksheet.getCell('D9').value = 'Clave del Proyecto'
-                worksheet.getCell('F9').value = 'Nombre del Proyecto Específico';
+                worksheet.getCell('A8').value = 'Dirección Distrital';
+                worksheet.getCell('A8').style = { ...fill, font: { ...fill.font, size: 12 } };
+                worksheet.getCell('B8').value = id_distrito;
+                worksheet.getCell('B8').style = { ...contenidoStyle, font: { ...contenidoStyle.font, size: 12 } };
+                worksheet.getCell('I8').value = fecha;
+                worksheet.getCell('I9').value = hora.substring(0, hora.length - 3);
+                worksheet.getCell('D11').value = 'Clave del Proyecto y Opiniones Nulas'
+                worksheet.getCell('F11').value = 'Nombre del Proyecto Específico';
                 for (let acta of actas) {
                     let sum_votos = 0, sum_votos_sei = 0;
                     const { nombre_delegacion, clave_colonia, nombre_colonia, mesa, proyectos, bol_nulas, bol_nulas_sei } = acta;
@@ -1374,7 +1480,7 @@ export const ResultadosOpiMesa = async (req = request, res = response) => {
                     if ([0, 2, 5].includes(i)) {
                         let maxLength = 0;
                         column.eachCell({ includeEmpty: false }, (cell, j) => {
-                            if (j >= 8)
+                            if (j >= 11)
                                 if (cell.value) {
                                     const length = cell.value.toString().length;
                                     if (length > maxLength)
@@ -1422,7 +1528,6 @@ export const ResultadosOpiMesa = async (req = request, res = response) => {
 export const ProyectosPrimerLugar = async (req = request, res = response) => {
     const { id_distrito } = req.params;
     const { anio } = req.query;
-    const campo = aniosCAT[0][anio];
     const workbook = new ExcelJs.Workbook();
     try {
         const proyectos = (await SICOVACC.sequelize.query(`;WITH CA AS (
@@ -1433,7 +1538,7 @@ export const ProyectosPrimerLugar = async (req = request, res = response) => {
         MesasEsperadas aS (
             SELECT id_distrito, clave_colonia, COUNT(*) AS total
             FROM consulta_mros
-            WHERE ${campo} = 1
+            WHERE estatus = 1
             GROUP BY id_distrito, clave_colonia
         ),
         MesasCapturadas AS (
@@ -1450,7 +1555,7 @@ export const ProyectosPrimerLugar = async (req = request, res = response) => {
         ActasValidadas AS (
             SELECT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, rubro_general, nom_proyecto, votos, votos_sei, total_votos
             FROM consulta_actas_VVS V
-            WHERE EXISTS (SELECT 1 FROM Mesas WHERE id_distrito = V.id_distrito AND clave_colonia = V.clave_colonia) AND anio = ${anio} AND ${campo} = 1
+            WHERE EXISTS (SELECT 1 FROM Mesas WHERE id_distrito = V.id_distrito AND clave_colonia = V.clave_colonia) AND estatus = 1 AND anio = ${anio}
         ),
         Votos AS (
             SELECT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, rubro_general, nom_proyecto, SUM(votos) AS votos, SUM(votos_sei) AS votos_sei, SUM(total_votos) AS total_votos
@@ -1477,7 +1582,7 @@ export const ProyectosPrimerLugar = async (req = request, res = response) => {
                 workbook.creator = autor;
                 const worksheet = workbook.getWorksheet(1);
                 worksheet.spliceColumns(1, 1);
-                const iecm = workbook.addImage({ filename: iecmLogo, extension: 'png' });
+                const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
                 worksheet.getCell('B2').value = titulos[0];
                 worksheet.getCell('B3').value = titulos[1];
@@ -1491,12 +1596,11 @@ export const ProyectosPrimerLugar = async (req = request, res = response) => {
                     worksheet.mergeCells('B5:I5');
                 if (!worksheet.getCell('B6').isMerged)
                     worksheet.mergeCells('B6:I6');
-                worksheet.getCell('I4').value = 'FORMATO 11';
                 worksheet.getCell('A8').value = `Dirección Distrital: ${id_distrito}`;
                 worksheet.getCell('A8').style = { ...fill, font: { ...fill.font, size: 12 } };
-                worksheet.getCell('I7').value = fecha;
-                worksheet.getCell('I8').value = hora.substring(0, hora.length - 3);
-                let fila = 11;
+                worksheet.getCell('I8').value = fecha;
+                worksheet.getCell('I9').value = hora.substring(0, hora.length - 3);
+                let fila = 12;
                 let colonias = [];
                 proyectos.forEach(res => {
                     if (!colonias.includes(res.clave_colonia))
@@ -1517,11 +1621,11 @@ export const ProyectosPrimerLugar = async (req = request, res = response) => {
                 worksheet.getCell(fila, 5).value = 'Total de Proyectos';
                 worksheet.getCell(fila, 5).style = { ...fill, font: { ...fill.font, bold: false } };
                 worksheet.getCell(fila, 6).value = proyectos.length;
-                worksheet.columns.forEach((column, index) => {
-                    if (index == 0 || index == 2 || index == 4 || index == 5) {
+                worksheet.columns.forEach((column, i) => {
+                    if ([0, 2, 4, 5].includes(i)) {
                         let maxLength = 0;
-                        column.eachCell({ includeEmpty: false }, (cell, index) => {
-                            if (index >= 9)
+                        column.eachCell({ includeEmpty: false }, (cell, j) => {
+                            if (j >= 11)
                                 if (cell.value) {
                                     const length = cell.value.toString().length;
                                     if (length > maxLength)
@@ -1569,10 +1673,9 @@ export const ProyectosPrimerLugar = async (req = request, res = response) => {
 export const ProyectosSegundoLugar = async (req = request, res = response) => {
     const { id_distrito } = req.params;
     const { anio } = req.query;
-    const campo = aniosCAT[0][anio];
     const workbook = new ExcelJs.Workbook();
     try {
-        const proyectos = await SICOVACC.sequelize.query(`;WITH CA AS (
+        const proyectos = (await SICOVACC.sequelize.query(`;WITH CA AS (
             SELECT id_distrito, clave_colonia
             FROM consulta_actas
             WHERE modalidad = 1 AND anio = ${anio} AND id_distrito = ${id_distrito}
@@ -1580,7 +1683,7 @@ export const ProyectosSegundoLugar = async (req = request, res = response) => {
         MesasEsperadas aS (
             SELECT id_distrito, clave_colonia, COUNT(*) AS total
             FROM consulta_mros
-            WHERE ${campo} = 1
+            WHERE estatus = 1
             GROUP BY id_distrito, clave_colonia
         ),
         MesasCapturadas AS (
@@ -1597,7 +1700,7 @@ export const ProyectosSegundoLugar = async (req = request, res = response) => {
         ActasValidadas AS (
             SELECT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, rubro_general, nom_proyecto, votos, votos_sei, total_votos
             FROM consulta_actas_VVS V
-            WHERE EXISTS (SELECT 1 FROM Mesas WHERE id_distrito = V.id_distrito AND clave_colonia = V.clave_colonia) AND anio = ${anio} AND ${campo} = 1
+            WHERE EXISTS (SELECT 1 FROM Mesas WHERE id_distrito = V.id_distrito AND clave_colonia = V.clave_colonia) AND estatus = 1 AND anio = ${anio}
         ),
         Votos AS (
             SELECT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, rubro_general, nom_proyecto, SUM(votos) AS votos, SUM(votos_sei) AS votos_sei, SUM(total_votos) AS total_votos
@@ -1611,8 +1714,8 @@ export const ProyectosSegundoLugar = async (req = request, res = response) => {
         SELECT nombre_delegacion, clave_colonia, nombre_colonia, secuencial, rubro_general, nom_proyecto, votos, votos_sei, total_votos
         FROM RANKING
         WHERE DR = 2 AND empate <= 1 AND total_votos > 0
-        ORDER BY nombre_delegacion, nombre_colonia, secuencial ASC`);
-        if (proyectos[1] == 0)
+        ORDER BY nombre_delegacion, nombre_colonia, secuencial ASC`))[0];
+        if (!proyectos.length)
             return res.status(404).json({
                 success: false,
                 msg: '¡No existe información!'
@@ -1624,7 +1727,7 @@ export const ProyectosSegundoLugar = async (req = request, res = response) => {
                 workbook.creator = autor;
                 const worksheet = workbook.getWorksheet(1);
                 worksheet.spliceColumns(1, 1);
-                const iecm = workbook.addImage({ filename: iecmLogo, extension: 'png' });
+                const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
                 worksheet.getCell('B2').value = titulos[0];
                 worksheet.getCell('B3').value = titulos[1];
@@ -1638,14 +1741,13 @@ export const ProyectosSegundoLugar = async (req = request, res = response) => {
                     worksheet.mergeCells('B5:I5');
                 if (!worksheet.getCell('B6').isMerged)
                     worksheet.mergeCells('B6:I6');
-                worksheet.getCell('I4').value = 'FORMATO 12';
                 worksheet.getCell('A8').value = `Dirección Distrital: ${id_distrito}`;
                 worksheet.getCell('A8').style = { ...fill, font: { ...fill.font, size: 12 } };
-                worksheet.getCell('I7').value = fecha;
-                worksheet.getCell('I8').value = hora.substring(0, hora.length - 3);
-                let fila = 11;
+                worksheet.getCell('I8').value = fecha;
+                worksheet.getCell('I9').value = hora.substring(0, hora.length - 3);
+                let fila = 12;
                 let colonias = [];
-                proyectos[0].forEach(res => {
+                proyectos.forEach(res => {
                     if (!colonias.includes(res.clave_colonia))
                         colonias.push(res.clave_colonia);
                     Object.keys(res).forEach((key, index) => {
@@ -1664,11 +1766,11 @@ export const ProyectosSegundoLugar = async (req = request, res = response) => {
                 worksheet.getCell(fila, 5).value = 'Total de Proyectos';
                 worksheet.getCell(fila, 5).style = { ...fill, font: { ...fill.font, bold: false } };
                 worksheet.getCell(fila, 6).value = Intl.NumberFormat('es-MX').format(proyectos[1]);
-                worksheet.columns.forEach((column, index) => {
-                    if (index == 0 || index == 2 || index == 4 || index == 5) {
+                worksheet.columns.forEach((column, i) => {
+                    if ([0, 2, 5, 4].includes(i)) {
                         let maxLength = 0;
-                        column.eachCell({ includeEmpty: false }, (cell, index) => {
-                            if (index >= 9)
+                        column.eachCell({ includeEmpty: false }, (cell, j) => {
+                            if (j >= 11)
                                 if (cell.value) {
                                     const length = cell.value.toString().length;
                                     if (length > maxLength)
@@ -1716,7 +1818,6 @@ export const ProyectosSegundoLugar = async (req = request, res = response) => {
 export const ProyectosEmpatePrimerLugar = async (req = request, res = response) => {
     const { id_distrito } = req.params;
     const { anio } = req.query;
-    const campo = aniosCAT[0][anio];
     const workbook = new ExcelJs.Workbook();
     try {
         const proyectos = (await SICOVACC.sequelize.query(`;WITH CA AS (
@@ -1727,7 +1828,7 @@ export const ProyectosEmpatePrimerLugar = async (req = request, res = response) 
         MesasEsperadas aS (
             SELECT id_distrito, clave_colonia, COUNT(*) AS total
             FROM consulta_mros
-            WHERE ${campo} = 1
+            WHERE estatus = 1
             GROUP BY id_distrito, clave_colonia
         ),
         MesasCapturadas AS (
@@ -1744,7 +1845,7 @@ export const ProyectosEmpatePrimerLugar = async (req = request, res = response) 
         ActasValidadas AS (
             SELECT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, rubro_general, nom_proyecto, votos, votos_sei, total_votos
             FROM consulta_actas_VVS V
-            WHERE EXISTS (SELECT 1 FROM Mesas WHERE id_distrito = V.id_distrito AND clave_colonia = V.clave_colonia) AND anio = ${anio} AND ${campo} = 1
+            WHERE EXISTS (SELECT 1 FROM Mesas WHERE id_distrito = V.id_distrito AND clave_colonia = V.clave_colonia) AND estatus = 1 AND anio = ${anio}
         ),
         Votos AS (
             SELECT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, rubro_general, nom_proyecto, SUM(votos) AS votos, SUM(votos_sei) AS votos_sei, SUM(total_votos) AS total_votos
@@ -1771,7 +1872,7 @@ export const ProyectosEmpatePrimerLugar = async (req = request, res = response) 
                 workbook.creator = autor;
                 const worksheet = workbook.getWorksheet(1);
                 worksheet.spliceColumns(1, 1);
-                const iecm = workbook.addImage({ filename: iecmLogo, extension: 'png' });
+                const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
                 worksheet.getCell('B2').value = 'DIRECCIÓN EJECUTIVA DE ORGANIZACIÓN ELECTORAL Y GEOSTADÍSTICA';
                 worksheet.getCell('B2').style = { ...tituloStyle, font: { ...tituloStyle.font, size: 16 } };
@@ -1785,12 +1886,11 @@ export const ProyectosEmpatePrimerLugar = async (req = request, res = response) 
                     worksheet.mergeCells('B4:I4');
                 if (!worksheet.getCell('B5').isMerged)
                     worksheet.mergeCells('B5:I5');
-                worksheet.getCell('I3').value = 'FORMATO 13';
-                worksheet.getCell('A7').value = `Dirección Distrital: ${id_distrito}`;
-                worksheet.getCell('A7').style = { ...fill, font: { ...fill.font, size: 12 } };
-                worksheet.getCell('I6').value = fecha;
-                worksheet.getCell('I7').value = hora.substring(0, hora.length - 3);
-                let fila = 10;
+                worksheet.getCell('A8').value = `Dirección Distrital: ${id_distrito}`;
+                worksheet.getCell('A8').style = { ...fill, font: { ...fill.font, size: 12 } };
+                worksheet.getCell('I8').value = fecha;
+                worksheet.getCell('I9').value = hora.substring(0, hora.length - 3);
+                let fila = 12;
                 let colonias = [];
                 proyectos.forEach(res => {
                     if (!colonias.includes(res.clave_colonia))
@@ -1811,11 +1911,11 @@ export const ProyectosEmpatePrimerLugar = async (req = request, res = response) 
                 worksheet.getCell(fila, 5).value = 'Total de Proyectos';
                 worksheet.getCell(fila, 5).style = { ...fill, font: { ...fill.font, bold: false } };
                 worksheet.getCell(fila, 6).value = proyectos.length;
-                worksheet.columns.forEach((column, index) => {
-                    if (index == 0 || index == 2 || index == 4 || index == 5) {
+                worksheet.columns.forEach((column, i) => {
+                    if ([0, 2, 4, 5].includes(i)) {
                         let maxLength = 0;
-                        column.eachCell({ includeEmpty: false }, (cell, index) => {
-                            if (index >= 9)
+                        column.eachCell({ includeEmpty: false }, (cell, j) => {
+                            if (j >= 11)
                                 if (cell.value) {
                                     const length = cell.value.toString().length;
                                     if (length > maxLength)
@@ -1863,10 +1963,9 @@ export const ProyectosEmpatePrimerLugar = async (req = request, res = response) 
 export const ProyectosEmpateSegundoLugar = async (req = request, res = response) => {
     const { id_distrito } = req.params;
     const { anio } = req.query;
-    const campo = aniosCAT[0][anio];
     const workbook = new ExcelJs.Workbook();
     try {
-        const proyectos = await SICOVACC.sequelize.query(`;WITH CA AS (
+        const proyectos = (await SICOVACC.sequelize.query(`;WITH CA AS (
             SELECT id_distrito, clave_colonia
             FROM consulta_actas
             WHERE modalidad = 1 AND anio = ${anio} AND id_distrito = ${id_distrito}
@@ -1874,7 +1973,7 @@ export const ProyectosEmpateSegundoLugar = async (req = request, res = response)
         MesasEsperadas aS (
             SELECT id_distrito, clave_colonia, COUNT(*) AS total
             FROM consulta_mros
-            WHERE ${campo} = 1
+            WHERE estatus = 1
             GROUP BY id_distrito, clave_colonia
         ),
         MesasCapturadas AS (
@@ -1891,7 +1990,7 @@ export const ProyectosEmpateSegundoLugar = async (req = request, res = response)
         ActasValidadas AS (
             SELECT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, rubro_general, nom_proyecto, votos, votos_sei, total_votos
             FROM consulta_actas_VVS V
-            WHERE EXISTS (SELECT 1 FROM Mesas WHERE id_distrito = V.id_distrito AND clave_colonia = V.clave_colonia) AND anio = ${anio} AND ${campo} = 1
+            WHERE EXISTS (SELECT 1 FROM Mesas WHERE id_distrito = V.id_distrito AND clave_colonia = V.clave_colonia) AND estatus = 1 AND anio = ${anio}
         ),
         Votos AS (
             SELECT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, rubro_general, nom_proyecto, SUM(votos) AS votos, SUM(votos_sei) AS votos_sei, SUM(total_votos) AS total_votos
@@ -1905,8 +2004,8 @@ export const ProyectosEmpateSegundoLugar = async (req = request, res = response)
         SELECT nombre_delegacion, clave_colonia, nombre_colonia, secuencial, rubro_general, nom_proyecto, votos, votos_sei, total_votos
         FROM RANKING
         WHERE DR = 2 AND empate > 1 AND total_votos > 0
-        ORDER BY nombre_delegacion, nombre_colonia, secuencial ASC`);
-        if (proyectos[1] == 0)
+        ORDER BY nombre_delegacion, nombre_colonia, secuencial ASC`))[0];
+        if (!proyectos.length)
             return res.status(404).json({
                 success: false,
                 msg: '¡No existe información!'
@@ -1918,7 +2017,7 @@ export const ProyectosEmpateSegundoLugar = async (req = request, res = response)
                 workbook.creator = autor;
                 const worksheet = workbook.getWorksheet(1);
                 worksheet.spliceColumns(1, 1);
-                const iecm = workbook.addImage({ filename: iecmLogo, extension: 'png' });
+                const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
                 worksheet.getCell('B2').value = titulos[0];
                 worksheet.getCell('B3').value = titulos[1];
@@ -1932,14 +2031,13 @@ export const ProyectosEmpateSegundoLugar = async (req = request, res = response)
                     worksheet.mergeCells('B5:I5');
                 if (!worksheet.getCell('B6').isMerged)
                     worksheet.mergeCells('B6:I6');
-                worksheet.getCell('I4').value = 'FORMATO 14';
                 worksheet.getCell('A8').value = `Dirección Distrital: ${id_distrito}`;
                 worksheet.getCell('A8').style = { ...fill, font: { ...fill.font, size: 12 } };
-                worksheet.getCell('I7').value = fecha;
-                worksheet.getCell('I8').value = hora.substring(0, hora.length - 3);
-                let fila = 11;
+                worksheet.getCell('I8').value = fecha;
+                worksheet.getCell('I9').value = hora.substring(0, hora.length - 3);
+                let fila = 12;
                 let colonias = [];
-                proyectos[0].forEach(res => {
+                proyectos.forEach(res => {
                     if (!colonias.includes(res.clave_colonia))
                         colonias.push(res.clave_colonia);
                     Object.keys(res).forEach((key, index) => {
@@ -1958,11 +2056,11 @@ export const ProyectosEmpateSegundoLugar = async (req = request, res = response)
                 worksheet.getCell(fila, 5).value = 'Total de Proyectos';
                 worksheet.getCell(fila, 5).style = { ...fill, font: { ...fill.font, bold: false } };
                 worksheet.getCell(fila, 6).value = Intl.NumberFormat('es-MX').format(proyectos[1]);
-                worksheet.columns.forEach((column, index) => {
-                    if (index == 0 || index == 2 || index == 4 || index == 5) {
+                worksheet.columns.forEach((column, i) => {
+                    if ([0, 2, 4, 5].includes(i)) {
                         let maxLength = 0;
-                        column.eachCell({ includeEmpty: false }, (cell, index) => {
-                            if (index >= 9)
+                        column.eachCell({ includeEmpty: false }, (cell, j) => {
+                            if (j >= 11)
                                 if (cell.value) {
                                     const length = cell.value.toString().length;
                                     if (length > maxLength)
@@ -2010,7 +2108,6 @@ export const ProyectosEmpateSegundoLugar = async (req = request, res = response)
 export const ProyectosUTSinOpiniones = async (req = request, res = response) => {
     const { id_distrito } = req.params;
     const { anio } = req.query;
-    const campo = aniosCAT[0][anio];
     const workbook = new ExcelJs.Workbook();
     try {
         const proyectos = (await SICOVACC.sequelize.query(`;WITH Mesas AS (
@@ -2021,7 +2118,7 @@ export const ProyectosUTSinOpiniones = async (req = request, res = response) => 
             HAVING COUNT(*) = (
                 SELECT COUNT(*)
                 FROM consulta_mros
-                WHERE id_distrito = CA.id_distrito AND clave_colonia = CA.clave_colonia AND ${campo} = 1
+                WHERE id_distrito = CA.id_distrito AND clave_colonia = CA.clave_colonia AND estatus = 1
             )
         ),
         V AS (
@@ -2046,7 +2143,7 @@ export const ProyectosUTSinOpiniones = async (req = request, res = response) => 
                 workbook.creator = autor;
                 const worksheet = workbook.getWorksheet(1);
                 worksheet.spliceColumns(1, 1);
-                const iecm = workbook.addImage({ filename: iecmLogo, extension: 'png' });
+                const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
                 worksheet.getCell('A2').value = titulos[0];
                 worksheet.getCell('A3').value = titulos[1];
@@ -2066,7 +2163,6 @@ export const ProyectosUTSinOpiniones = async (req = request, res = response) => 
                 worksheet.getCell('B8').style = contenidoStyle;
                 worksheet.getCell('I8').value = fecha;
                 worksheet.getCell('I9').value = hora.substring(0, hora.length - 3);
-                worksheet.getCell('I10').value = 'FORMATO 15';
                 let fila = 12;
                 proyectos.forEach(res => {
                     Object.keys(res).forEach((key, index) => {
@@ -2079,11 +2175,11 @@ export const ProyectosUTSinOpiniones = async (req = request, res = response) => 
                 worksheet.getCell(fila, 5).style = { ...fill, font: { ...fill.font, bold: false } };
                 worksheet.getCell(fila, 6).value = proyectos.length;
                 worksheet.getCell(fila, 6).style = { ...fill, font: { ...fill.font, bold: false }, numFmt: '#,##0' };
-                worksheet.columns.forEach((column, index) => {
-                    if (index == 0 || index == 2 || index == 4 || index == 5) {
+                worksheet.columns.forEach((column, i) => {
+                    if ([0, 2, 4, 5].includes(i)) {
                         let maxLength = 0;
-                        column.eachCell({ includeEmpty: false }, (cell, index) => {
-                            if (index >= 9)
+                        column.eachCell({ includeEmpty: false }, (cell, j) => {
+                            if (j >= 11)
                                 if (cell.value) {
                                     const length = cell.value.toString().length;
                                     if (length > maxLength)
@@ -2150,14 +2246,14 @@ export const ProyectosOpinar = async (req = request, res = response) => {
             .then(() => {
                 workbook.creator = autor;
                 const worksheet = workbook.getWorksheet(1);
-                let fila = 11;
-                const iecm = workbook.addImage({ filename: iecmLogo, extension: 'png' });
+                let fila = 12;
+                const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
                 worksheet.getCell('A5').value = titulo;
                 worksheet.getCell('A6').value = 'PROYECTOS A OPINAR';
-                worksheet.getCell('B7').value = id_distrito;
-                worksheet.getCell('F7').value = `Fecha: ${fecha}`;
-                worksheet.getCell('F8').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
+                worksheet.getCell('B8').value = id_distrito;
+                worksheet.getCell('F8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('F9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 proyectos.forEach(proyecto => {
                     Object.keys(proyecto).forEach((key, index) => {
                         worksheet.getCell(fila, index + 1).value = proyecto[key];
@@ -2170,10 +2266,10 @@ export const ProyectosOpinar = async (req = request, res = response) => {
                 worksheet.getCell(fila, 3).value = proyectos.length;
                 worksheet.getCell(fila, 3).style = { ...contenidoStyle, numFmt: '#,##0' };
                 worksheet.columns.forEach((column, index) => {
-                    if (index == 0 || index == 2 || index == 5) {
+                    if ([0, 2, 5].includes(index)) {
                         let maxLength = 0;
                         column.eachCell({ includeEmpty: false }, (cell, index) => {
-                            if (index >= 9)
+                            if (index >= 11)
                                 if (cell.value) {
                                     const length = cell.value.toString().length;
                                     if (length > maxLength)
@@ -2221,6 +2317,7 @@ export const ProyectosOpinar = async (req = request, res = response) => {
 export const LevantadaDistrito = async (req = request, res = response) => {
     const { id_distrito } = req.params;
     const { anio } = req.query;
+    const campo = aniosCAT[0][anio];
     const workbook = new ExcelJs.Workbook();
     try {
         const resultado = await SICOVACC.sequelize.query(`
@@ -2232,7 +2329,7 @@ export const LevantadaDistrito = async (req = request, res = response) => {
             UPPER(dbo.RazonDistrital(CA.razon_distrital)) AS razon_distrital
             FROM consulta_actas CA
             LEFT JOIN consulta_cat_colonia_cc1 CCC ON CA.clave_colonia = CCC.clave_colonia
-            WHERE CA.modalidad = 1 AND CA.anio = ${anio} AND CA.levantada_distrito = 1 AND CCC.estatus = 1 AND CA.id_distrito = ${id_distrito}
+            WHERE CA.modalidad = 1 AND CA.anio = ${anio} AND CA.levantada_distrito = 1 AND CCC.${campo} = 1 AND CA.id_distrito = ${id_distrito}
             ORDER BY CCC.nombre_colonia, CA.num_mro ASC
         `);
         if (resultado[1] == 0)
@@ -2247,8 +2344,8 @@ export const LevantadaDistrito = async (req = request, res = response) => {
                 workbook.creator = autor;
                 const worksheet = workbook.getWorksheet(1);
                 worksheet.spliceColumns(1, 1);
-                let fila = 11;
-                const iecm = workbook.addImage({ filename: iecmLogo, extension: 'png' });
+                let fila = 12;
+                const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
                 worksheet.getCell('B2').value = titulos[0];
                 if (!worksheet.getCell('B2').isMerged)
@@ -2265,6 +2362,7 @@ export const LevantadaDistrito = async (req = request, res = response) => {
                 worksheet.getCell('E8').value = `Fecha: ${fecha}`;
                 worksheet.getCell('E9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 worksheet.getCell('A8').value = `Dirección Distrital:`;
+                worksheet.getCell('A8').style = { ...fill, font: { ...fill.font, size: 12 } };
                 worksheet.getCell('B8').value = id_distrito;
                 worksheet.getCell('B8').style = contenidoStyle;
                 worksheet.getCell('A8').style = { ...fill, font: { ...fill.font, size: 12 } };
@@ -2279,11 +2377,11 @@ export const LevantadaDistrito = async (req = request, res = response) => {
                 worksheet.getCell(fila, 4).style = { ...fill, font: { ...fill.font, bold: false } };
                 worksheet.getCell(fila, 5).value = resultado[1];
                 worksheet.getCell(fila, 5).style = { ...fill, font: { ...fill.font, bold: false }, numFmt: '#,##0' };
-                worksheet.columns.forEach((column, index) => {
-                    if (index == 1 || index == 4) {
+                worksheet.columns.forEach((column, i) => {
+                    if ([1, 4].includes(i)) {
                         let maxLength = 0;
-                        column.eachCell({ includeEmpty: false }, (cell, index) => {
-                            if (index >= 9)
+                        column.eachCell({ includeEmpty: false }, (cell, j) => {
+                            if (j >= 11)
                                 if (cell.value) {
                                     const length = cell.value.toString().length;
                                     if (length > maxLength)

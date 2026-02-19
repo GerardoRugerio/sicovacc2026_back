@@ -1,9 +1,9 @@
 import { request, response } from 'express';
 import PDFDocument from 'pdfkit';
 import { CalcularAltoAncho, DibujarTablaPDF, TextoMultiFuente } from '../helpers/ActasPDF.js';
-import { anioN, autor, emblemaEC, iecmLogoBN } from '../helpers/Constantes.js';
+import { anioN, autor, AveAzteca, IECMLogoBN, SerpienteAzteca } from '../helpers/Constantes.js';
 import { ConsultaClaveColonia, ConsultaDelegacion, ConsultaDistrito, ConsultaTipoEleccion, FechaServer, InformacionConstancia } from '../helpers/Consultas.js';
-import { dividirArreglo, NumAMes, NumAText } from '../helpers/Funciones.js';
+import { DividirArreglo, NumAMes, NumAText } from '../helpers/Funciones.js';
 import { SICOVACC } from '../models/consulta_usuarios_sicovacc.model.js';
 
 //? Proyectos Participantes Dictaminados Favorablemente
@@ -47,7 +47,7 @@ export const ProyectosParticipantes = async (req = request, res = response) => {
             });
             datos.push(X);
         });
-        const subProyectos = dividirArreglo(datos, 15);
+        const subProyectos = DividirArreglo(datos, 15);
         const doc = new PDFDocument({ bufferPages: true, autoFirstPage: false, size: 'A3', layout: 'landscape' });
         doc.info.Author = autor;
         for (let i = 0; i < subProyectos.length; i++) {
@@ -136,7 +136,7 @@ export const ConstanciaPDF = async (req = request, res = response) => {
             });
             datos.push(X);
         });
-        const subProyectos = dividirArreglo(datos, 25);
+        const subProyectos = DividirArreglo(datos, 25);
         const doc = new PDFDocument({ bufferPages: true, autoFirstPage: false, size: 'A3', layout: 'portrait' });
         doc.info.Author = autor;
         doc.addPage();
@@ -254,111 +254,141 @@ export const ActaValidacionPDF = async (req = request, res = response) => {
         consulta.filter(proyecto => proyecto.num_proyecto != 0).forEach(proyecto => {
             let X = [];
             Object.keys(proyecto).forEach((key, index) => {
-                X.push([{ text: proyecto[key].toString(), font: 'Helvetica', fontSize: 10 }]);
+                X.push([{ text: proyecto[key].toString(), font: 'Helvetica', fontSize: 10, strokeColor: '#BFBFBF' }]);
                 if (index == 1)
-                    X.push([{ text: NumAText(proyecto[key]), font: 'Helvetica', fontSize: 10 }]);
+                    X.push([{ text: NumAText(proyecto[key]), font: 'Helvetica', fontSize: 10, strokeColor: '#BFBFBF' }]);
             });
             datos.push(X);
         });
         datos.push([
-            [{ text: 'Opiniones nulas', font: 'Helvetica-Bold', fontSize: 10, background: '#C0C0C0' }],
-            [{ text: String(bol_nulas), font: 'Helvetica-Bold', fontSize: 10, background: '#C0C0C0' }],
-            [{ text: NumAText(bol_nulas), font: 'Helvetica-Bold', fontSize: 10, background: '#C0C0C0' }]
+            [{ text: 'OPINIONES NULAS', font: 'Helvetica-Bold', fontSize: 10, background: '#F2F2F2', strokeColor: '#BFBFBF' }],
+            [{ text: String(bol_nulas), font: 'Helvetica-Bold', fontSize: 10, background: '#F2F2F2', strokeColor: '#BFBFBF' }],
+            [{ text: NumAText(bol_nulas), font: 'Helvetica-Bold', fontSize: 10, background: '#F2F2F2', strokeColor: '#BFBFBF' }]
         ], [
-            [{ text: 'TOTAL', font: 'Helvetica-Bold', fontSize: 14, background: '#000', fillColor: '#FFF' }],
-            [{ text: String(total), font: 'Helvetica-Bold', fontSize: 10, background: '#C0C0C0' }],
-            [{ text: NumAText(total), font: 'Helvetica-Bold', fontSize: 10, background: '#C0C0C0' }]
+            [{ text: 'TOTAL', font: 'Helvetica-Bold', fontSize: 14, fillColor: '#FFF', background: '#000' }],
+            [{ text: String(total), font: 'Helvetica-Bold', fontSize: 10, background: '#F2F2F2', strokeColor: '#BFBFBF' }],
+            [{ text: NumAText(total), font: 'Helvetica-Bold', fontSize: 10, background: '#F2F2F2', strokeColor: '#BFBFBF' }]
         ]);
+        const subDatos = DividirArreglo(datos, 42);
         const doc = new PDFDocument({ bufferPages: true, autoFirstPage: false, size: 'A3', layout: 'portrait', margin: 30 });
         doc.info.Author = autor;
         doc.addPage();
-        doc.rect(50, 50, 658, 70).fillAndStroke('#000', '#000').font('Helvetica-Bold', 16).fillColor('#FFF').text(`ACTA DE VALIDACIÓN DE RESULTADOS PARA LA CONSULTA DE ${eleccion.toUpperCase()} POR UNIDAD TERRITORIAL`, 305, 60, { width: 398, align: 'center' });
-        doc.rect(710, 50, 80, 70).fillAndStroke('#000', '#000').fillColor('#FFF').text(`APP\n07`, 710, 70, { width: 80, align: 'center' });
-        doc.image(iecmLogoBN, 40, 55, {
-            fit: [150, 60],
-            align: 'center',
-            valign: 'center'
-        });
-        doc.image(emblemaEC, 160, 55, {
-            fit: [150, 60],
-            align: 'center',
-            valign: 'center'
-        });
-        doc.rect(50, 140, 740, 20).fillAndStroke('#000', '#000').fontSize(14).fillColor('#FFF').text('INFORMACIÓN DE LA UT', 50, 145, { width: 740, align: 'center' });
+        doc.font('Helvetica', 10).fillColor('#000');
         const textos = [
             `DEMARCACIÓN: ${nombre_delegacion}`,
             `DD: ${id_distrito}`,
             `UT (clave): ${clave_colonia}`,
             `UT (nombre): ${nombre_colonia}`
         ];
-        doc.font('Helvetica', 10).fillColor('#000');
         const widths = textos.map(t => doc.widthOfString(t));
         const espacio = (740 - widths.reduce((acum, width) => acum + width, 0)) / 3;
-        let x = 50;
-        for (let i = 0; i < textos.length; i++) {
-            doc.text(textos[i], x, 165);
-            if (i < 3)
-                x += widths[i] + espacio;
+        let x = 0, y = 0;
+        for (let i = 0; i < subDatos.length; i++) {
+            doc.rect(50, 50, 740, 70).fillAndStroke('#000', '#000');
+            TextoMultiFuente(doc, 190, 68, 425, 16, [
+                { text: 'ACTA DE VALIDACIÓN DE RESULTADOS', font: 'Helvetica-Bold' },
+                { text: `DE LA CONSULTA DE ${eleccion.toUpperCase()}`, font: 'Helvetica' }
+            ], {
+                fillColor: '#FFF',
+                lineHeight: 1.5,
+                align: 'center'
+            });
+            doc.font('Helvetica-Bold').fillColor('#FFF').text(`APP${anio == 2 ? '26' : '27'}\n05`, 710, 70, { width: 80, align: 'center' });
+            doc.image(IECMLogoBN, 40, 55, {
+                fit: [150, 60],
+                align: 'center',
+                valign: 'center'
+            });
+            doc.image(anio == 2 ? AveAzteca : SerpienteAzteca, 590, 55, {
+                fit: [150, 60],
+                align: 'center',
+                valign: 'center'
+            });
+            doc.rect(50, 140, 740, 20).fillAndStroke('#F2F2F2', '#BFBFBF').fontSize(14).fillColor('#000').text('INFORMACIÓN DE LA UT', 50, 145, { width: 740, align: 'center' });
+            doc.font('Helvetica', 10).fillColor('#000');
+            x = 50;
+            for (let i = 0; i < textos.length; i++) {
+                doc.text(textos[i], x, 165);
+                if (i < 3)
+                    x += widths[i] + espacio;
+            }
+            doc.rect(50, 185, 740, 20).fillAndStroke('#F2F2F2', '#BFBFBF').font('Helvetica-Bold', 14).fillColor('#000').text('INFORMACIÓN DE LA VALIDACIÓN', 50, 190, { width: 740, align: 'center' });
+            TextoMultiFuente(doc, 50, 210, 740, 10, [
+                { text: 'En la Ciudad de México, siendo las', font: 'Helvetica' },
+                { text: `${hora.substring(0, hora.length - 3)}`, font: 'Helvetica', underline: true },
+                { text: ' horas del', font: 'Helvetica' },
+                { text: `${fecha.split('/')[0]}`, font: 'Helvetica', underline: true },
+                { text: ' de', font: 'Helvetica' },
+                { text: `${NumAMes(+fecha.split('/')[1]).toLowerCase()}`, font: 'Helvetica', underline: true },
+                { text: ' de', font: 'Helvetica' },
+                { text: `${fecha.split('/')[2]}`, font: 'Helvetica' },
+                { text: ', en el domicilio que ocupa la Dirección Distrital', font: 'Helvetica' },
+                { text: `${id_distrito}`, font: 'Helvetica', underline: true },
+                { text: ', situada en', font: 'Helvetica' },
+                { text: `${direccion}`, font: 'Helvetica', underline: true },
+                { text: ', se realizó el', font: 'Helvetica' },
+                { text: 'cómputo total', font: 'Helvetica-Bold' },
+                { text: `de la Unidad Territorial referida en la presente acta, correspondiente a la Consulta de ${eleccion}.`, font: 'Helvetica' }
+            ], {
+                fillColor: '#000',
+                lineHeight: 1.5,
+                align: 'justify'
+            });
+            y = doc.y + 20;
+            TextoMultiFuente(doc, 50, y, 740, 10, [
+                { text: 'Por lo anterior,', font: 'Helvetica' },
+                { text: 'las personas funcionarias que suscriben la presente, hacen constar los siguientes resultados', font: 'Helvetica-Bold', },
+                { text: ':', font: 'Helvetica', }
+            ], {
+                fillColor: '#000',
+                lineHeight: 1.5,
+                align: 'left'
+            });
+            y += 25;
+            doc.rect(50, y, 740, 20).fillAndStroke('#F2F2F2', '#BFBFBF').font('Helvetica-Bold', 14).fillColor('#000F').text('RESULTADOS', 50, y + 5, { width: 740, align: 'center' });
+            DibujarTablaPDF(doc, 50, doc.y - 1, [
+                [{ text: 'Número de proyecto', font: 'Helvetica-Bold', fontSize: 12, background: '#F2F2F2', strokeColor: '#BFBFBF' }],
+                [{ text: 'Total con número', font: 'Helvetica-Bold', fontSize: 12, background: '#F2F2F2', strokeColor: '#BFBFBF' }],
+                [{ text: 'Total con letra', font: 'Helvetica-Bold', fontSize: 12, background: '#F2F2F2', strokeColor: '#BFBFBF' }]
+            ], [
+                { width: 100, align: 'center' },
+                { width: 100, align: 'center' },
+                { width: 540, align: 'center' }
+            ], subDatos[i]);
+            if (i < subDatos.length - 1)
+                doc.addPage();
         }
-        doc.rect(50, 185, 740, 20).fillAndStroke('#000', '#000').font('Helvetica-Bold', 14).fillColor('#FFF').text('INFORMACIÓN DE LA VALIDACIÓN', 50, 190, { width: 740, align: 'center' });
-        TextoMultiFuente(doc, 50, 210, 740, 10, [
-            { text: 'En la Ciudad de México, siendo las', font: 'Helvetica' },
-            { text: `${hora.substring(0, hora.length - 3)}`, font: 'Helvetica', underline: true },
-            { text: ' horas del', font: 'Helvetica' },
-            { text: `${fecha.split('/')[0]}`, font: 'Helvetica', underline: true },
-            { text: ' de', font: 'Helvetica' },
-            { text: `${NumAMes(+fecha.split('/')[1]).toLowerCase()}`, font: 'Helvetica', underline: true },
-            { text: ' de', font: 'Helvetica' },
-            { text: `${fecha.split('/')[2]}`, font: 'Helvetica' },
-            { text: ', en el domicilio que ocupa la Dirección Distrital', font: 'Helvetica' },
-            { text: `${id_distrito}`, font: 'Helvetica', underline: true },
-            { text: ', situada en', font: 'Helvetica' },
-            { text: `${direccion}`, font: 'Helvetica', underline: true },
-            { text: ', se realizó el', font: 'Helvetica' },
-            { text: 'CÓMPUTO TOTAL', font: 'Helvetica-Bold' },
-            { text: `de la Unidad Territorial referida en la presente acta, correspondiente a la Consulta de ${eleccion}.`, font: 'Helvetica' }
-        ], {
-            fillColor: '#000',
-            lineHeight: 1.5,
-            align: 'justify'
-        });
-        let y = doc.y + 20;
-        doc.font('Helvetica-Bold', 10).text('Por lo anterior, las personas funcionarias que suscriben la presente hacen constar el siguiente resultado:', 50, y);
-        y += 25;
-        doc.rect(50, y, 740, 20).fillAndStroke('#000', '#000').fontSize(14).fillColor('#FFF').text('RESULTADOS', 50, y + 5, { width: 740, align: 'center' });
-        DibujarTablaPDF(doc, 50, doc.y - 1, [
-            [{ text: 'Número de proyecto', font: 'Helvetica-Bold', fontSize: 12, background: '#C0C0C0' }],
-            [{ text: 'Total con número', font: 'Helvetica-Bold', fontSize: 12, background: '#C0C0C0' }],
-            [{ text: 'Total con letra', font: 'Helvetica-Bold', fontSize: 12, background: '#C0C0C0' }]
-        ], [
-            { width: 100, align: 'center' },
-            { width: 100, align: 'center' },
-            { width: 540, align: 'center' }
-        ], datos);
-        y = doc.page.height - 145;
-        doc.rect(50, y, 740, 20).fillAndStroke('#A9A9A9', '#000').font('Helvetica-Bold', 14).fillColor('#FFF').text('Por la Dirección Distrital, suscriben:', 50, y + 5, { width: 740, align: 'center' });
+        y = doc.page.height - 145 - (subDatos.length > 1 ? 15 : 0);
+        doc.rect(50, y, 740, 20).fillAndStroke('#F2F2F2', '#BFBFBF').font('Helvetica-Bold', 14).fillColor('#000').text('POR LA DIRECCIÓN DISTRITAL, SUSCRIBEN:', 50, y + 5, { width: 740, align: 'center' });
         DibujarTablaPDF(doc, 50, y + 20, [
-            [{ text: 'Cargo', font: 'Helvetica-Bold', fontSize: 14, fillColor: '#FFF', background: '#A9A9A9' }],
-            [{ text: 'Nombre completo', font: 'Helvetica-Bold', fontSize: 14, fillColor: '#FFF', background: '#A9A9A9' }],
-            [{ text: 'Firma', font: 'Helvetica-Bold', fontSize: 14, fillColor: '#FFF', background: '#A9A9A9' }]
+            [{ text: 'CARGO', font: 'Helvetica-Bold', fontSize: 14, background: '#F2F2F2', strokeColor: '#BFBFBF' }],
+            [{ text: 'NOMBRE COMPLETO', font: 'Helvetica-Bold', fontSize: 14, background: '#F2F2F2', strokeColor: '#BFBFBF' }],
+            [{ text: 'FIRMA', font: 'Helvetica-Bold', fontSize: 14, background: '#F2F2F2', strokeColor: '#BFBFBF' }]
         ], [
             { width: 280, align: 'center' },
             { width: 330, align: 'center' },
             { width: 130, align: 'center' }
         ], [
             [
-                [{ text: coordinador_puesto, font: 'Helvetica', fontSize: 10 }],
-                [{ text: coordinador, font: 'Helvetica', fontSize: 10 }],
-                [{ text: '', font: 'Helvetica', fontSize: 10 }]
+                [{ text: coordinador_puesto, font: 'Helvetica', fontSize: 10, strokeColor: '#BFBFBF' }],
+                [{ text: coordinador, font: 'Helvetica', fontSize: 10, strokeColor: '#BFBFBF' }],
+                [{ text: '', font: 'Helvetica', fontSize: 10, strokeColor: '#BFBFBF' }]
             ],
             [
-                [{ text: secretario_puesto, font: 'Helvetica', fontSize: 10 }],
-                [{ text: secretario, font: 'Helvetica', fontSize: 10 }],
-                [{ text: '', font: 'Helvetica', fontSize: 10 }]
+                [{ text: secretario_puesto, font: 'Helvetica', fontSize: 10, strokeColor: '#BFBFBF' }],
+                [{ text: secretario, font: 'Helvetica', fontSize: 10, strokeColor: '#BFBFBF' }],
+                [{ text: '', font: 'Helvetica', fontSize: 10, strokeColor: '#BFBFBF' }]
             ]
         ]);
         x = CalcularAltoAncho(doc, [{ text: secretario_puesto, font: 'Helvetica', fontSize: 10 }], 0, 280, 1.15).totalHeight;
-        doc.font('Helvetica', 8).text(`Con fundamento en los artículos 36 primer párrafo, 113 fracción V, 366 y 367 segundo párrafo del Código de Instituciones y Procedimientos Electorales de la Ciudad de México 116, 117, 119, 120 inciso e) y 124 fracción IV de la Ley de Participación Ciudadana de la Ciudad de México, el apartado 14.5 del Manual de Geografía, Organización y Capacitación para la Preparación y Desarrollo de la Consulta de ${eleccion}; así como del párrafo tercero de la base décima quinta de las disposiciones comunes de la Convocatoria de la Consulta de ${eleccion}.`, 50, doc.y + (x / 2) + 8, { width: 740, align: 'justify' });
+        doc.font('Helvetica', 8).text('SE LEVANTA LA PRESENTE ACTA CON FUNDAMENTO EN LOS ARTÍCULOS 6 FRACCIÓN I, 36 PÁRRAFO PRIMERO, 113 FRACCIÓN V, 362 PRIMER Y SEGUNDO PÁRRAFO Y 367 DEL CÓDIGO DE INSTITUCIONES Y PROCEDIMIENTOS ELECTORALES DE LA CIUDAD DE MÉXICO; 116+, 124 FRACCIÓN IV Y 129 FRACCIÓN II DE LA LEY DE PARTICIPACIÓN CIUDADANA DE LA CIUDAD DE MÉXICO; ASÍ COMO DEL NUMERAL 16 DE LAS DISPOSICIONES GENERALES DE LA CONVOCATORIA ÚNICA APROBADA POR EL CONSEJO GENERAL DEL INSTITUTO ELECTORAL DE LA CIUDAD DE MÉXICO MEDIANTE ACUERDO IECM/ACU-CG-004/2026 DE FECHA 09 DE ENERO DE 2026.', 50, doc.y + (x / 2) + 9, { width: 740, align: 'justify' });
+        if (subDatos.length > 1) {
+            const paginas = doc.bufferedPageRange().count;
+            for (let i = 0; i < paginas; i++) {
+                doc.switchToPage(i);
+                doc.font('Helvetica', 10).text(`Hoja ${i + 1} de ${paginas}`, 50, doc.page.height - 45, { width: 740, align: 'center' });
+            }
+        }
         doc.end();
         doc.on('data', buffer.push.bind(buffer));
         doc.on('end', () => {

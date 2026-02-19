@@ -59,15 +59,12 @@ router.put('/inicioValidacion', [
 
 router.get('/mesasInstaladas', [
     chkToken(),
-    dataToken,
-    query('anio').exists().notEmpty().isInt({ min: 1, max: 3 }).withMessage('El valor debe de ser 1 al 3'),
-    Validator
+    dataToken
 ], MesasInstaladas);
 
 router.put('/mesasInstaladas', [
     chkToken(),
     dataToken,
-    body('anio').exists().notEmpty().isInt({ min: 1, max: 3 }).withMessage('El valor debe de ser 1 al 3'),
     body('mesas').exists().notEmpty().isArray({ min: 1 }).withMessage('El minimo de objetos es 1. Debe de contener clave_colonia, num_mro, tipo_mro y noInstaladas'),
     body('mesas.*.clave_colonia').exists().notEmpty().isString(),
     body('mesas.*.num_mro').exists().notEmpty().isNumeric(),

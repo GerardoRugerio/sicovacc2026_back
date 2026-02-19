@@ -69,7 +69,6 @@ router.post('/mesas', [
     chkToken(),
     dataToken,
     body('clave_colonia').exists().notEmpty().isString(),
-    body('anio').exists().notEmpty().isInt({ min: 1, max: 3 }).withMessage('El valor debe de ser 1 al 3'),
     Validator
 ], Mesas);
 

@@ -131,7 +131,7 @@ export const DibujarTablaPDF = (doc = PDFDocument, x, y, encabezados, columnas, 
         blocks.map((block, index) => {
             const colWidth = columnas[index].width;
             height = alturas[index];
-            doc.rect(offsetX, offsetY, colWidth, maxHeight).fillAndStroke(block[0].background ?? '#FFF', '#000');
+            doc.rect(offsetX, offsetY, colWidth, maxHeight).fillAndStroke(block[0].background ?? '#FFF', block[0].strokeColor ?? '#000');
             //? Escribir el texto dentro de la celda usanto la función TextoMultiFuente
             TextoMultiFuente(doc, offsetX + (margen / 2), offsetY + ((maxHeight - height) / 2) + 1.5, colWidth - margen, block[0].fontSize ?? fontSize, block, {
                 fillColor: block[0].fillColor ?? '#000',

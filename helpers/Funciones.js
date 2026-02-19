@@ -1,6 +1,6 @@
+import CryptoJS from 'crypto-js';
 import { config } from 'dotenv';
 import Pako from 'pako';
-import CryptoJS from 'crypto-js';
 
 const formatear = new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -40,7 +40,7 @@ export const Comillas = cadena => cadena.replace(/'/g, "''");
  * @param {number} tamanio Número en que se dividira el arreglo 
  * @returns {object} Arreglo con sub arreglos
  */
-export const dividirArreglo = (original, tamanio) => {
+export const DividirArreglo = (original, tamanio) => {
     let subArreglo = [];
     for (let i = 0; i < original.length; i += tamanio)
         subArreglo.push(original.slice(i, i + tamanio));

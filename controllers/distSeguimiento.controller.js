@@ -20,11 +20,7 @@ export const EstadoBaseDatos = async (req = request, res = response) => {
             datos: {
                 datosSEI: infoG[0][0].datosSEI,
                 ...verifica,
-                mesasNI: {
-                    mesasNI_C: infoG[0][0].mesasNI_C,
-                    mesasNI_CC1: infoG[0][0].mesasNI_CC1,
-                    mesasNI_CC2: infoG[0][0].mesasNI_CC2
-                },
+                mesasNI: infoG[0][0].mesasNI,
                 incidentes: {
                     incidentes_C: infoG[0][0].incidentes_C,
                     incidentes_CC1: infoG[0][0].incidentes_CC1,
@@ -134,14 +130,12 @@ export const ActualizarInicioValidacion = async (req = request, res = response) 
 
 export const MesasInstaladas = async (req = request, res = response) => {
     const { id_distrito } = req.data;
-    const { anio } = req.query;
-    const campo = aniosCAT[0][anio];
     try {
         const datos = (await SICOVACC.sequelize.query(`SELECT UPPER(CCC.nombre_colonia) AS nombre_colonia, CM.clave_colonia, CM.num_mro, CM.tipo_mro,
-        CAST(CASE WHEN CM.${campo} = 1 THEN 0 ELSE 1 END AS BIT) AS noInstalada
+        CAST(CASE WHEN CM.estatus = 1 THEN 0 ELSE 1 END AS BIT) AS noInstalada
         FROM consulta_mros CM
-        LEFT JOIN consulta_cat_colonia_cc1 CCC ON CM.clave_colonia = CCC.clave_colonia AND CCC.${campo} = 1 AND CCC.nombre_colonia IS NOT NULL
-        WHERE CM.${campo} IN (0, 1) AND CM.id_distrito = ${id_distrito}
+        LEFT JOIN consulta_cat_colonia_cc1 CCC ON CM.clave_colonia = CCC.clave_colonia
+        WHERE CCC.nombre_colonia IS NOT NULL AND CM.estatus IN (0, 1) AND CM.id_distrito = ${id_distrito}
         ORDER BY CCC.nombre_colonia`))[0];
         res.json({
             success: true,
@@ -158,12 +152,11 @@ export const MesasInstaladas = async (req = request, res = response) => {
 
 export const GuardarMesasInstaladas = async (req = request, res = response) => {
     const { id_transaccion, id_usuario, id_distrito } = req.data;
-    const { anio, mesas } = req.body
-    const campo = aniosCAT[0][anio];
+    const { mesas } = req.body;
     try {
         for (let mesa of mesas) {
             const { clave_colonia, num_mro, tipo_mro, noInstalada } = mesa;
-            await SICOVACC.sequelize.query(`UPDATE consulta_mros SET ${campo} = ${noInstalada ? 0 : 1} WHERE clave_colonia = '${clave_colonia}' AND num_mro = '${num_mro}' AND tipo_mro = ${tipo_mro}`);
+            await SICOVACC.sequelize.query(`UPDATE consulta_mros SET estatus = ${noInstalada ? 0 : 1} WHERE clave_colonia = '${clave_colonia}' AND num_mro = '${num_mro}' AND tipo_mro = ${tipo_mro}`);
         }
         await Audit(id_transaccion, id_usuario, id_distrito, 'ACTUALIZÓ EL ESTADO DE LAS MESAS');
         res.json({
@@ -305,7 +298,6 @@ export const ResultadoConsultaMesa = async (req = request, res = response) => {
 export const VerificarConsultaMesa = async (req = request, res = response) => {
     const { id_distrito } = req.data;
     const { clave_colonia, num_mro, tipo_mro, anio } = req.body;
-    const campo = aniosCAT[0][anio].replace('_copaco', '');
     try {
         if (await ConsultaExistenciaActas(id_distrito, clave_colonia, num_mro, tipo_mro, anio) != 0)
             return res.status(400).json({
@@ -335,7 +327,7 @@ export const VerificarConsultaMesa = async (req = request, res = response) => {
         ), V AS (
             SELECT secuencial, ${anio == 1 ? 'nombreC' : 'nom_proyecto'} AS nom_p${anio != 1 ? ', rubro_general' : ''}, '' AS votos, votos_sei, id_distrito, clave_colonia, num_mro, tipo_mro${anio != 1 ? ', anio' : ''}
             FROM ${anio == 1 ? 'copaco' : 'consulta'}_actas_VVS
-            WHERE ${campo} = 1
+            WHERE estatus = 1
         )
         SELECT (
             SELECT nombre_delegacion, bol_nulas_sei, opi_total_sei, (
@@ -380,7 +372,7 @@ export const DatosActa = async (req = request, res = response) => {
         V AS (
             SELECT secuencial, ${anio == 1 ? 'nombreC' : 'nom_proyecto'} AS nom_p,${anio != 1 ? ' rubro_general,' : ''} votos, votos_sei, id_distrito, clave_colonia, num_mro, tipo_mro${anio != 1 ? ', anio' : ''}
             FROM ${anio == 1 ? 'copaco' : 'consulta'}_actas_VVS
-            WHERE ${campo} = 1
+            WHERE estatus = 1
         )
         SELECT COALESCE((
             SELECT id_acta, clave_colonia, nombre_colonia, id_delegacion, nombre_delegacion, num_mro, tipo_mro, mro, coordinador_sino, num_integrantes, observador_sino, levantada_distrito, razon_distrital, bol_recibidas, bol_adicionales,

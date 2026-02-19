@@ -1,7 +1,7 @@
 import ExcelJs from 'exceljs';
 import { request, response } from 'express';
 import path from 'path';
-import { autor, contenidoStyle, fill, iecmLogo, plantillas, titulos } from '../helpers/Constantes.js';
+import { autor, contenidoStyle, fill, IECMLogo, plantillas, titulos } from '../helpers/Constantes.js';
 import { FechaServer } from '../helpers/Consultas.js';
 import { SICOVACC } from '../models/consulta_usuarios_sicovacc.model.js';
 
@@ -38,7 +38,7 @@ export const ComputoTotalUT = async (req = request, res = response) => {
                 const worksheet = workbook.getWorksheet(1);
                 worksheet.spliceColumns(1, 1);
                 let fila = 13;
-                const iecm = workbook.addImage({ filename: iecmLogo, extension: 'png' });
+                const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
                 worksheet.getCell('A2').value = titulos[0];
                 worksheet.getCell('A3').value = titulos[1];
@@ -150,7 +150,7 @@ export const ResultadoComputoTotalMesa = async (req = request, res = response) =
         MesasEsperadas AS (
             SELECT id_distrito, clave_colonia, COUNT(*) AS total
             FROM consulta_mros
-            WHERE estatus_copaco = 1
+            WHERE estatus = 1
             GROUP BY id_distrito, clave_colonia
         ),
         MesasCapturadas AS (
@@ -198,7 +198,7 @@ export const ResultadoComputoTotalMesa = async (req = request, res = response) =
                 const celdasTotales = 13 + (max * 3);
                 let fila = 13, celda = 8;
                 worksheet.spliceColumns(1, 1);
-                const iecm = workbook.addImage({ filename: iecmLogo, extension: 'png' });
+                const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
                 worksheet.getCell('A2').value = titulos[0];
                 worksheet.getCell('A3').value = titulos[1];
@@ -364,7 +364,7 @@ export const ResultadoComputoTotalUT = async (req = request, res = response) => 
         MesasEsperadas AS (
             SELECT id_distrito, clave_colonia, COUNT(*) AS total
             FROM consulta_mros
-            WHERE estatus_copaco = 1
+            WHERE estatus = 1
             GROUP BY id_distrito, clave_colonia
         ),
         MesasCapturadas AS (
@@ -414,7 +414,7 @@ export const ResultadoComputoTotalUT = async (req = request, res = response) => 
                 const celdasTotales = 11 + (max * 3);
                 let fila = 13, celda = 6;
                 worksheet.spliceColumns(1, 1);
-                const iecm = workbook.addImage({ filename: iecmLogo, extension: 'png' });
+                const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
                 worksheet.getCell('A2').value = titulos[0];
                 worksheet.getCell('A3').value = titulos[1];
@@ -577,7 +577,7 @@ export const ConcentradoParticipantes = async (req = request, res = response) =>
                 const worksheet = workbook.getWorksheet(1);
                 let fila = 12;
                 worksheet.spliceColumns(1, 1);
-                const iecm = workbook.addImage({ filename: iecmLogo, extension: 'png' });
+                const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
                 worksheet.getCell('A2').value = titulos[0];
                 worksheet.getCell('A3').value = titulos[1];
@@ -646,7 +646,7 @@ export const CandidaturasEmpate = async (req = request, res = response) => {
         MesasEsperadas AS (
             SELECT id_distrito, clave_colonia, COUNT(*) AS total
             FROM consulta_mros
-            WHERE estatus_copaco = 1
+            WHERE estatus = 1
             GROUP BY id_distrito, clave_colonia
         ),
         MesasCapturadas AS (
@@ -690,7 +690,7 @@ export const CandidaturasEmpate = async (req = request, res = response) => {
                 const worksheet = workbook.getWorksheet(1);
                 let fila = 12;
                 worksheet.spliceColumns(1, 1);
-                const iecm = workbook.addImage({ filename: iecmLogo, extension: 'png' });
+                const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
                 worksheet.addImage(iecm, { tl: { col: 0, row: 1 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
                 worksheet.getCell('A2').value = titulos[0];
                 worksheet.getCell('A3').value = titulos[1];
@@ -778,7 +778,7 @@ export const ResultadosMesa = async (req = request, res = response) => {
         MesasEsperadas aS (
             SELECT id_distrito, clave_colonia, COUNT(*) AS total
             FROM consulta_mros
-            WHERE estatus_copaco = 1
+            WHERE estatus = 1
             GROUP BY id_distrito, clave_colonia
         ),
         MesasCapturadas AS (
@@ -820,9 +820,9 @@ export const ResultadosMesa = async (req = request, res = response) => {
             .then(() => {
                 workbook.creator = autor;
                 const worksheet = workbook.getWorksheet(1);
-                let fila = 10;
+                let fila = 12;
                 worksheet.spliceColumns(1, 1);
-                const iecm = workbook.addImage({ filename: iecmLogo, extension: 'png' });
+                const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
                 worksheet.getCell('A2').value = titulos[0];
                 if (!worksheet.getCell('A2').isMerged)
@@ -836,10 +836,10 @@ export const ResultadosMesa = async (req = request, res = response) => {
                 worksheet.getCell('A6').value = 'RESULTADOS DE VOTOS POR MESA (INCLUYE MRVyO, MECPEP, MECPPP, SEI)';
                 if (!worksheet.getCell('A6').isMerged)
                     worksheet.mergeCells('A6:I6');
-                worksheet.getCell('I7').value = fecha;
-                worksheet.getCell('I8').value = hora.substring(0, hora.length - 3);
-                worksheet.getCell('D9').value = 'Letra del Participante';
-                worksheet.getCell('F9').value = 'Nombre del Participante';
+                worksheet.getCell('I8').value = fecha;
+                worksheet.getCell('I9').value = hora.substring(0, hora.length - 3);
+                worksheet.getCell('D11').value = 'Letra del Participante';
+                worksheet.getCell('F11').value = 'Nombre del Participante';
                 for (let acta of actas) {
                     let sum_votos = 0, sum_votos_sei = 0;
                     const { nombre_delegacion, clave_colonia, nombre_colonia, mesa, participantes, bol_nulas, bol_nulas_sei } = acta;
@@ -926,7 +926,7 @@ export const MesasComputadas = async (req = request, res = response) => {
         LEFT JOIN consulta_cat_delegacion D ON M.id_delegacion = D.id_delegacion
         LEFT JOIN consulta_cat_colonia_cc1 C ON M.clave_colonia = C.clave_colonia
         LEFT JOIN consulta_tipo_mesa_V TP ON M.tipo_mro = TP.tipo_mro
-        WHERE M.estatus_copaco = 1 AND EXISTS (SELECT 1 FROM copaco_actas WHERE modalidad = 1 AND estatus = 1 AND clave_colonia = M.clave_colonia AND num_mro = M.num_mro AND tipo_mro = M.tipo_mro) AND M.id_distrito = ${id_distrito}
+        WHERE M.estatus = 1 AND EXISTS (SELECT 1 FROM copaco_actas WHERE modalidad = 1 AND estatus = 1 AND clave_colonia = M.clave_colonia AND num_mro = M.num_mro AND tipo_mro = M.tipo_mro) AND M.id_distrito = ${id_distrito}
         ORDER BY D.nombre_delegacion, C.nombre_colonia, M.num_mro, M.tipo_mro`))[0];
         if (!mesas.length)
             return res.status(404).json({
@@ -940,7 +940,7 @@ export const MesasComputadas = async (req = request, res = response) => {
                 const worksheet = workbook.getWorksheet(1);
                 let fila = 12;
                 worksheet.spliceColumns(1, 1);
-                const iecm = workbook.addImage({ filename: iecmLogo, extension: 'png' });
+                const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
                 worksheet.getCell('A2').value = titulos[0];
                 worksheet.getCell('A3').value = titulos[1];
@@ -1025,7 +1025,7 @@ export const MesasNoComputadas = async (req = request, res = response) => {
         FROM consulta_mros M
         LEFT JOIN consulta_cat_colonia_cc1 C ON M.clave_colonia = C.clave_colonia
         LEFT JOIN consulta_tipo_mesa_V TP ON M.tipo_mro = TP.tipo_mro
-        WHERE M.estatus_copaco = 1 AND NOT EXISTS (SELECT 1 FROM copaco_actas WHERE modalidad = 1 AND estatus = 1 AND clave_colonia = M.clave_colonia AND num_mro = M.num_mro AND tipo_mro = M.tipo_mro) AND M.id_distrito = ${id_distrito}
+        WHERE M.estatus = 1 AND NOT EXISTS (SELECT 1 FROM copaco_actas WHERE modalidad = 1 AND estatus = 1 AND clave_colonia = M.clave_colonia AND num_mro = M.num_mro AND tipo_mro = M.tipo_mro) AND M.id_distrito = ${id_distrito}
         ORDER BY C.nombre_colonia, M.num_mro, M.tipo_mro`))[0];
         if (!mesas.length)
             return res.status(404).json({
@@ -1039,7 +1039,7 @@ export const MesasNoComputadas = async (req = request, res = response) => {
                 const worksheet = workbook.getWorksheet(1);
                 let fila = 12;
                 worksheet.spliceColumns(1, 1);
-                const iecm = workbook.addImage({ filename: iecmLogo, extension: 'png' });
+                const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
                 worksheet.getCell('A2').value = titulos[0];
                 worksheet.getCell('A3').value = titulos[1];
@@ -1123,8 +1123,8 @@ export const UTConComputo = async (req = request, res = response) => {
         const utc = (await SICOVACC.sequelize.query(`SELECT UPPER(D.nombre_delegacion) AS nombre_delegacion, C.clave_colonia, UPPER(C.nombre_colonia) AS nombre_colonia
         FROM consulta_cat_colonia_cc1 C
         LEFT JOIN consulta_cat_delegacion D ON C.id_delegacion = D.id_delegacion
-        WHERE C.id_distrito = ${id_distrito} AND EXISTS (SELECT 1 FROM copaco_actas A WHERE modalidad = 1 AND estatus = 1 AND clave_colonia = C.clave_colonia GROUP BY clave_colonia HAVING COUNT(*) = (SELECT COUNT(*) FROM consulta_mros WHERE estatus_copaco = 1 AND clave_colonia = A.clave_colonia))
-        AND EXISTS (SELECT 1 FROM consulta_mros WHERE id_distrito = C.id_distrito AND clave_colonia = C.clave_colonia AND estatus_copaco = 1)
+        WHERE C.id_distrito = ${id_distrito} AND EXISTS (SELECT 1 FROM copaco_actas A WHERE modalidad = 1 AND estatus = 1 AND clave_colonia = C.clave_colonia GROUP BY clave_colonia HAVING COUNT(*) = (SELECT COUNT(*) FROM consulta_mros WHERE estatus = 1 AND clave_colonia = A.clave_colonia))
+        AND EXISTS (SELECT 1 FROM consulta_mros WHERE id_distrito = C.id_distrito AND clave_colonia = C.clave_colonia AND estatus = 1)
         ORDER BY nombre_delegacion, nombre_colonia`))[0];
         if (!utc.length)
             return res.status(404).json({
@@ -1138,7 +1138,7 @@ export const UTConComputo = async (req = request, res = response) => {
                 const worksheet = workbook.getWorksheet(1);
                 let fila = 12;
                 worksheet.spliceColumns(1, 1);
-                const iecm = workbook.addImage({ filename: iecmLogo, extension: 'png' });
+                const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
                 worksheet.getCell('A2').value = titulos[0];
                 worksheet.getCell('A3').value = titulos[1];
@@ -1222,8 +1222,8 @@ export const UTSinComputo = async (req = request, res = response) => {
         const utc = (await SICOVACC.sequelize.query(`SELECT UPPER(D.nombre_delegacion) AS nombre_delegacion, C.clave_colonia, UPPER(C.nombre_colonia) AS nombre_colonia
         FROM consulta_cat_colonia_cc1 C
         LEFT JOIN consulta_cat_delegacion D ON C.id_delegacion = D.id_delegacion
-        WHERE C.id_distrito = ${id_distrito} AND NOT EXISTS (SELECT 1 FROM copaco_actas A WHERE modalidad = 1 AND estatus = 1 AND clave_colonia = C.clave_colonia GROUP BY clave_colonia HAVING COUNT(*) = (SELECT COUNT(*) FROM consulta_mros WHERE estatus_copaco = 1 AND clave_colonia = A.clave_colonia))
-        AND EXISTS (SELECT 1 FROM consulta_mros WHERE id_distrito = C.id_distrito AND clave_colonia = C.clave_colonia AND estatus_copaco = 1)
+        WHERE C.id_distrito = ${id_distrito} AND NOT EXISTS (SELECT 1 FROM copaco_actas A WHERE modalidad = 1 AND estatus = 1 AND clave_colonia = C.clave_colonia GROUP BY clave_colonia HAVING COUNT(*) = (SELECT COUNT(*) FROM consulta_mros WHERE estatus = 1 AND clave_colonia = A.clave_colonia))
+        AND EXISTS (SELECT 1 FROM consulta_mros WHERE id_distrito = C.id_distrito AND clave_colonia = C.clave_colonia AND estatus = 1)
         ORDER BY nombre_delegacion, nombre_colonia`))[0];
         if (!utc.length)
             return res.status(404).json({
@@ -1237,7 +1237,7 @@ export const UTSinComputo = async (req = request, res = response) => {
                 const worksheet = workbook.getWorksheet(1);
                 let fila = 12;
                 worksheet.spliceColumns(1, 1);
-                const iecm = workbook.addImage({ filename: iecmLogo, extension: 'png' });
+                const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
                 worksheet.getCell('A2').value = titulos[0];
                 worksheet.getCell('A3').value = titulos[1];
@@ -1336,7 +1336,7 @@ export const LevantadaDistrito = async (req = request, res = response) => {
                 const worksheet = workbook.getWorksheet(1);
                 let fila = 12;
                 worksheet.spliceColumns(1, 1);
-                const iecm = workbook.addImage({ filename: iecmLogo, extension: 'png' });
+                const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
                 worksheet.addImage(iecm, { tl: { col: 0, row: 1 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
                 worksheet.getCell('A2').value = titulos[0];
                 worksheet.getCell('A3').value = titulos[1];
@@ -1434,7 +1434,7 @@ export const ActasAlerta = async (req = request, res = response) => {
                 const worksheet = workbook.getWorksheet(1);
                 let fila = 10;
                 worksheet.spliceColumns(2, 1);
-                const iecm = workbook.addImage({ filename: iecmLogo, extension: 'png' });
+                const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
                 worksheet.getCell('B2').value = titulos[0];
                 worksheet.getCell('B3').value = titulos[1];
