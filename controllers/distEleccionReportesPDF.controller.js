@@ -17,9 +17,10 @@ export const ActaComputoTotalPDF = async (req = request, res = response) => {
         const { nombre_colonia } = await ConsultaClaveColonia(clave_colonia);
         const { direccion, coordinador, coordinador_puesto, secretario, secretario_puesto } = await ConsultaDistrito(id_distrito);
         const consulta = (await SICOVACC.sequelize.query(`;WITH CA AS (
-            SELECT id_distrito, clave_colonia, modalidad, bol_nulas
+            SELECT id_distrito, clave_colonia, modalidad, SUM(bol_nulas) AS bol_nulas
             FROM copaco_actas
             WHERE id_distrito = ${id_distrito} AND clave_colonia = '${clave_colonia}'
+            GROUP BY id_distrito, clave_colonia, modalidad
         ),
         Acta AS (
             SELECT V.secuencial AS orden, dbo.NumeroALetras(V.secuencial) AS secuencial, SUM(V.votos) AS votos, SUM(V.votos_sei) AS votos_sei, SUM(V.total_votos) AS total_votos
@@ -201,7 +202,6 @@ export const ActaComputoTotalPDF = async (req = request, res = response) => {
             });
         });
     } catch (err) {
-        console.log(err)
         console.error(`Error al generar el Acta de Cómputo Total en PDF: ${err}`);
         res.status(500).json({
             success: false,
