@@ -65,7 +65,7 @@ export const ProyectosParticipantes = async (req = request, res = response) => {
             doc.font('Helvetica').text('Clave de la Unidad Territorial:', 70, 262, { width: 1050, align: 'center' }).font('Helvetica-Bold').text(`(${clave_colonia})`, 70, 282, { width: 1050, align: 'center' });
             doc.font('Helvetica', 14).text(`Fecha: ${fecha}`, 70, 198, { width: 1050, align: 'right' }).text(`Hora: ${hora.substring(0, hora.length - 3)}`, 70, 228, { width: 1050, align: 'right' }).text('FORMATO 1', 70, 258, { width: 1050, align: 'right' });
             DibujarTablaPDF(doc, 70, 322, [
-                [{ text: 'CLAVE DEL PROYECTO', font: 'Helvetica-Bold', fontSize: 14, background: '#C0C0C0' }],
+                [{ text: 'NÚMERO DE PROYECTO', font: 'Helvetica-Bold', fontSize: 14, background: '#C0C0C0' }],
                 [{ text: 'FOLIO DE REGISTRO', font: 'Helvetica-Bold', fontSize: 14, background: '#C0C0C0' }],
                 [{ text: 'RUBRO GENERAL', font: 'Helvetica-Bold', fontSize: 14, background: '#C0C0C0' }],
                 [{ text: 'NOMBRE DEL PROYECTO', font: 'Helvetica-Bold', fontSize: 14, background: '#C0C0C0' }]

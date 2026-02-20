@@ -39,7 +39,8 @@ router.post('/validacionResultados/:id_distrito', [
     param('id_distrito').exists().notEmpty(),
     chkDistrito('1'),
     body('anio').exists().notEmpty().isInt({ min: 2, max: 3 }).withMessage('El valor debe de ser 2 al 3'),
-    Validator
+    Validator,
+    StatusReporte(false)
 ], ValidacionResultados);
 
 //? F5 - Validación de Resultados de la Consulta Detalle Mesa - Excel
@@ -48,7 +49,8 @@ router.post('/validacionResultadosDetalle/:id_distrito', [
     param('id_distrito').exists().notEmpty(),
     chkDistrito('1'),
     body('anio').exists().notEmpty().isInt({ min: 2, max: 3 }).withMessage('El valor debe de ser 2 al 3'),
-    Validator
+    Validator,
+    StatusReporte(false)
 ], ValidacionResultadosDetalle);
 
 //? F6 - Validación de Resultados de la Consulta por Nombre del Proyecto - Escel
@@ -58,7 +60,8 @@ router.post('/validacionResultadosNombre/:id_distrito', [
     chkDistrito('1'),
     body('clave_colonia').exists().notEmpty().isString(),
     body('anio').exists().notEmpty().isInt({ min: 2, max: 3 }).withMessage('El valor debe de ser 2 al 3'),
-    Validator
+    Validator,
+    StatusReporte()
 ], ValidacionResultadosNombre);
 
 //? F7 - Validación de Resultados de la Consulta por Nombre del Proyecto (Detalle por Mesa) - Excel
@@ -68,7 +71,8 @@ router.post('/validacionResultadosNombreDetalle/:id_distrito', [
     chkDistrito('1'),
     body('clave_colonia').exists().notEmpty().isString(),
     body('anio').exists().notEmpty().isInt({ min: 2, max: 3 }).withMessage('El valor debe de ser 2 al 3'),
-    Validator
+    Validator,
+    StatusReporte()
 ], ValidacionResultadosNombreDetalle);
 
 //? F8 - Mesas Con Cómputo Capturado - Excel
@@ -180,7 +184,7 @@ router.post('/constancia/:id_distrito', [
     body('tipo').exists().notEmpty().isString().isIn(['PDF', 'WORD']).withMessage(`El tipo debe de ser 'PDF' o 'WORD'`),
     body('anio').exists().notEmpty().isInt({ min: 2, max: 3 }).withMessage('El valor debe de ser 2 al 3'),
     Validator,
-    StatusReporte
+    StatusReporte()
 ], async (req = request, res = response) => {
     const { tipo } = req.body;
     if (tipo.toLowerCase() == 'pdf')
@@ -198,7 +202,7 @@ router.post('/actaValidacion/:id_distrito', [
     body('tipo').exists().notEmpty().isString().isIn(['PDF', 'WORD']).withMessage(`El tipo debe de ser 'PDF' o 'WORD'`),
     body('anio').exists().notEmpty().isInt({ min: 2, max: 3 }).withMessage('El valor debe de ser 2 al 3'),
     Validator,
-    StatusReporte
+    StatusReporte()
 ], async (req = request, res = response) => {
     const { tipo } = req.body;
     if (tipo.toLowerCase() == 'pdf')

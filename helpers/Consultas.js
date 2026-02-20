@@ -1,5 +1,4 @@
 import { SICOVACC } from '../models/consulta_usuarios_sicovacc.model.js';
-import { aniosCAT } from './Constantes.js';
 
 //? Regresa la fecha del servidor
 export const FechaServer = async () => {

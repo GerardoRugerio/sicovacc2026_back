@@ -112,7 +112,7 @@ router.post('/actaComputoTotal/:id_distrito', [
     body('clave_colonia').exists().notEmpty().isString(),
     body('tipo').exists().notEmpty().isString().isIn(['PDF', 'WORD']).withMessage(`El tipo debe de ser 'PDF' o 'WORD'`),
     Validator,
-    StatusReporte
+    StatusReporte()
 ], async (req = request, res = response) => {
     const { tipo } = req.body;
     if (tipo.toLowerCase() == 'pdf')
