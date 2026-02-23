@@ -121,12 +121,14 @@ export const TextoMultiFuente = (doc = PDFDocument, x, y, width, fontSize, fontB
 export const DibujarTablaPDF = (doc = PDFDocument, x, y, encabezados, columnas, datos, options = {}) => {
     const { margen = 2, fontSize = 7 } = options;
     let offsetY = y;
+    let altura = 0;
     //? Función interna para dibujas una fila
     const dibujarFila = (blocks) => {
         let offsetX = x, height = 0;
         //? Calcula la altura de cada celda según su contenido
         const alturas = blocks.map((block, index) => CalcularAltoAncho(doc, block, block[0].fontSize ?? fontSize, columnas[index].width - margen + 1).totalHeight);
         const maxHeight = Math.max(...alturas) + (margen * 2);
+        altura += maxHeight;
         //? Dibuja cada celda de la fila
         blocks.map((block, index) => {
             const colWidth = columnas[index].width;
@@ -142,8 +144,11 @@ export const DibujarTablaPDF = (doc = PDFDocument, x, y, encabezados, columnas, 
         });
         offsetY += maxHeight;
     };
-    dibujarFila(encabezados);
-    datos.map(blocks => dibujarFila(blocks));
+    if (encabezados)
+        dibujarFila(encabezados);
+    if (datos)
+        datos.map(blocks => dibujarFila(blocks));
+    return altura;
 }
 
 export const CalcularAltoAncho = (doc = PDFDocument, fontBlocks, fontSize, width, lineHeight = 1.15) => {
