@@ -2,7 +2,7 @@ import { request, response } from 'express';
 import PDFDocument from 'pdfkit';
 import { CalcularAltoAncho, DibujarTablaPDF, TextoMultiFuente } from '../helpers/ActasPDF.js';
 import { anioN, autor, AveAzteca, IECMLogo, IECMLogoBN, SerpienteAzteca } from '../helpers/Constantes.js';
-import { ConsultaClaveColonia, ConsultaDelegacion, ConsultaDistrito, ConsultaTipoEleccion, FechaServer, InformacionConstancia } from '../helpers/Consultas.js';
+import { ConsultaClaveColonia, ConsultaDelegacion, ConsultaDistrito, ConsultaTipoEleccion, FechaHoraActa, FechaServer, InformacionConstancia } from '../helpers/Consultas.js';
 import { DividirArreglo, NumAMes, NumAText } from '../helpers/Funciones.js';
 import { SICOVACC } from '../models/consulta_usuarios_sicovacc.model.js';
 
@@ -228,6 +228,7 @@ export const ActaValidacionPDF = async (req = request, res = response) => {
         const { nombre_delegacion } = await ConsultaDelegacion(id_distrito, clave_colonia);
         const { nombre_colonia } = await ConsultaClaveColonia(clave_colonia);
         const { direccion, coordinador, coordinador_puesto, secretario, secretario_puesto } = await ConsultaDistrito(id_distrito);
+        const { fechaActa, horaActa } = await FechaHoraActa(id_distrito, clave_colonia, anio);
         const eleccion = await ConsultaTipoEleccion(anio);
         const consulta = (await SICOVACC.sequelize.query(`SELECT secuencial AS num_proyecto, SUM(total_votos) AS total_votos
         FROM consulta_actas_VVS
@@ -260,9 +261,9 @@ export const ActaValidacionPDF = async (req = request, res = response) => {
             [{ text: NumAText(total), font: 'Helvetica-Bold', fontSize: 10, background: '#F2F2F2', strokeColor: '#BFBFBF' }]
         ]);
         const encabezados = [
-            [{ text: 'Número de proyecto', font: 'Helvetica-Bold', fontSize: 12, background: '#F2F2F2', strokeColor: '#BFBFBF' }],
-            [{ text: 'Total con número', font: 'Helvetica-Bold', fontSize: 12, background: '#F2F2F2', strokeColor: '#BFBFBF' }],
-            [{ text: 'Total con letra', font: 'Helvetica-Bold', fontSize: 12, background: '#F2F2F2', strokeColor: '#BFBFBF' }]
+            [{ text: 'NÚMERO DE PROYECTO', font: 'Helvetica-Bold', fontSize: 12, background: '#F2F2F2', strokeColor: '#BFBFBF' }],
+            [{ text: 'TOTAL CON NÚMERO', font: 'Helvetica-Bold', fontSize: 12, background: '#F2F2F2', strokeColor: '#BFBFBF' }],
+            [{ text: 'TOTAL CON LETRA', font: 'Helvetica-Bold', fontSize: 12, background: '#F2F2F2', strokeColor: '#BFBFBF' }]
         ];
         const columnas = [
             { width: 100, align: 'center' },
@@ -285,7 +286,7 @@ export const ActaValidacionPDF = async (req = request, res = response) => {
         for (let i = 0; i < datos.length; i++) {
             if (newPage) {
                 doc.rect(50, 50, 740, 70).fillAndStroke('#000', '#000');
-                TextoMultiFuente(doc, 190, 68, 425, 16, [
+                TextoMultiFuente(doc, 180, 68, 425, 16, [
                     { text: 'ACTA DE VALIDACIÓN DE RESULTADOS', font: 'Helvetica-Bold' },
                     { text: `DE LA CONSULTA DE ${eleccion.toUpperCase()}`, font: 'Helvetica' }
                 ], {
@@ -293,13 +294,13 @@ export const ActaValidacionPDF = async (req = request, res = response) => {
                     lineHeight: 1.5,
                     align: 'center'
                 });
-                doc.font('Helvetica-Bold').fillColor('#FFF').text(`APP${anio == 2 ? '26' : '27'}\n05`, 710, 70, { width: 80, align: 'center' });
+                doc.font('Helvetica-Bold').fillColor('#FFF').text(`AP${anio == 2 ? '26' : '27'}\n05`, 710, 70, { width: 80, align: 'center' });
                 doc.image(IECMLogoBN, 40, 55, {
                     fit: [150, 60],
                     align: 'center',
                     valign: 'center'
                 });
-                doc.image(anio == 2 ? AveAzteca : SerpienteAzteca, 590, 55, {
+                doc.image(anio == 2 ? AveAzteca : SerpienteAzteca, 580, 55, {
                     fit: [150, 60],
                     align: 'center',
                     valign: 'center'
@@ -315,20 +316,22 @@ export const ActaValidacionPDF = async (req = request, res = response) => {
                 doc.rect(50, 185, 740, 20).fillAndStroke('#F2F2F2', '#BFBFBF').font('Helvetica-Bold', 14).fillColor('#000').text('INFORMACIÓN DE LA VALIDACIÓN', 50, 190, { width: 740, align: 'center' });
                 TextoMultiFuente(doc, 50, 210, 740, 10, [
                     { text: 'En la Ciudad de México, siendo las', font: 'Helvetica' },
-                    { text: `${hora.substring(0, hora.length - 3)}`, font: 'Helvetica', underline: true },
+                    { text: `${horaActa}`, font: 'Helvetica', underline: true },
                     { text: ' horas del', font: 'Helvetica' },
-                    { text: `${fecha.split('/')[0]}`, font: 'Helvetica', underline: true },
+                    { text: `${fechaActa.split('/')[0]}`, font: 'Helvetica', underline: true },
                     { text: ' de', font: 'Helvetica' },
-                    { text: `${NumAMes(+fecha.split('/')[1]).toLowerCase()}`, font: 'Helvetica', underline: true },
+                    { text: `${NumAMes(+fechaActa.split('/')[1]).toLowerCase()}`, font: 'Helvetica', underline: true },
                     { text: ' de', font: 'Helvetica' },
-                    { text: `${fecha.split('/')[2]}`, font: 'Helvetica' },
+                    { text: `${fechaActa.split('/')[2]}`, font: 'Helvetica' },
                     { text: ', en el domicilio que ocupa la Dirección Distrital', font: 'Helvetica' },
                     { text: `${id_distrito}`, font: 'Helvetica', underline: true },
                     { text: ', situada en', font: 'Helvetica' },
                     { text: `${direccion}`, font: 'Helvetica', underline: true },
                     { text: ', se realizó el', font: 'Helvetica' },
                     { text: 'cómputo total', font: 'Helvetica-Bold' },
-                    { text: `de la Unidad Territorial referida en la presente acta, correspondiente a la Consulta de ${eleccion}.`, font: 'Helvetica' }
+                    { text: 'de la Unidad Territorial referida en la presente acta, correspondiente a la', font: 'Helvetica' },
+                    { text: `Consulta de ${eleccion}`, font: 'Helvetica-Bold' },
+                    { text: '.', font: 'Helvetica' }
                 ], {
                     fillColor: '#000',
                     lineHeight: 1.5,
@@ -381,7 +384,7 @@ export const ActaValidacionPDF = async (req = request, res = response) => {
             ]
         ]);
         x = CalcularAltoAncho(doc, [{ text: coordinador_puesto, font: 'Helvetica', fontSize: 10 }], 10, 280, 1.15).totalHeight;
-        doc.font('Helvetica', 8).text('SE LEVANTA LA PRESENTE ACTA CON FUNDAMENTO EN LOS ARTÍCULOS 6 FRACCIÓN I, 36 PÁRRAFO PRIMERO, 113 FRACCIÓN V, 362 PRIMER Y SEGUNDO PÁRRAFO Y 367 DEL CÓDIGO DE INSTITUCIONES Y PROCEDIMIENTOS ELECTORALES DE LA CIUDAD DE MÉXICO; 116+, 124 FRACCIÓN IV Y 129 FRACCIÓN II DE LA LEY DE PARTICIPACIÓN CIUDADANA DE LA CIUDAD DE MÉXICO; ASÍ COMO DEL NUMERAL 16 DE LAS DISPOSICIONES GENERALES DE LA CONVOCATORIA ÚNICA APROBADA POR EL CONSEJO GENERAL DEL INSTITUTO ELECTORAL DE LA CIUDAD DE MÉXICO MEDIANTE ACUERDO IECM/ACU-CG-004/2026 DE FECHA 09 DE ENERO DE 2026.', 50, doc.y + (x / 2) + 9, { width: 740, align: 'justify' });
+        doc.font('Helvetica', 8).text('SE LEVANTA LA PRESENTE ACTA CON FUNDAMENTO EN LOS ARTÍCULOS 6 FRACCIÓN I, 36 PÁRRAFO PRIMERO, 113 FRACCIÓN V, 362 PRIMER Y SEGUNDO PÁRRAFO Y 367 DEL CÓDIGO DE INSTITUCIONES Y PROCEDIMIENTOS ELECTORALES DE LA CIUDAD DE MÉXICO; 116, 124 FRACCIÓN IV Y 129 FRACCIÓN II DE LA LEY DE PARTICIPACIÓN CIUDADANA DE LA CIUDAD DE MÉXICO; ASÍ COMO DEL NUMERAL 16 DE LAS DISPOSICIONES GENERALES DE LA CONVOCATORIA ÚNICA APROBADA POR EL CONSEJO GENERAL DEL INSTITUTO ELECTORAL DE LA CIUDAD DE MÉXICO MEDIANTE ACUERDO IECM/ACU-CG-004/2026 DE FECHA 09 DE ENERO DE 2026.', 50, doc.y + (x / 2) + 9, { width: 740, align: 'justify' });
         if (paginas > 1)
             for (let i = 0; i < paginas; i++) {
                 doc.switchToPage(i);

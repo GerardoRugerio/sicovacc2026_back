@@ -4,7 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import PizZip from 'pizzip';
 import { plantillas } from '../helpers/Constantes.js';
-import { ConsultaClaveColonia, ConsultaDelegacion, ConsultaDistrito, FechaServer } from '../helpers/Consultas.js';
+import { ConsultaClaveColonia, ConsultaDelegacion, ConsultaDistrito, FechaHoraActa, FechaServer } from '../helpers/Consultas.js';
 import { NumAMes, NumAText } from '../helpers/Funciones.js';
 import { SICOVACC } from '../models/consulta_usuarios_sicovacc.model.js';
 
@@ -18,10 +18,12 @@ export const ActaComputoTotalWord = async (req = request, res = response) => {
         const { nombre_delegacion } = await ConsultaDelegacion(id_distrito, clave_colonia);
         const { nombre_colonia } = await ConsultaClaveColonia(clave_colonia);
         const { direccion, coordinador, coordinador_puesto, secretario, secretario_puesto } = await ConsultaDistrito(id_distrito);
+        const { fechaActa, horaActa } = await FechaHoraActa(id_distrito, clave_colonia, 1);
         const consulta = (await SICOVACC.sequelize.query(`;WITH CA AS (
-            SELECT id_distrito, clave_colonia, modalidad, bol_nulas
+            SELECT id_distrito, clave_colonia, modalidad, SUM(bol_nulas) AS bol_nulas
             FROM copaco_actas
             WHERE id_distrito = ${id_distrito} AND clave_colonia = '${clave_colonia}'
+            GROUP BY id_distrito, clave_colonia, modalidad
         ),
         Acta AS (
             SELECT V.secuencial AS orden, dbo.NumeroALetras(V.secuencial) AS secuencial, SUM(V.votos) AS votos, SUM(V.votos_sei) AS votos_sei, SUM(V.total_votos) AS total_votos
@@ -68,10 +70,10 @@ export const ActaComputoTotalWord = async (req = request, res = response) => {
                 dd: id_distrito,
                 ut: clave_colonia,
                 colonia: nombre_colonia,
-                hora: hora.substring(0, hora.length - 3),
-                dia: fecha.split('/')[0],
-                mes: NumAMes(+fecha.split('/')[1]).toLowerCase(),
-                anio: +fecha.split('/')[2],
+                hora: horaActa,
+                dia: fechaActa.split('/')[0],
+                mes: NumAMes(+fechaActa.split('/')[1]).toLowerCase(),
+                anio: +fechaActa.split('/')[2],
                 direccion,
                 participantes,
                 nulas, nulas_sei, total_nulas, total_nulasL: NumAText(total_nulas),

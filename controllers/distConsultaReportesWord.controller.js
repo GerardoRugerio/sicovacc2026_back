@@ -5,7 +5,7 @@ import fs from 'fs';
 import path from 'path';
 import PizZip from 'pizzip';
 import { anioN, AveAzteca, plantillas, SerpienteAzteca } from '../helpers/Constantes.js';
-import { ConsultaClaveColonia, ConsultaDelegacion, ConsultaDistrito, ConsultaTipoEleccion, FechaServer, InformacionConstancia } from '../helpers/Consultas.js';
+import { ConsultaClaveColonia, ConsultaDelegacion, ConsultaDistrito, ConsultaTipoEleccion, FechaHoraActa, FechaServer, InformacionConstancia } from '../helpers/Consultas.js';
 import { NumAMes, NumAText } from '../helpers/Funciones.js';
 import { SICOVACC } from '../models/consulta_usuarios_sicovacc.model.js';
 
@@ -92,6 +92,7 @@ export const ActaValidacionWord = async (req = request, res = response) => {
         const { nombre_delegacion } = await ConsultaDelegacion(id_distrito, clave_colonia);
         const { nombre_colonia } = await ConsultaClaveColonia(clave_colonia);
         const { direccion, coordinador, coordinador_puesto, secretario, secretario_puesto } = await ConsultaDistrito(id_distrito);
+        const { fechaActa, horaActa } = await FechaHoraActa(id_distrito, clave_colonia, anio);
         const eleccion = await ConsultaTipoEleccion(anio);
         const eleccion1 = eleccion.toUpperCase();
         const consulta = (await SICOVACC.sequelize.query(`SELECT secuencial, SUM(total_votos) AS total_votos
@@ -142,10 +143,10 @@ export const ActaValidacionWord = async (req = request, res = response) => {
                 dd: id_distrito,
                 ut: clave_colonia,
                 colonia: nombre_colonia,
-                hora: hora.substring(0, hora.length - 3),
-                dia: +fecha.split('/')[0],
-                mes: NumAMes(+fecha.split('/')[1]).toLowerCase(),
-                anio: +fecha.split('/')[2],
+                hora: horaActa,
+                dia: +fechaActa.split('/')[0],
+                mes: NumAMes(+fechaActa.split('/')[1]).toLowerCase(),
+                anio: +fechaActa.split('/')[2],
                 direccion,
                 proyectos,
                 nulas: bol_nulas,

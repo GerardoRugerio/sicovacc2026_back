@@ -1,6 +1,6 @@
 import { request, response } from 'express';
 import { Audit } from '../helpers/Audit.js';
-import { aniosCAT, TipoMesa } from '../helpers/Constantes.js';
+import { TipoMesa } from '../helpers/Constantes.js';
 import { ConsultaClaveColonia, ConsultaDelegacion, ConsultaExistenciaActas, ConsultaVerificaInicioCierre, ConsultaVerificaProyectos } from '../helpers/Consultas.js';
 import { Comillas, EncryptData, LetrasANumero } from '../helpers/Funciones.js';
 import { SICOVACC } from '../models/consulta_usuarios_sicovacc.model.js';
@@ -318,13 +318,15 @@ export const VerificarConsultaMesa = async (req = request, res = response) => {
                     msg: 'Esta Unidad Territorial tiene proyectos Sin Sortear'
                 });
         }
-        const datos = JSON.parse((await SICOVACC.sequelize.query(`;WITH C AS (
-            SELECT UPPER(CCD.nombre_delegacion) AS nombre_delegacion, COALESCE(CA.bol_nulas, 0) AS bol_nulas_sei, COALESCE(CA.votacion_total_emitida, 0) AS opi_total_sei, M.id_distrito, M.clave_colonia, M.num_mro, M.tipo_mro${anio != 1 ? ', CA.anio' : ''}
-            FROM consulta_mros M
-            LEFT JOIN ${anio == 1 ? 'copaco' : 'consulta'}_actas CA ON M.id_distrito = CA.id_distrito AND M.clave_colonia = CA.clave_colonia AND M.num_mro = CA.num_mro AND M.tipo_mro = CA.tipo_mro AND CA.modalidad = 2 AND CA.estatus = 1${anio != 1 ? ` AND CA.anio = ${anio}` : ''}
-            LEFT JOIN consulta_cat_delegacion CCD ON M.id_delegacion = CCD.id_delegacion
-            WHERE M.id_distrito = ${id_distrito} AND M.clave_colonia = '${clave_colonia}' AND M.num_mro = ${num_mro} AND M.tipo_mro = ${tipo_mro}
-        ), V AS (
+        const datos = JSON.parse((await SICOVACC.sequelize.query(`;WITH I AS (SELECT ${id_distrito} AS id_distrito, '${clave_colonia}' AS clave_colonia, ${num_mro} AS num_mro, ${tipo_mro} AS tipo_mro${anio != 1 ? `, ${anio} AS anio` : ''}),
+        C AS (
+            SELECT UPPER(D.nombre_delegacion) AS nombre_delegacion, COALESCE(A2.bol_nulas, 0) AS bol_nulas_sei, COALESCE(A2.votacion_total_emitida, 0) AS opi_total_sei, I.id_distrito, I.clave_colonia, I.num_mro, I.tipo_mro${anio != 1 ? ', I.anio' : ''}
+            FROM I
+            LEFT JOIN consulta_mros M ON I.id_distrito = M.id_distrito AND I.clave_colonia = M.clave_colonia AND I.num_mro = M.num_mro AND I.tipo_mro = M.tipo_mro
+            LEFT JOIN ${anio == 1 ? 'copaco' : 'consulta'}_actas A2 ON I.id_distrito = A2.id_distrito AND I.clave_colonia = A2.clave_colonia AND I.num_mro = A2.num_mro AND I.tipo_mro = A2.tipo_mro AND A2.modalidad = 2 AND A2.estatus = 2${anio != 1 ? ' AND I.anio = A2.anio' : ''}
+            LEFT JOIN consulta_cat_delegacion D ON M.id_delegacion = D.id_delegacion
+        ),
+        V AS (
             SELECT secuencial, ${anio == 1 ? 'nombreC' : 'nom_proyecto'} AS nom_p${anio != 1 ? ', rubro_general' : ''}, '' AS votos, votos_sei, id_distrito, clave_colonia, num_mro, tipo_mro${anio != 1 ? ', anio' : ''}
             FROM ${anio == 1 ? 'copaco' : 'consulta'}_actas_VVS
             WHERE estatus = 1
@@ -356,7 +358,6 @@ export const VerificarConsultaMesa = async (req = request, res = response) => {
 export const DatosActa = async (req = request, res = response) => {
     const { id_acta } = req.params;
     const { anio } = req.query;
-    const campo = aniosCAT[0][anio].replace('_copaco', '');
     try {
         const datos = JSON.parse((await SICOVACC.sequelize.query(`;WITH C AS (
             SELECT CA1.id_acta, CA1.clave_colonia, UPPER(CCC.nombre_colonia) AS nombre_colonia, CA1.id_delegacion, UPPER(CCD.nombre_delegacion) AS nombre_delegacion, CA1.num_mro, CA1.tipo_mro, CONCAT('M', RIGHT('00' + CA1.num_mro, 2)) AS mro,
@@ -437,12 +438,14 @@ export const RegistrarActa = async (req = request, res = response) => {
         //         });
         // }
         const { id_delegacion } = await ConsultaDelegacion(id_distrito, clave_colonia);
-        await SICOVACC.sequelize.query(`INSERT ${anio == 1 ? 'copaco' : 'consulta'}_actas (id_distrito, id_delegacion, clave_colonia, num_mro, tipo_mro, modalidad, coordinador_sino, num_integrantes, bol_recibidas, total_ciudadanos, bol_sobrantes, bol_nulas, opi_total_computada, votacion_total_emitida, ${insertVotos.substring(0, insertVotos.length - 2)}, bol_adicionales, levantada_distrito, observador_sino, razon_distrital,${anio != 1 ? ' anio,' : ''} id_incidencia, id_usuario, fecha_alta, estatus)
-        VALUES (${id_distrito}, ${id_delegacion}, '${clave_colonia}', ${num_mro}, ${tipo_mro}, 1, ${coordinador_sino ? 1 : 0}, ${num_integrantes ? num_integrantes : 'NULL'}, ${bol_recibidas}, ${total_ciudadanos}, ${bol_sobrantes}, ${bol_nulas}, 0, ${bol_total_emitidas}, ${valuesVotos.substring(0, valuesVotos.length - 2)}, ${bol_adicionales}, ${levantada_distrito ? 1 : 0}, ${observador_sino ? 1 : 0}, ${razon_distrital ? `'${razon_distrital}'` : 'NULL'},${anio != 1 ? ` ${anio},` : ''} ${id_incidencia ? id_incidencia : 'NULL'}, ${id_usuario}, CURRENT_TIMESTAMP, 1)`);
+        const { id_acta } = (await SICOVACC.sequelize.query(`INSERT ${anio == 1 ? 'copaco' : 'consulta'}_actas (id_distrito, id_delegacion, clave_colonia, num_mro, tipo_mro, modalidad, coordinador_sino, num_integrantes, bol_recibidas, total_ciudadanos, bol_sobrantes, bol_nulas, opi_total_computada, votacion_total_emitida, ${insertVotos.substring(0, insertVotos.length - 2)}, bol_adicionales, levantada_distrito, observador_sino, razon_distrital,${anio != 1 ? ' anio,' : ''} id_incidencia, id_usuario, fecha_alta, estatus)
+        OUTPUT INSERTED.id_acta
+        VALUES (${id_distrito}, ${id_delegacion}, '${clave_colonia}', ${num_mro}, ${tipo_mro}, 1, ${coordinador_sino ? 1 : 0}, ${num_integrantes ? num_integrantes : 'NULL'}, ${bol_recibidas}, ${total_ciudadanos}, ${bol_sobrantes}, ${bol_nulas}, 0, ${bol_total_emitidas}, ${valuesVotos.substring(0, valuesVotos.length - 2)}, ${bol_adicionales}, ${levantada_distrito ? 1 : 0}, ${observador_sino ? 1 : 0}, ${razon_distrital ? `'${razon_distrital}'` : 'NULL'},${anio != 1 ? ` ${anio},` : ''} ${id_incidencia ? id_incidencia : 'NULL'}, ${id_usuario}, CURRENT_TIMESTAMP, 1)`))[0][0];
         await Audit(id_transaccion, id_usuario, id_distrito, `REGISTRÓ EL ACTA DE LA ${anio == 1 ? 'ELECCIÓN' : 'CONSULTA'}, DE LA UT ${clave_colonia}, MESA M${String(num_mro).padStart(2, '0')}${tipo_mro != 1 ? `, DE TIPO DE MESA ${TipoMesa(tipo_mro)}` : ''}`);
         res.json({
             success: true,
-            msg: 'Acta Registrada'
+            msg: 'Acta Registrada',
+            id_acta: EncryptData(id_acta)
         });
     } catch (err) {
         console.error(`Error en RegistrarActa: ${err}`);

@@ -2,7 +2,7 @@ import { request, response } from 'express';
 import PDFDocument from 'pdfkit';
 import { CalcularAltoAncho, DibujarTablaPDF, TextoMultiFuente } from '../helpers/ActasPDF.js';
 import { autor, CalendarioAzteca, IECMLogoBN } from '../helpers/Constantes.js';
-import { ConsultaClaveColonia, ConsultaDelegacion, ConsultaDistrito, FechaServer } from '../helpers/Consultas.js';
+import { ConsultaClaveColonia, ConsultaDelegacion, ConsultaDistrito, FechaHoraActa, FechaServer } from '../helpers/Consultas.js';
 import { NumAMes, NumAText } from '../helpers/Funciones.js';
 import { SICOVACC } from '../models/consulta_usuarios_sicovacc.model.js';
 
@@ -16,6 +16,7 @@ export const ActaComputoTotalPDF = async (req = request, res = response) => {
         const { nombre_delegacion } = await ConsultaDelegacion(id_distrito, clave_colonia);
         const { nombre_colonia } = await ConsultaClaveColonia(clave_colonia);
         const { direccion, coordinador, coordinador_puesto, secretario, secretario_puesto } = await ConsultaDistrito(id_distrito);
+        const { fechaActa, horaActa } = await FechaHoraActa(id_distrito, clave_colonia, 1);
         const consulta = (await SICOVACC.sequelize.query(`;WITH CA AS (
             SELECT id_distrito, clave_colonia, modalidad, SUM(bol_nulas) AS bol_nulas
             FROM copaco_actas
@@ -103,7 +104,7 @@ export const ActaComputoTotalPDF = async (req = request, res = response) => {
         for (let i = 0; i < datos.length; i++) {
             if (newPage) {
                 doc.rect(50, 50, 740, 70).fillAndStroke('#000', '#000');
-                TextoMultiFuente(doc, 190, 68, 425, 16, [
+                TextoMultiFuente(doc, 180, 68, 425, 16, [
                     { text: 'ACTA DE CÓMPUTO TOTAL', font: 'Helvetica-Bold' },
                     { text: 'DE LA ELECCIÓN DE LAS COMISIONES DE PARTICIPACIÓN COMUNITARIA 2026', font: 'Helvetica' }
                 ], {
@@ -117,7 +118,7 @@ export const ActaComputoTotalPDF = async (req = request, res = response) => {
                     align: 'center',
                     valign: 'center'
                 });
-                doc.image(CalendarioAzteca, 600, 55, {
+                doc.image(CalendarioAzteca, 580, 55, {
                     fit: [150, 60],
                     align: 'center',
                     valign: 'center'
@@ -133,13 +134,13 @@ export const ActaComputoTotalPDF = async (req = request, res = response) => {
                 doc.rect(50, 185, 740, 20).fillAndStroke('#F2F2F2', '#BFBFBF').font('Helvetica-Bold', 14).fillColor('#000').text('INFORMACIÓN DE LA VALIDACIÓN', 50, 190, { width: 740, align: 'center' });
                 TextoMultiFuente(doc, 50, 210, 740, 10, [
                     { text: 'En la Ciudad de México, siendo las', font: 'Helvetica' },
-                    { text: `${hora.substring(0, hora.length - 3)}`, font: 'Helvetica', underline: true },
+                    { text: `${horaActa}`, font: 'Helvetica', underline: true },
                     { text: ' horas del', font: 'Helvetica' },
-                    { text: `${fecha.split('/')[0]}`, font: 'Helvetica', underline: true },
+                    { text: `${fechaActa.split('/')[0]}`, font: 'Helvetica', underline: true },
                     { text: ' de', font: 'Helvetica' },
-                    { text: `${NumAMes(+fecha.split('/')[1]).toLowerCase()}`, font: 'Helvetica', underline: true },
+                    { text: `${NumAMes(+fechaActa.split('/')[1]).toLowerCase()}`, font: 'Helvetica', underline: true },
                     { text: ' de', font: 'Helvetica' },
-                    { text: `${fecha.split('/')[2]}`, font: 'Helvetica' },
+                    { text: `${fechaActa.split('/')[2]}`, font: 'Helvetica' },
                     { text: ', en el domicilio que ocupa la Dirección Distrital', font: 'Helvetica' },
                     { text: `${id_distrito}`, font: 'Helvetica', underline: true },
                     { text: ', situada en', font: 'Helvetica' },
