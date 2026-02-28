@@ -4,7 +4,7 @@ import { SICOVACC } from '../models/consulta_usuarios_sicovacc.model.js';
 export const IniciarSesion = async (id_usuario, id_distrito, ip_cliente, useragent, descripcion) => {
     try {
         const so_cliente = useragent.split('/')[1].trim(), navegador_cliente = useragent.split('/')[0].trim();
-        await SICOVACC.sequelize.query(`INSERT consulta_audit (id_usuario, id_distrito, ip_cliente, so_cliente, navegador_cliente, fecha_inicio, estatus) values(${id_usuario}, ${id_distrito}, '${ip_cliente}', '${so_cliente}', '${navegador_cliente}', CURRENT_TIMESTAMP, 1)`);
+        await SICOVACC.sequelize.query(`INSERT consulta_audit (id_usuario, id_distrito, ip_cliente, so_cliente, navegador_cliente, fecha_inicio, estatus) VALUES (${id_usuario}, ${id_distrito}, '${ip_cliente}', '${so_cliente}', '${navegador_cliente}', CURRENT_TIMESTAMP, 1)`);
         const consulta = await SICOVACC.sequelize.query(`SELECT TOP 1 ID, CONVERT(VARCHAR(25), fecha_inicio, 121) AS fecha FROM consulta_audit WHERE estatus = 1 AND id_usuario = ${id_usuario} ORDER BY fecha_inicio DESC`);
         const { ID, fecha } = consulta[0][0];
         await Audit(ID, id_usuario, id_distrito, descripcion, fecha);
@@ -36,4 +36,4 @@ export const CerrarSesion = async (id_transaccion, descripcion) => {
 }
 
 //? Registra todas las acciones que el usuario haga
-export const Audit = async (id_transaccion_det, id_usuario, id_distrito, descripcion, fecha_registro = 'CURRENT_TIMESTAMP') => await SICOVACC.sequelize.query(`INSERT consulta_audit_det (id_transaccion_det, id_usuario, id_distrito, descripcion, fecha_registro) VALUES(${id_transaccion_det}, ${id_usuario}, ${id_distrito}, UPPER('${descripcion}'), ${!fecha_registro.match('CURRENT_TIMESTAMP') ? `'${fecha_registro}'` : fecha_registro})`);
+export const Audit = async (id_transaccion_det, id_usuario, id_distrito, descripcion, fecha_registro = 'CURRENT_TIMESTAMP') => await SICOVACC.sequelize.query(`INSERT consulta_audit_det (id_transaccion_det, id_usuario, id_distrito, descripcion, fecha_registro) VALUES (${id_transaccion_det}, ${id_usuario}, ${id_distrito}, UPPER('${descripcion}'), ${!fecha_registro.match('CURRENT_TIMESTAMP') ? `'${fecha_registro}'` : fecha_registro})`);

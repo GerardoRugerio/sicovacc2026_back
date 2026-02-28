@@ -143,3 +143,7 @@ export const InformacionConstancia = async (anio, clave_colonia) => {
     ORDER BY CA.ultimaFecha, CA.ultimaHora DESC`);
     return consulta[0][0];
 }
+
+export const FechaHoraActa = async (id_distrito, clave_colonia, anio) => (await SICOVACC.sequelize.query(`SELECT CONVERT(VARCHAR(10), fecha_alta, 103) AS fechaActa, CONVERT(VARCHAR(5), fecha_alta, 114) AS horaActa
+    FROM ${anio == 1 ? 'copaco' : 'consulta'}_actas
+    WHERE modalidad = 1 AND id_distrito = ${id_distrito} AND clave_colonia = '${clave_colonia}'${anio != 1 ? ` AND anio = ${anio}` : ''}`))[0][0];
