@@ -49,26 +49,8 @@ export const StatusReporte = (required = true) => {
         if (!validada)
             return res.status(400).json({
                 success: false,
-                msg: `Esta Unidad Territorial todavía no está validada, ${mesasFalt == 1 ? `falta ${mesasFalt} Mesa` : `faltan ${mesasFalt} Mesas`} por Validar`
+                msg: `Esta Unidad Territorial todavía no está validada, ${mesasFalt == 1 ? `falta ${mesasFalt} Mesa` : `faltan ${mesasFalt} Mesas`} por Capturar`
             });
         next();
     }
-    // const { id_distrito } = req.params;
-    // const { clave_colonia } = req.body;
-    // const anio = req.body.anio ?? 1;
-    // const { mesasI } = await MesasI(id_distrito, clave_colonia, anio);
-    // if (mesasI) {
-    //     const validada = await EstadoUT(clave_colonia, anio);
-    //     const mesasFalt = await MesasFalt(id_distrito, clave_colonia, anio);
-    //     if (!validada)
-    //         return res.status(400).json({
-    //             success: false,
-    //             msg: `Esta Unidad Territorial todavía no está validada, ${mesasFalt == 1 ? `falta ${mesasFalt} Mesa` : `faltan ${mesasFalt} Mesas`} por Validar`
-    //         });
-    // } else
-    //     return res.status(400).json({
-    //         success: false,
-    //         msg: 'Esta Unidad Territorial no tiene ninguna mesa instalada'
-    //     })
-    // next();
 }

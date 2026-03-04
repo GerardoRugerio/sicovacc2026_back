@@ -18,7 +18,7 @@ export const InicioCierreValidacion = async (req = request, res = response) => {
                 msg: '¡No existe información!'
             });
         const { fecha, hora } = await FechaServer();
-        workbook.xlsx.readFile(path.join(plantillas[0].replace('consulta/', ''), 'Inicio-Cierre_Validacion.xlsx'))
+        workbook.xlsx.readFile(path.join(plantillas[0], 'Inicio-Cierre_Validacion.xlsx'))
             .then(() => {
                 workbook.creator = autor;
                 const worksheet = workbook.getWorksheet(1);
@@ -30,17 +30,13 @@ export const InicioCierreValidacion = async (req = request, res = response) => {
                     worksheet.mergeCells('A2:M2');
                 worksheet.getCell('A3').value = titulos[1];
                 if (!worksheet.getCell('A3').isMerged)
-                    worksheet.mergeCells('A3:M3');
-                worksheet.getCell('A5').value = 'PENDIENTE';
-                if (!worksheet.getCell('A5').isMerged)
-                    worksheet.mergeCells('A5:M5');
-                worksheet.getCell('A6').value = 'REPORTE DE ASISTENCIA DE INICIO Y CIERRE DE LA VALIDACIÓN';
+                    worksheet.mergeCells('A3:M4');
+                worksheet.getCell('A6').value = 'REPORTE DE ASISTENCIA AL INICIO Y CIERRE DEL CÓMPUTO Y LA VALIDACIÓN';
                 if (!worksheet.getCell('A6').isMerged)
                     worksheet.mergeCells('A6:M6');
-                worksheet.getCell('T8').value = `Fecha: ${fecha}`;
-                worksheet.getCell('T9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 worksheet.getCell('A8').value = 'DEOEyG';
-                worksheet.getCell('A8').style = fill;
+                worksheet.getCell('U8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('U9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 if (!worksheet.getCell('A11').isMerged)
                     worksheet.mergeCells('A11:A12');
                 worksheet.getCell('B11').value = 'Asistencia de Inicio';
@@ -123,15 +119,12 @@ export const Incidentes = async (req = request, res = response) => {
                     worksheet.mergeCells('A2:O2');
                 worksheet.getCell('A3').value = titulos[1];
                 if (!worksheet.getCell('A3').isMerged)
-                    worksheet.mergeCells('A3:O3');
-                worksheet.getCell('A5').value = 'PENDIENTE';
-                if (!worksheet.getCell('A5').isMerged)
-                    worksheet.mergeCells('A5:O5');
-                worksheet.getCell('A6').value = 'INCIDENTES PRESENTADOS DURANTE LA VALIDACIÓN DE LA ELECCIÓN Y LA CONSULTA';
+                    worksheet.mergeCells('A3:O4');
+                worksheet.getCell('A6').value = 'INCIDENTES PRESENTADOS DURANTE EL CÓMPUTO DE LA ELECCIÓN Y LA VALIDACIÓN DE LA CONSULTA DE PRESUPUESTO PARTICIPATIVO 2026 Y 2027';
                 if (!worksheet.getCell('A6').isMerged)
                     worksheet.mergeCells('A6:O6');
-                worksheet.getCell('N8').value = `Fecha: ${fecha}`;
-                worksheet.getCell('N9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
+                worksheet.getCell('O8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('O9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 if (!worksheet.getCell('A11').isMerged)
                     worksheet.mergeCells('A11:A12');
                 if (!worksheet.getCell('B11').isMerged)
@@ -170,10 +163,10 @@ export const Incidentes = async (req = request, res = response) => {
                     worksheet.getCell(fila, i + 7).style = { ...contenidoStyle, numFmt: '#,##0' };
                 }
                 fila++;
-                worksheet.getCell(fila, 7).value = 'Total de Causas de Incidentes:'
+                worksheet.getCell(fila, 7).value = 'Total de Incidentes'
                 worksheet.getCell(fila, 7).style = fill;
                 worksheet.getCell(fila, 8).value = inc.reduce((sum, i) => sum + i, 0);
-                worksheet.getCell(fila, 8).style = { ...contenidoStyle, numFmt: "#,##0" };
+                worksheet.getCell(fila, 8).style = { ...contenidoStyle, font: { ...contenidoStyle.font, bold: true }, numFmt: "#,##0" };
                 worksheet.columns.forEach((column, index) => {
                     if (index == 1 || index == 3 || (index >= 10 && index <= 12)) {
                         let maxLength = 0;

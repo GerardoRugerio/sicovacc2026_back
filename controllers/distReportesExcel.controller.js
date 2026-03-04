@@ -1,7 +1,7 @@
 import ExcelJs from 'exceljs';
 import { request, response } from 'express';
 import path from 'path';
-import { autor, contenidoStyle, fill, IECMLogo, plantillas, titulos } from '../helpers/Constantes.js';
+import { autor, contenidoStyle, fill, IECMLogo, plantillas, titulos, tituloStyle } from '../helpers/Constantes.js';
 import { FechaServer } from '../helpers/Consultas.js';
 import { SICOVACC } from '../models/consulta_usuarios_sicovacc.model.js';
 
@@ -20,7 +20,7 @@ export const InicioCierreValidacion = async (req = request, res = response) => {
                 msg: '¡No existe información!'
             });
         const { fecha, hora } = await FechaServer();
-        workbook.xlsx.readFile(path.join(plantillas[0].replace('consulta/', ''), 'Inicio-Cierre_Validacion.xlsx'))
+        workbook.xlsx.readFile(path.join(plantillas[0], 'Inicio-Cierre_Validacion.xlsx'))
             .then(() => {
                 workbook.creator = autor;
                 const worksheet = workbook.getWorksheet(1);
@@ -33,17 +33,14 @@ export const InicioCierreValidacion = async (req = request, res = response) => {
                     worksheet.mergeCells('A2:T2');
                 worksheet.getCell('A3').value = titulos[1];
                 if (!worksheet.getCell('A3').isMerged)
-                    worksheet.mergeCells('A3:T3');
-                worksheet.getCell('A5').value = 'PENDIENTE';
-                if (!worksheet.getCell('A5').isMerged)
-                    worksheet.mergeCells('A5:T5');
-                worksheet.getCell('A6').value = 'REPORTE DE ASISTENCIA DE INICIO Y CIERRE DE LA VALIDACIÓN';
+                    worksheet.mergeCells('A3:T4');
+                worksheet.getCell('A3').style = { ...tituloStyle, font: { ...tituloStyle.font, size: 14 } };
+                worksheet.getCell('A6').value = 'REPORTE DE ASISTENCIA AL INICIO Y CIERRE DEL CÓMPUTO Y LA VALIDACIÓN';
                 if (!worksheet.getCell('A6').isMerged)
                     worksheet.mergeCells('A6:T6');
                 worksheet.getCell('A8').value = `DIRECCIÓN DISTRITAL: ${id_distrito}`;
-                worksheet.getCell('A8').style = { ...fill, font: { ...fill.font, size: 12 } };
-                worksheet.getCell('S8').value = `Fecha: ${fecha}`;
-                worksheet.getCell('S9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
+                worksheet.getCell('T8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('T9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 worksheet.getCell('A11').value = 'Asistencia de Inicio';
                 worksheet.getCell('A11').style = fill;
                 if (!worksheet.getCell('A11').isMerged)
@@ -143,21 +140,18 @@ export const IncidentesDistrito = async (req = request, res = response) => {
                 const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
                 worksheet.getCell('A2').value = titulos[0];
-                worksheet.getCell('A3').value = titulos[1];
                 if (!worksheet.getCell('A2').isMerged)
                     worksheet.mergeCells('A2:N2');
+                worksheet.getCell('A3').value = titulos[1];
                 if (!worksheet.getCell('A3').isMerged)
-                    worksheet.mergeCells('A3:N3');
-                worksheet.getCell('A5').value = 'PENDIENTE';
-                if (!worksheet.getCell('A5').isMerged)
-                    worksheet.mergeCells('A5:N5');
-                worksheet.getCell('A6').value = 'INCIDENTES PRESENTADOS DURANTE LA VALIDACIÓN DE LA ELECCIÓN Y LA CONSULTA';
+                    worksheet.mergeCells('A3:N4');
+                worksheet.getCell('A3').style = { ...tituloStyle, font: { ...tituloStyle.font, size: 14 } };
+                    worksheet.getCell('A6').value = 'INCIDENTES PRESENTADOS DURANTE EL CÓMPUTO DE LA ELECCIÓN Y LA VALIDACIÓN DE LA CONSULTA DE PRESUPUESTO PARTICIPATIVO 2026 Y 2027';
                 if (!worksheet.getCell('A6').isMerged)
                     worksheet.mergeCells('A6:N6');
-                worksheet.getCell('A8').value = `Dirección Distrital: ${id_distrito}`;
-                worksheet.getCell('A8').style = { ...fill, font: { ...fill.font, size: 12 } };
-                worksheet.getCell('M8').value = `Fecha: ${fecha}`;
-                worksheet.getCell('M9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
+                worksheet.getCell('A8').value = `DIRECCIÓN DISTRITAL: ${id_distrito}`;
+                worksheet.getCell('N8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('N9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 if (!worksheet.getCell('A11').isMerged)
                     worksheet.mergeCells('A11:A12');
                 if (!worksheet.getCell('B11').isMerged)
@@ -194,10 +188,10 @@ export const IncidentesDistrito = async (req = request, res = response) => {
                     worksheet.getCell(fila, i + 6).style = { ...contenidoStyle, numFmt: '#,##0' };
                 }
                 fila++;
-                worksheet.getCell(fila, 6).value = 'Total de Causas de Incidentes:'
+                worksheet.getCell(fila, 6).value = 'Total de Incidentes'
                 worksheet.getCell(fila, 6).style = fill;
                 worksheet.getCell(fila, 7).value = inc.reduce((sum, i) => sum + i, 0);
-                worksheet.getCell(fila, 7).style = { ...contenidoStyle, numFmt: '#,##0' };
+                worksheet.getCell(fila, 7).style = { ...contenidoStyle, font: { ...contenidoStyle.font, bold: true }, numFmt: '#,##0' };
                 worksheet.columns.forEach((column, i) => {
                     if ([0, 2, 9, 11].includes(i)) {
                         let maxLength = 0;

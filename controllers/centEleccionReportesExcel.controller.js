@@ -41,10 +41,10 @@ export const ComputoTotalUT = async (req = request, res = response) => {
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
                 worksheet.getCell('A2').value = titulos[0];
                 worksheet.getCell('A3').value = titulos[1];
-                worksheet.getCell('A5').value = 'ELECCIÓN DE COMISIONES DE PARTICIPACIÓN COMUNITARIA';
+                worksheet.getCell('A5').value = 'ELECCIÓN DE COMISIONES DE PARTICIPACIÓN COMUNITARIA 2026';
                 worksheet.getCell('A6').value = 'CÓMPUTO TOTAL DE LAS CANDIDATURAS POR UNIDADES TERRITORIALES (INCLUYE MRVyO, MECPEP, MECPPP Y SEI)';
-                worksheet.getCell('J8').value = `Fecha: ${fecha}`;
-                worksheet.getCell('J9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
+                worksheet.getCell('K8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('K9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 if (!worksheet.getCell('A2').isMerged)
                     worksheet.mergeCells('A2:K2');
                 if (!worksheet.getCell('A3').isMerged)
@@ -201,10 +201,10 @@ export const ResultadoComputoTotalMesa = async (req = request, res = response) =
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
                 worksheet.getCell('A2').value = titulos[0];
                 worksheet.getCell('A3').value = titulos[1];
-                worksheet.getCell('A5').value = 'ELECCIÓN DE COMISIONES DE PARTICIPACIÓN COMUNITARIA';
+                worksheet.getCell('A5').value = 'ELECCIÓN DE COMISIONES DE PARTICIPACIÓN COMUNITARIA 2026';
                 worksheet.getCell('A6').value = 'RESULTADOS DEL CÓMPUTO TOTAL POR MESA (INCLUYE MRVyO, MECPEP, MECPPP Y SEI)';
-                worksheet.getCell('M8').value = `Fecha: ${fecha}`;
-                worksheet.getCell('M9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
+                worksheet.getCell('N8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('N9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 for (let i = 1; i <= max; i++) {
                     for (let j = 1; j <= 3; j++)
                         worksheet.spliceColumns(celda, 0, [null]);
@@ -419,10 +419,10 @@ export const ResultadoComputoTotalUT = async (req = request, res = response) => 
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
                 worksheet.getCell('A2').value = titulos[0];
                 worksheet.getCell('A3').value = titulos[1];
-                worksheet.getCell('A5').value = 'ELECCIÓN DE COMISIONES DE PARTICIPACIÓN COMUNITARIA';
+                worksheet.getCell('A5').value = 'ELECCIÓN DE COMISIONES DE PARTICIPACIÓN COMUNITARIA 2026';
                 worksheet.getCell('A6').value = 'RESULTADOS DEL CÓMPUTO TOTAL POR UNIDAD TERRITORIAL (INCLUYE MRVyO, MECPEP, MECPPP Y SEI)';
-                worksheet.getCell('K8').value = `Fecha: ${fecha}`;
-                worksheet.getCell('K9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
+                worksheet.getCell('L8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('L9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 for (let i = 1; i <= max; i++) {
                     for (let j = 1; j <= 3; j++)
                         worksheet.spliceColumns(celda, 0, [null]);
@@ -565,7 +565,7 @@ export const ConcentradoParticipantes = async (req = request, res = response) =>
         const participantes = (await SICOVACC.sequelize.query(`SELECT F.id_distrito, UPPER(D.nombre_delegacion) AS nombre_delegacion, F.clave_colonia, UPPER(C.nombre_colonia) AS nombre_colonia, COUNT(*) AS total
         FROM copaco_formulas F
         LEFT JOIN consulta_cat_delegacion D ON F.id_delegacion = D.id_delegacion
-        LEFT JOIN consulta_cat_colonia_cc1 C ON F.clave_colonia = C.clave_colonia
+        INNER JOIN consulta_cat_colonia_cc1 C ON F.clave_colonia = C.clave_colonia
         WHERE F.secuencial IS NOT NULL${id_distrito != 0 ? ` AND F.id_distrito = ${id_distrito}` : ''}
         GROUP BY F.id_distrito, D.nombre_delegacion, F.clave_colonia, C.nombre_colonia
         ORDER BY F.id_distrito, D.nombre_delegacion, C.nombre_colonia`))[0];
@@ -582,31 +582,51 @@ export const ConcentradoParticipantes = async (req = request, res = response) =>
                 let fila = 12;
                 const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
-                worksheet.getCell('A2').value = titulos[0];
-                worksheet.getCell('A3').value = titulos[1];
-                worksheet.getCell('A5').value = 'ELECCIÓN DE COMISIONES DE PARTICIPACIÓN COMUNITARIA';
-                worksheet.getCell('A6').value = 'CONCENTRADO CANDIDATURAS PARTICIPANTES';
-                worksheet.getCell('E8').value = `Fecha: ${fecha}`;
-                worksheet.getCell('E9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
-                if (!worksheet.getCell('A2').isMerged)
-                    worksheet.mergeCells('A2:E2')
-                if (!worksheet.getCell('A3').isMerged)
-                    worksheet.mergeCells('A3:E3')
-                if (!worksheet.getCell('A5').isMerged)
-                    worksheet.mergeCells('A5:E5')
-                if (!worksheet.getCell('A6').isMerged)
-                    worksheet.mergeCells('A6:E6')
+                worksheet.getCell('B2').value = titulos[0];
+                worksheet.getCell('B3').value = titulos[1];
+                worksheet.getCell('B5').value = 'ELECCIÓN DE COMISIONES DE PARTICIPACIÓN COMUNITARIA 2026';
+                worksheet.getCell('B6').value = 'CONCENTRADO CANDIDATURAS PARTICIPANTES';
+                worksheet.getCell('G8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('G9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
+                if (!worksheet.getCell('B2').isMerged)
+                    worksheet.mergeCells('B2:F2')
+                if (!worksheet.getCell('B3').isMerged)
+                    worksheet.mergeCells('B3:F3')
+                if (!worksheet.getCell('B5').isMerged)
+                    worksheet.mergeCells('B5:F5')
+                if (!worksheet.getCell('B6').isMerged)
+                    worksheet.mergeCells('B6:F6')
                 participantes.forEach(participante => {
                     Object.keys(participante).forEach((key, index) => {
-                        worksheet.getCell(fila, index + 1).value = participante[key];
-                        worksheet.getCell(fila, index + 1).style = index == 3 ? { ...contenidoStyle, numFmt: '#,##0' } : contenidoStyle;
+                        worksheet.getCell(fila, index + 2).value = participante[key];
+                        worksheet.getCell(fila, index + 2).style = index == 3 ? { ...contenidoStyle, numFmt: '#,##0' } : contenidoStyle;
                     });
                     fila++;
                 });
-                worksheet.getCell(fila, 4).value = 'TOTAL';
-                worksheet.getCell(fila, 4).style = { ...fill, font: { ...fill.font, bold: false } };
-                worksheet.getCell(fila, 5).value = participantes.reduce((sum, participante) => sum + participante.total, 0);
-                worksheet.getCell(fila, 5).style = { ...fill, font: { ...fill.font, bold: false }, numFmt: '#,##0' };
+                worksheet.getCell(fila, 5).value = 'TOTAL';
+                worksheet.getCell(fila, 5).style = fill
+                worksheet.getCell(fila, 6).value = participantes.reduce((sum, participante) => sum + participante.total, 0);
+                worksheet.getCell(fila, 6).style = { ...fill, numFmt: '#,##0' };
+                worksheet.columns.forEach((column, i) => {
+                    if ([2, 4].includes(i)) {
+                        let maxLength = 0;
+                        column.eachCell({ includeEmpty: false }, (cell, j) => {
+                            if (j >= 11)
+                                if (cell.value) {
+                                    const length = cell.value.toString().length;
+                                    if (length > maxLength)
+                                        maxLength = length;
+                                }
+                        });
+                        maxLength += 10;
+                        if (maxLength > 70)
+                            column.width = 70;
+                        else if (maxLength < 21)
+                            column.width = 21;
+                        else
+                            column.width = maxLength;
+                    }
+                });
                 return workbook.xlsx.writeBuffer();
             })
             .then(buffer => {
@@ -643,7 +663,7 @@ export const CandidaturasEmpate = async (req = request, res = response) => {
         const candidatos = (await SICOVACC.sequelize.query(`;WITH CA AS (
             SELECT id_distrito, clave_colonia
             FROM copaco_actas
-            ${id_distrito != 0 ? `WHERE id_distrito = ${id_distrito}` : ''}
+            WHERE modalidad = 1${id_distrito != 0 ? ` AND id_distrito = ${id_distrito}` : ''}
         ),
         MesasEsperadas AS (
             SELECT id_distrito, clave_colonia, COUNT(*) AS total
@@ -673,12 +693,12 @@ export const CandidaturasEmpate = async (req = request, res = response) => {
             GROUP BY id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, nombreC
         ),
         RANKING AS (
-            SELECT *, DENSE_RANK() OVER (PARTITION BY clave_Colonia ORDER BY total_votos DESC) AS DR, COUNT(*) OVER (PARTITION BY clave_colonia, total_votos) AS empate
+            SELECT *, COUNT(*) OVER (PARTITION BY clave_colonia, total_votos) AS empate
             FROM Votos
         )
         SELECT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, nombreC, total_votos
         FROM RANKING
-        WHERE DR IN (1, 2) AND empate > 1 AND total_votos > 0
+        WHERE empate > 1 AND total_votos > 0
         ORDER BY id_distrito, nombre_delegacion, nombre_colonia`))[0];
         if (!candidatos.length)
             return res.status(404).json({
@@ -695,10 +715,10 @@ export const CandidaturasEmpate = async (req = request, res = response) => {
                 worksheet.addImage(iecm, { tl: { col: 0, row: 1 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
                 worksheet.getCell('A2').value = titulos[0];
                 worksheet.getCell('A3').value = titulos[1];
-                worksheet.getCell('A5').value = 'ELECCIÓN DE COMISIONES DE PARTICIPACIÓN COMUNITARIA';
+                worksheet.getCell('A5').value = 'ELECCIÓN DE COMISIONES DE PARTICIPACIÓN COMUNITARIA 2026';
                 worksheet.getCell('A6').value = 'CANDIDATURAS EN LAS QUE SE PRESENTA EMPATE';
-                worksheet.getCell('E8').value = `Fecha: ${fecha}`;
-                worksheet.getCell('E9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
+                worksheet.getCell('F8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('F9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 if (!worksheet.getCell('A2').isMerged)
                     worksheet.mergeCells('A2:F2');
                 if (!worksheet.getCell('A3').isMerged)
@@ -718,7 +738,7 @@ export const CandidaturasEmpate = async (req = request, res = response) => {
                     if ([1, 3, 4].includes(i)) {
                         let maxLength = 0;
                         column.eachCell({ includeEmpty: false }, (cell, j) => {
-                            if (j >= 10)
+                            if (j >= 11)
                                 if (cell.value) {
                                     const length = cell.value.toString().length;
                                     if (length > maxLength)
@@ -829,14 +849,14 @@ export const ResultadosMesa = async (req = request, res = response) => {
                 worksheet.getCell('A3').value = titulos[1];
                 if (!worksheet.getCell('A3').isMerged)
                     worksheet.mergeCells('A3:J3');
-                worksheet.getCell('A5').value = 'ELECCIÓN DE COMISIONES DE PARTICIPACIÓN COMUNITARIA';
+                worksheet.getCell('A5').value = 'ELECCIÓN DE COMISIONES DE PARTICIPACIÓN COMUNITARIA 2026';
                 if (!worksheet.getCell('A5').isMerged)
                     worksheet.mergeCells('A5:J5');
                 worksheet.getCell('A6').value = 'RESULTADOS DE VOTOS POR MESA (INCLUYE MRVyO, MECPEP, MECPPP, SEI)';
                 if (!worksheet.getCell('A6').isMerged)
                     worksheet.mergeCells('A6:J6');
-                worksheet.getCell('J8').value = fecha;
-                worksheet.getCell('J9').value = hora.substring(0, hora.length - 3);
+                worksheet.getCell('J8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('J9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 worksheet.getCell('E11').value = 'Letra del Participante';
                 worksheet.getCell('G11').value = 'Nombre del Participante';
                 for (let acta of actas) {
@@ -871,7 +891,7 @@ export const ResultadosMesa = async (req = request, res = response) => {
                     if ([1, 3, 6].includes(i)) {
                         let maxLength = 0;
                         column.eachCell({ includeEmpty: false }, (cell, j) => {
-                            if (j >= 8)
+                            if (j >= 11)
                                 if (cell.value) {
                                     const length = cell.value.toString().length;
                                     if (length > maxLength)
@@ -939,37 +959,37 @@ export const MesasComputadas = async (req = request, res = response) => {
                 const worksheet = workbook.getWorksheet(1);
                 let fila = 12;
                 const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
-                worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
-                worksheet.getCell('A2').value = titulos[0];
-                worksheet.getCell('A3').value = titulos[1];
-                worksheet.getCell('A5').value = 'ELECCIÓN DE COMISIONES DE PARTICIPACIÓN COMUNITARIA';
-                worksheet.getCell('A6').value = 'CONCENTRADO DE MESAS COMPUTADAS (INCLUYE MRVyO, MECPEP, MECPPP Y SEI)';
-                worksheet.getCell('D8').value = `Fecha: ${fecha}`;
-                worksheet.getCell('D9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
-                if (!worksheet.getCell('A2').isMerged)
-                    worksheet.mergeCells('A2:E2');
-                if (!worksheet.getCell('A3').isMerged)
-                    worksheet.mergeCells('A3:E3');
-                if (!worksheet.getCell('A5').isMerged)
-                    worksheet.mergeCells('A5:E5');
-                if (!worksheet.getCell('A6').isMerged)
-                    worksheet.mergeCells('A6:E6');
+                worksheet.addImage(iecm, { tl: { col: 0, row: 1 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
+                worksheet.getCell('B2').value = titulos[0];
+                worksheet.getCell('B3').value = titulos[1];
+                worksheet.getCell('B5').value = 'ELECCIÓN DE COMISIONES DE PARTICIPACIÓN COMUNITARIA 2026';
+                worksheet.getCell('B6').value = 'CONCENTRADO DE MESAS COMPUTADAS (INCLUYE MRVyO, MECPEP, MECPPP Y SEI)';
+                worksheet.getCell('F8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('F9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
+                if (!worksheet.getCell('B2').isMerged)
+                    worksheet.mergeCells('B2:F2');
+                if (!worksheet.getCell('B3').isMerged)
+                    worksheet.mergeCells('B3:F3');
+                if (!worksheet.getCell('B5').isMerged)
+                    worksheet.mergeCells('B5:F5');
+                if (!worksheet.getCell('B6').isMerged)
+                    worksheet.mergeCells('B6:F6');
                 mesas.forEach(mesa => {
                     Object.keys(mesa).forEach((key, index) => {
-                        worksheet.getCell(fila, index + 1).value = mesa[key];
-                        worksheet.getCell(fila, index + 1).style = contenidoStyle;
+                        worksheet.getCell(fila, index + 2).value = mesa[key];
+                        worksheet.getCell(fila, index + 2).style = contenidoStyle;
                     });
                     fila++;
                 });
-                worksheet.getCell(fila, 3).value = 'TOTAL';
-                worksheet.getCell(fila, 3).style = fill;
-                worksheet.getCell(fila, 4).value = mesas.length;
-                worksheet.getCell(fila, 4).style = { ...fill, numFmt: '#,##0' };
+                worksheet.getCell(fila, 4).value = 'TOTAL';
+                worksheet.getCell(fila, 4).style = fill;
+                worksheet.getCell(fila, 5).value = mesas.length;
+                worksheet.getCell(fila, 5).style = { ...fill, numFmt: '#,##0' };
                 worksheet.columns.forEach((column, i) => {
-                    if ([1, 3].includes(i)) {
+                    if ([2, 4].includes(i)) {
                         let maxLength = 0;
                         column.eachCell({ includeEmpty: false }, (cell, j) => {
-                            if (j >= 10)
+                            if (j >= 11)
                                 if (cell.value) {
                                     const length = cell.value.toString().length;
                                     if (length > maxLength)
@@ -1036,37 +1056,37 @@ export const MesasNoComputadas = async (req = request, res = response) => {
                 const worksheet = workbook.getWorksheet(1);
                 let fila = 12;
                 const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
-                worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
-                worksheet.getCell('A2').value = titulos[0];
-                worksheet.getCell('A3').value = titulos[1];
-                worksheet.getCell('A5').value = 'ELECCIÓN DE COMISIONES DE PARTICIPACIÓN COMUNITARIA';
-                worksheet.getCell('A6').value = 'CONCENTRADO DE MESAS COMPUTADAS (INCLUYE MRVyO, MECPEP, MECPPP Y SEI)';
-                worksheet.getCell('D8').value = `Fecha: ${fecha}`;
-                worksheet.getCell('D9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
-                if (!worksheet.getCell('A2').isMerged)
-                    worksheet.mergeCells('A2:D2');
-                if (!worksheet.getCell('A3').isMerged)
-                    worksheet.mergeCells('A3:D3');
-                if (!worksheet.getCell('A5').isMerged)
-                    worksheet.mergeCells('A5:D5');
-                if (!worksheet.getCell('A6').isMerged)
-                    worksheet.mergeCells('A6:D6');
+                worksheet.addImage(iecm, { tl: { col: 0, row: 1.5 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
+                worksheet.getCell('B2').value = titulos[0];
+                worksheet.getCell('B3').value = titulos[1];
+                worksheet.getCell('B5').value = 'ELECCIÓN DE COMISIONES DE PARTICIPACIÓN COMUNITARIA 2026';
+                worksheet.getCell('B6').value = 'CONCENTRADO DE MESAS NO COMPUTADAS (INCLUYE MRVyO, MECPEP, MECPPP Y SEI)';
+                worksheet.getCell('E8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('E9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
+                if (!worksheet.getCell('B2').isMerged)
+                    worksheet.mergeCells('B2:E2');
+                if (!worksheet.getCell('B3').isMerged)
+                    worksheet.mergeCells('B3:E3');
+                if (!worksheet.getCell('B5').isMerged)
+                    worksheet.mergeCells('B5:E5');
+                if (!worksheet.getCell('B6').isMerged)
+                    worksheet.mergeCells('B6:E6');
                 mesas.forEach(mesa => {
                     Object.keys(mesa).forEach((key, index) => {
-                        worksheet.getCell(fila, index + 1).value = mesa[key];
-                        worksheet.getCell(fila, index + 1).style = contenidoStyle;
+                        worksheet.getCell(fila, index + 2).value = mesa[key];
+                        worksheet.getCell(fila, index + 2).style = contenidoStyle;
                     });
                     fila++;
                 });
-                worksheet.getCell(fila, 3).value = 'TOTAL';
-                worksheet.getCell(fila, 3).style = fill;
-                worksheet.getCell(fila, 4).value = mesas.length;
-                worksheet.getCell(fila, 4).style = { ...fill, numFmt: '#,##0' };
+                worksheet.getCell(fila, 4).value = 'TOTAL';
+                worksheet.getCell(fila, 4).style = fill;
+                worksheet.getCell(fila, 5).value = mesas.length;
+                worksheet.getCell(fila, 5).style = { ...fill, numFmt: '#,##0' };
                 worksheet.columns.forEach((column, i) => {
-                    if ([2].includes(i)) {
+                    if ([3].includes(i)) {
                         let maxLength = 0;
                         column.eachCell({ includeEmpty: false }, (cell, j) => {
-                            if (j >= 10)
+                            if (j >= 11)
                                 if (cell.value) {
                                     const length = cell.value.toString().length;
                                     if (length > maxLength)
@@ -1133,37 +1153,37 @@ export const UTConComputo = async (req = request, res = response) => {
                 const worksheet = workbook.getWorksheet(1);
                 let fila = 12;
                 const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
-                worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
-                worksheet.getCell('A2').value = titulos[0];
-                worksheet.getCell('A3').value = titulos[1];
-                worksheet.getCell('A5').value = 'ELECCIÓN DE COMISIONES DE PARTICIPACIÓN COMUNITARIA';
-                worksheet.getCell('A6').value = 'UNIDADES TERRITORIALES CON CÓMPUTO CAPTURADO';
-                worksheet.getCell('D8').value = `Fecha: ${fecha}`;
-                worksheet.getCell('D9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
-                if (!worksheet.getCell('A2').isMerged)
-                    worksheet.mergeCells('A2:D2');
-                if (!worksheet.getCell('A3').isMerged)
-                    worksheet.mergeCells('A3:D3');
-                if (!worksheet.getCell('A5').isMerged)
-                    worksheet.mergeCells('A5:D5');
-                if (!worksheet.getCell('A6').isMerged)
-                    worksheet.mergeCells('A6:D6');
+                worksheet.addImage(iecm, { tl: { col: 0, row: 1 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
+                worksheet.getCell('B2').value = titulos[0];
+                worksheet.getCell('B3').value = titulos[1];
+                worksheet.getCell('B5').value = 'ELECCIÓN DE COMISIONES DE PARTICIPACIÓN COMUNITARIA 2026';
+                worksheet.getCell('B6').value = 'UNIDADES TERRITORIALES CON CÓMPUTO CAPTURADO';
+                worksheet.getCell('E8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('E9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
+                if (!worksheet.getCell('B2').isMerged)
+                    worksheet.mergeCells('B2:E2');
+                if (!worksheet.getCell('B3').isMerged)
+                    worksheet.mergeCells('B3:E3');
+                if (!worksheet.getCell('B5').isMerged)
+                    worksheet.mergeCells('B5:E5');
+                if (!worksheet.getCell('B6').isMerged)
+                    worksheet.mergeCells('B6:E6');
                 utc.forEach(ut => {
                     Object.keys(ut).forEach((key, index) => {
-                        worksheet.getCell(fila, index + 1).value = ut[key];
-                        worksheet.getCell(fila, index + 1).style = contenidoStyle;
+                        worksheet.getCell(fila, index + 2).value = ut[key];
+                        worksheet.getCell(fila, index + 2).style = contenidoStyle;
                     });
                     fila++;
                 });
-                worksheet.getCell(fila, 3).value = 'TOTAL';
-                worksheet.getCell(fila, 3).style = fill;
-                worksheet.getCell(fila, 4).value = utc.length;
-                worksheet.getCell(fila, 4).style = { ...fill, numFmt: '#,##0' };
+                worksheet.getCell(fila, 4).value = 'TOTAL';
+                worksheet.getCell(fila, 4).style = fill;
+                worksheet.getCell(fila, 5).value = utc.length;
+                worksheet.getCell(fila, 5).style = { ...fill, numFmt: '#,##0' };
                 worksheet.columns.forEach((column, i) => {
-                    if ([1, 3].includes(i)) {
+                    if ([2, 4].includes(i)) {
                         let maxLength = 0;
                         column.eachCell({ includeEmpty: false }, (cell, j) => {
-                            if (j >= 10)
+                            if (j >= 11)
                                 if (cell.value) {
                                     const length = cell.value.toString().length;
                                     if (length > maxLength)
@@ -1231,33 +1251,33 @@ export const UTSinComputo = async (req = request, res = response) => {
                 let fila = 12;
                 const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
-                worksheet.getCell('A2').value = titulos[0];
-                worksheet.getCell('A3').value = titulos[1];
-                worksheet.getCell('A5').value = 'ELECCIÓN DE COMISIONES DE PARTICIPACIÓN COMUNITARIA';
-                worksheet.getCell('A6').value = 'UNIDADES TERRITORIALES SIN CÓMPUTO CAPTURADO';
-                worksheet.getCell('D8').value = `Fecha: ${fecha}`;
-                worksheet.getCell('D9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
-                if (!worksheet.getCell('A2').isMerged)
-                    worksheet.mergeCells('A2:D2');
-                if (!worksheet.getCell('A3').isMerged)
-                    worksheet.mergeCells('A3:D3');
-                if (!worksheet.getCell('A5').isMerged)
-                    worksheet.mergeCells('A5:D5');
-                if (!worksheet.getCell('A6').isMerged)
-                    worksheet.mergeCells('A6:D6');
+                worksheet.getCell('B2').value = titulos[0];
+                worksheet.getCell('B3').value = titulos[1];
+                worksheet.getCell('B5').value = 'ELECCIÓN DE COMISIONES DE PARTICIPACIÓN COMUNITARIA 2026';
+                worksheet.getCell('B6').value = 'UNIDADES TERRITORIALES SIN CÓMPUTO CAPTURADO';
+                worksheet.getCell('E8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('E9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
+                if (!worksheet.getCell('B2').isMerged)
+                    worksheet.mergeCells('B2:E2');
+                if (!worksheet.getCell('B3').isMerged)
+                    worksheet.mergeCells('B3:E3');
+                if (!worksheet.getCell('B5').isMerged)
+                    worksheet.mergeCells('B5:E5');
+                if (!worksheet.getCell('B6').isMerged)
+                    worksheet.mergeCells('B6:E6');
                 utc.forEach(ut => {
                     Object.keys(ut).forEach((key, index) => {
-                        worksheet.getCell(fila, index + 1).value = ut[key];
-                        worksheet.getCell(fila, index + 1).style = contenidoStyle;
+                        worksheet.getCell(fila, index + 2).value = ut[key];
+                        worksheet.getCell(fila, index + 2).style = contenidoStyle;
                     });
                     fila++;
                 });
-                worksheet.getCell(fila, 3).value = 'TOTAL';
-                worksheet.getCell(fila, 3).style = fill;
-                worksheet.getCell(fila, 4).value = utc.length;
-                worksheet.getCell(fila, 4).style = { ...fill, numFmt: '#,##0' };
+                worksheet.getCell(fila, 4).value = 'TOTAL';
+                worksheet.getCell(fila, 4).style = fill;
+                worksheet.getCell(fila, 5).value = utc.length;
+                worksheet.getCell(fila, 5).style = { ...fill, numFmt: '#,##0' };
                 worksheet.columns.forEach((column, i) => {
-                    if ([1, 3].includes(i)) {
+                    if ([2, 4].includes(i)) {
                         let maxLength = 0;
                         column.eachCell({ includeEmpty: false }, (cell, j) => {
                             if (j >= 10)
@@ -1330,8 +1350,8 @@ export const UTConComputoGA = async (req = request, res = response) => {
                 const worksheet = workbook.getWorksheet(1);
                 let fila = 13, UTT = 0, UTCT = 0, total = 0;
                 const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
-                worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
-                worksheet.getCell('A4').value = 'ELECCIÓN DE COMISIONES DE PARTICIPACIÓN COMUNITARIA';
+                worksheet.addImage(iecm, { tl: { col: 0, row: 1 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
+                worksheet.getCell('A5').value = 'ELECCIÓN DE COMISIONES DE PARTICIPACIÓN COMUNITARIA 2026';
                 worksheet.getCell('F9').value = `Fecha: ${fecha}`;
                 worksheet.getCell('F10').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 avances.forEach(distrito => {
@@ -1407,7 +1427,7 @@ export const LevantadaDistrito = async (req = request, res = response) => {
                 worksheet.addImage(iecm, { tl: { col: 0, row: 1 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
                 worksheet.getCell('A2').value = titulos[0];
                 worksheet.getCell('A3').value = titulos[1];
-                worksheet.getCell('A5').value = 'ELECCIÓN DE COMISIONES DE PARTICIPACIÓN COMUNITARIA';
+                worksheet.getCell('A5').value = 'ELECCIÓN DE COMISIONES DE PARTICIPACIÓN COMUNITARIA 2026';
                 worksheet.getCell('A6').value = 'ACTAS LEVANTADAS EN DIRECCIÓN DISTRITAL (CAUSALES DE RECUENTO)';
                 worksheet.getCell('E8').value = `Fecha: ${fecha}`;
                 worksheet.getCell('E9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
@@ -1427,9 +1447,9 @@ export const LevantadaDistrito = async (req = request, res = response) => {
                     fila++;
                 });
                 worksheet.getCell(fila, 4).value = 'TOTAL';
-                worksheet.getCell(fila, 4).style = { ...fill, font: { ...fill.font, bold: false } };
+                worksheet.getCell(fila, 4).style = fill;
                 worksheet.getCell(fila, 5).value = actas.length;
-                worksheet.getCell(fila, 5).style = { ...fill, font: { ...fill.font, bold: false }, numFmt: '#,##0' };
+                worksheet.getCell(fila, 5).style = { ...fill, numFmt: '#,##0' };
                 worksheet.columns.forEach((column, i) => {
                     if ([1, 4].includes(i)) {
                         let maxLength = 0;
@@ -1501,8 +1521,8 @@ export const VotacionDistrito = async (req = request, res = response) => {
                 let fila = 12;
                 let sum1 = 0, sum2 = 0, sum3 = 0, sum4 = 0, sum5 = 0;
                 const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
-                worksheet.addImage(iecm, { tl: { col: 0, row: 2 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
-                worksheet.getCell('A5').value = 'ELECCIÓN DE COMISIONES DE PARTICIPACIÓN COMUNITARIA';
+                worksheet.addImage(iecm, { tl: { col: 0, row: 3 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
+                worksheet.getCell('A5').value = 'ELECCIÓN DE COMISIONES DE PARTICIPACIÓN COMUNITARIA 2026';
                 worksheet.getCell('A6').value = 'VOTACIÓN TOTAL POR DISTRITO';
                 worksheet.getCell('F8').value = `Fecha: ${fecha}`;
                 worksheet.getCell('F9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
@@ -1572,15 +1592,15 @@ export const VotacionDemarcacion = async (req = request, res = response) => {
         LEFT JOIN CA A2 ON D.id_delegacion = A2.id_delegacion AND A2.modalidad = 2
         ORDER BY D.nombre_delegacion ASC`))[0];
         const { fecha, hora } = await FechaServer();
-        workbook.xlsx.readFile(path.join(plantillas[0], 'Opiniones_Distrito.xlsx'))
+        workbook.xlsx.readFile(path.join(plantillas[0], 'Opiniones_Demarcacion.xlsx'))
             .then(() => {
                 workbook.creator = autor;
                 const worksheet = workbook.getWorksheet(1);
                 let fila = 12;
                 let sum1 = 0, sum2 = 0, sum3 = 0, sum4 = 0, sum5 = 0;
                 const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
-                worksheet.addImage(iecm, { tl: { col: 0, row: 2 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
-                worksheet.getCell('A5').value = 'ELECCIÓN DE COMISIONES DE PARTICIPACIÓN COMUNITARIA';
+                worksheet.addImage(iecm, { tl: { col: 0, row: 3 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
+                worksheet.getCell('A5').value = 'ELECCIÓN DE COMISIONES DE PARTICIPACIÓN COMUNITARIA 2026';
                 worksheet.getCell('A6').value = 'OPINIONES POR DEMARCACIÓN';
                 worksheet.getCell('F8').value = `Fecha: ${fecha}`;
                 worksheet.getCell('F9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
@@ -1633,7 +1653,7 @@ export const VotacionDemarcacion = async (req = request, res = response) => {
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_VotacionDistrito-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_VotacionDemarcacion-${fecha}-${hora}.xlsx`,
                     buffer
                 });
             })
@@ -1674,7 +1694,7 @@ export const Participacion = async (req = request, res = response) => {
                 let fila = 12;
                 const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
-                worksheet.getCell('B5').value = 'ELECCIÓN DE COMISIONES DE PARTICIPACIÓN COMUNITARIA';
+                worksheet.getCell('B5').value = 'ELECCIÓN DE COMISIONES DE PARTICIPACIÓN COMUNITARIA 2026';
                 worksheet.getCell('C8').value = `Fecha: ${fecha}`;
                 worksheet.getCell('C9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 porcentajes.forEach(distrito => {
@@ -1717,11 +1737,13 @@ export const ActasAlerta = async (req = request, res = response) => {
     const { id_distrito } = req.params;
     const workbook = new ExcelJs.Workbook();
     try {
-        const actas = (await SICOVACC.sequelize.query(`SELECT id_distrito, CONCAT(num_mro, NULLIF(CONCAT(' ', TP.mesa), '')) AS mesa, dbo.Incidente(id_incidencia) AS incidente
+        const actas = (await SICOVACC.sequelize.query(`SELECT A.id_distrito, UPPER(D.nombre_delegacion) AS nombre_delegacion, A.clave_colonia, UPPER(C.nombre_colonia) AS nombre_colonia, CONCAT(A.num_mro, NULLIF(CONCAT(' ', TP.mesa), '')) AS mesa, dbo.Incidente(A.id_incidencia) AS incidente
         FROM copaco_actas A
-        LEFT JOIN consulta_tipo_mesa_V TP ON A.tipo_mro = TP.tipo_mro
-        WHERE modalidad = 1 AND id_incidencia IS NOT NULL${id_distrito != 0 ? ` AND id_distrito = ${id_distrito}` : ''}
-        ORDER BY id_distrito, num_mro, A.tipo_mro`))[0];
+        INNER JOIN consulta_cat_delegacion D ON A.id_delegacion = D.id_delegacion
+        INNER JOIN consulta_cat_colonia_cc1 C ON A.clave_colonia = C.clave_colonia
+        INNER JOIN consulta_tipo_mesa_V TP ON A.tipo_mro = TP.tipo_mro
+        WHERE A.modalidad = 1 AND A.id_incidencia IS NOT NULL${id_distrito != 0 ? ` AND A.id_distrito = ${id_distrito}` : ''}
+        ORDER BY D.nombre_delegacion, C.nombre_colonia, A.num_mro, A.tipo_mro`))[0];
         if (!actas.length)
             return res.status(404).json({
                 success: false,
@@ -1734,35 +1756,35 @@ export const ActasAlerta = async (req = request, res = response) => {
                 const worksheet = workbook.getWorksheet(1);
                 let fila = 10;
                 const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
-                worksheet.addImage(iecm, { tl: { col: 0, row: 1 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
-                worksheet.getCell('B2').value = titulos[0];
-                worksheet.getCell('B3').value = titulos[1];
-                worksheet.getCell('B5').value = 'ELECCIÓN DE COMISIONES DE PARTICIPACIÓN COMUNITARIA';
-                worksheet.getCell('B6').value = 'ACTAS CAPTURADAS CON ALERTAS';
-                if (!worksheet.getCell('B2').isMerged)
-                    worksheet.mergeCells('B2:D2');
-                if (!worksheet.getCell('B3').isMerged)
-                    worksheet.mergeCells('B3:D3');
-                if (!worksheet.getCell('B5').isMerged)
-                    worksheet.mergeCells('B5:D5');
-                if (!worksheet.getCell('B6').isMerged)
-                    worksheet.mergeCells('B6:D6');
+                worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
+                worksheet.getCell('A2').value = titulos[0];
+                if (!worksheet.getCell('A2').isMerged)
+                    worksheet.mergeCells('A2:F2');
+                worksheet.getCell('A3').value = titulos[1];
+                if (!worksheet.getCell('A3').isMerged)
+                    worksheet.mergeCells('A3:F3');
+                worksheet.getCell('A5').value = 'ELECCIÓN DE COMISIONES DE PARTICIPACIÓN COMUNITARIA 2026';
+                if (!worksheet.getCell('A5').isMerged)
+                    worksheet.mergeCells('A5:F5');
+                worksheet.getCell('A6').value = 'ACTAS CAPTURADAS CON ALERTAS';
+                if (!worksheet.getCell('A6').isMerged)
+                    worksheet.mergeCells('A6:F6');
                 actas.forEach(acta => {
                     Object.keys(acta).forEach((key, index) => {
-                        worksheet.getCell(fila, index + 2).value = acta[key];
-                        worksheet.getCell(fila, index + 2).style = contenidoStyle;
+                        worksheet.getCell(fila, index + 1).value = acta[key];
+                        worksheet.getCell(fila, index + 1).style = contenidoStyle;
                     });
                     fila++;
                 });
-                worksheet.getCell(fila, 3).value = 'TOTAL';
-                worksheet.getCell(fila, 3).style = fill;
-                worksheet.getCell(fila, 4).value = actas.length;
-                worksheet.getCell(fila, 4).style = { ...contenidoStyle, numFmt: '#,##0' };
+                worksheet.getCell(fila, 5).value = 'TOTAL';
+                worksheet.getCell(fila, 5).style = fill;
+                worksheet.getCell(fila, 6).value = actas.length;
+                worksheet.getCell(fila, 6).style = { ...contenidoStyle, font: { ...contenidoStyle.font, bold: true }, numFmt: '#,##0' };
                 worksheet.columns.forEach((column, i) => {
-                    if ([3].includes(i)) {
+                    if ([1, 3, 5].includes(i)) {
                         let maxLength = 0;
                         column.eachCell({ includeEmpty: false }, (cell, j) => {
-                            if (j >= 8)
+                            if (j >= 10)
                                 if (cell.value) {
                                     const length = cell.value.toString().length;
                                     if (length > maxLength)

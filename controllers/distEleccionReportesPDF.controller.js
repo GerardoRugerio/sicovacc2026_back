@@ -75,7 +75,7 @@ export const ActaComputoTotalPDF = async (req = request, res = response) => {
                 { text: '(VOTOS SACADOS DE LA URNA)', font: 'Helvetica', fontSize: 12, background: '#F2F2F2', strokeColor: '#BFBFBF' }
             ],
             [
-                { text: 'RESULTADOS DEL COMPUTO DEL SEI', font: 'Helvetica-Bold', fontSize: 12, background: '#F2F2F2', strokeColor: '#BFBFBF' },
+                { text: 'RESULTADOS DEL CÓMPUTO DEL SEI', font: 'Helvetica-Bold', fontSize: 12, background: '#F2F2F2', strokeColor: '#BFBFBF' },
                 { text: '(ASENTADOS EN EL ACTA)', font: 'Helvetica', fontSize: 12, background: '#F2F2F2', strokeColor: '#BFBFBF' }
             ],
             [{ text: 'TOTAL CON NÚMERO', font: 'Helvetica-Bold', fontSize: 12, background: '#F2F2F2', strokeColor: '#BFBFBF' }],

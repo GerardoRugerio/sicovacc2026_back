@@ -52,8 +52,8 @@ export const BaseDatos = async (req = request, res = response) => {
                 const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
                 worksheet.getCell('A5').value = subtitulo;
-                worksheet.getCell('L8').value = `Fecha: ${fecha}`;
-                worksheet.getCell('L9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
+                worksheet.getCell('M8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('M9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 for (let acta of actas) {
                     let sum_total = 0;
                     const { nombre_delegacion, id_distrito: distrito, clave_colonia, nombre_colonia, mesa, bol_nulas, bol_nulas_sei, proyectos } = acta;
@@ -171,9 +171,9 @@ export const ProyectosParticipantes = async (req = request, res = response) => {
                     fila++;
                 });
                 worksheet.getCell(fila, 7).value = 'Total';
-                worksheet.getCell(fila, 7).style = { ...fill, font: { ...fill.font, bold: false } };
+                worksheet.getCell(fila, 7).style = fill;
                 worksheet.getCell(fila, 8).value = proyectos.length;
-                worksheet.getCell(fila, 8).style = { ...fill, font: { ...fill.font, bold: false }, numFmt: '#,##0' };
+                worksheet.getCell(fila, 8).style = { ...fill, numFmt: '#,##0' };
                 worksheet.columns.forEach((column, i) => {
                     if ([1, 3, 4, 6].includes(i)) {
                         let maxLength = 0;
@@ -301,8 +301,8 @@ export const ConsultaCiudadanaDetalle = async (req = request, res = response) =>
                 worksheet.getCell('A3').value = titulos[1];
                 worksheet.getCell('A5').value = subtitulo;
                 worksheet.getCell('A6').value = 'VALIDACIÓN DE RESULTADOS DE LA CONSULTA CIUDADANA DETALLE MESA';
-                worksheet.getCell('P8').value = `Fecha: ${fecha}`;
-                worksheet.getCell('P9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
+                worksheet.getCell('Q8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('Q9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 for (let i = 1; i <= max; i++) {
                     for (let j = 1; j <= 3; j++)
                         worksheet.spliceColumns(celda, 0, [null]);
@@ -520,8 +520,8 @@ export const OpinionesMesa = async (req = request, res = response) => {
                 worksheet.getCell('A6').value = 'RESULTADOS DE OPINIONES POR MESA';
                 if (!worksheet.getCell('A6').isMerged)
                     worksheet.mergeCells('A6:J6');
-                worksheet.getCell('J8').value = fecha;
-                worksheet.getCell('J9').value = hora.substring(0, hora.length - 3);
+                worksheet.getCell('J8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('J9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 worksheet.getCell('E11').value = 'Clave del Proyecto y Opiniones Nulas';
                 worksheet.getCell('G11').value = 'Nombre del Proyecto Especifico';
                 for (let acta of actas) {
@@ -679,8 +679,8 @@ export const ConsultaUnidadTerritorial = async (req = request, res = response) =
                 worksheet.getCell('A3').value = titulos[1];
                 worksheet.getCell('A5').value = subtitulo;
                 worksheet.getCell('A6').value = 'VALIDACIÓN DE RESULTADOS DE LA CONSULTA POR UNIDAD TERRITORIAL';
-                worksheet.getCell('M8').value = `Fecha: ${fecha}`;
-                worksheet.getCell('M9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
+                worksheet.getCell('N8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('N9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 for (let i = 1; i <= max; i++) {
                     for (let j = 1; j <= 3; j++)
                         worksheet.spliceColumns(celda, 0, [null]);
@@ -894,8 +894,8 @@ export const OpinionesUT = async (req = request, res = response) => {
                     worksheet.mergeCells('A5:J5');
                 if (!worksheet.getCell('A6').isMerged)
                     worksheet.mergeCells('A6:J6');
-                worksheet.getCell('J8').value = fecha;
-                worksheet.getCell('J9').value = hora.substring(0, hora.length - 3);
+                worksheet.getCell('J8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('J9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 worksheet.getCell('E11').value = 'Clave del Proyecto y Opiniones Nulas';
                 worksheet.getCell('G11').value = 'Nombre del Proyecto Especifico';
                 for (let acta of actas) {
@@ -997,7 +997,7 @@ export const ProyectosPrimerLugar = async (req = request, res = response) => {
         ActasValidadas AS (
             SELECT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, rubro_general, nom_proyecto, votos, votos_sei, total_votos
             FROM consulta_actas_VVS V
-            WHERE EXISTS (SELECT 1 FROM Mesas WHERE id_distrito = V.id_distrito AND clave_colonia = V.clave_colonia) AND anio = ${anio} AND ${campo} = 1
+            WHERE EXISTS (SELECT 1 FROM Mesas WHERE id_distrito = V.id_distrito AND clave_colonia = V.clave_colonia) AND anio = ${anio} AND estatus = 1
         ),
         Votos AS (
             SELECT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, rubro_general, nom_proyecto, SUM(votos) AS votos, SUM(votos_sei) AS votos_sei, SUM(total_votos) AS total_votos
@@ -1037,8 +1037,8 @@ export const ProyectosPrimerLugar = async (req = request, res = response) => {
                     worksheet.mergeCells('B5:I5');
                 if (!worksheet.getCell('B6').isMerged)
                     worksheet.mergeCells('B6:I6');
-                worksheet.getCell('J8').value = fecha;
-                worksheet.getCell('J9').value = hora.substring(0, hora.length - 3);
+                worksheet.getCell('J8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('J9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 let fila = 12;
                 let colonias = [];
                 proyectos.forEach(res => {
@@ -1053,12 +1053,12 @@ export const ProyectosPrimerLugar = async (req = request, res = response) => {
                 if (!worksheet.getCell(fila, 2).isMerged)
                     worksheet.mergeCells(fila, 2, fila, 3);
                 for (let i = 1; i <= 10; i++)
-                    worksheet.getCell(fila, i).style = [4, 7].includes(i) ? { ...contenidoStyle, numFmt: '#,##0' } : contenidoStyle;
+                    worksheet.getCell(fila, i).style = [4, 7].includes(i) ? { ...contenidoStyle, font: { ...contenidoStyle.font, bold: true }, numFmt: '#,##0' } : contenidoStyle;
                 worksheet.getCell(fila, 2).value = 'Total de Unidades Territoriales';
-                worksheet.getCell(fila, 2).style = { ...fill, font: { ...fill.font, bold: false }, numFmt: '#,##0' };
+                worksheet.getCell(fila, 2).style = fill
                 worksheet.getCell(fila, 4).value = colonias.length;
                 worksheet.getCell(fila, 6).value = 'Total de Proyectos';
-                worksheet.getCell(fila, 6).style = { ...fill, font: { ...fill.font, bold: false }, numFmt: '#,##0' };
+                worksheet.getCell(fila, 6).style = fill
                 worksheet.getCell(fila, 7).value = proyectos.length;
                 worksheet.columns.forEach((column, i) => {
                     if ([1, 3, 5, 6].includes(i)) {
@@ -1179,8 +1179,8 @@ export const ProyectosEmpatePrimerLugar = async (req = request, res = response) 
                     worksheet.mergeCells('B5:I5');
                 if (!worksheet.getCell('B6').isMerged)
                     worksheet.mergeCells('B6:I6');
-                worksheet.getCell('J8').value = fecha;
-                worksheet.getCell('J9').value = hora.substring(0, hora.length - 3);
+                worksheet.getCell('J8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('J9').value = `Hora: ${hora.substring(0, hora.length - 3)}`
                 let fila = 12;
                 let colonias = [];
                 proyectos.forEach(res => {
@@ -1195,12 +1195,12 @@ export const ProyectosEmpatePrimerLugar = async (req = request, res = response) 
                 if (!worksheet.getCell(fila, 2).isMerged)
                     worksheet.mergeCells(fila, 2, fila, 3);
                 for (let i = 1; i <= 10; i++)
-                    worksheet.getCell(fila, i).style = [4, 7].includes(i) ? { ...contenidoStyle, numFmt: '#,##0' } : contenidoStyle;
+                    worksheet.getCell(fila, i).style = [4, 7].includes(i) ? { ...contenidoStyle, font: { ...contenidoStyle.font, bold: true }, numFmt: '#,##0' } : contenidoStyle;
                 worksheet.getCell(fila, 2).value = 'Total de Unidades Territoriales';
-                worksheet.getCell(fila, 2).style = { ...fill, font: { ...fill.font, bold: false }, numFmt: '#,##0' };
+                worksheet.getCell(fila, 2).style = fill;
                 worksheet.getCell(fila, 4).value = colonias.length;
                 worksheet.getCell(fila, 6).value = 'Total de Proyectos';
-                worksheet.getCell(fila, 6).style = { ...fill, font: { ...fill.font, bold: false }, numFmt: '#,##0' };
+                worksheet.getCell(fila, 6).style = fill;
                 worksheet.getCell(fila, 7).value = proyectos.length;
                 worksheet.columns.forEach((column, i) => {
                     if ([1, 3, 5, 6].includes(i)) {
@@ -1312,8 +1312,8 @@ export const ProyectosSinOpiniones = async (req = request, res = response) => {
                     worksheet.mergeCells('A5:J5');
                 if (!worksheet.getCell('A6').isMerged)
                     worksheet.mergeCells('A6:J6');
-                worksheet.getCell('J8').value = fecha;
-                worksheet.getCell('J9').value = hora.substring(0, hora.length - 3);
+                worksheet.getCell('J8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('J9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 let fila = 12;
                 proyectos.forEach(res => {
                     Object.keys(res).forEach((key, index) => {
@@ -1323,9 +1323,9 @@ export const ProyectosSinOpiniones = async (req = request, res = response) => {
                     fila++;
                 });
                 worksheet.getCell(fila, 6).value = 'Total';
-                worksheet.getCell(fila, 6).style = { ...fill, font: { ...fill.font, bold: false } };
+                worksheet.getCell(fila, 6).style = fill;
                 worksheet.getCell(fila, 7).value = proyectos.length;
-                worksheet.getCell(fila, 7).style = { ...fill, font: { ...fill.font, bold: false }, numFmt: '#,##0' };
+                worksheet.getCell(fila, 7).style = { ...fill, numFmt: '#,##0' };
                 worksheet.columns.forEach((column, i) => {
                     if ([1, 3, 5, 6].includes(i)) {
                         let maxLength = 0;
@@ -1403,8 +1403,8 @@ export const AsistenciaUT = async (req = request, res = response) => {
                 const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
                 worksheet.getCell('A5').value = subtitulo;
-                worksheet.getCell('J8').value = `Fecha: ${fecha}`;
-                worksheet.getCell('J9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
+                worksheet.getCell('K8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('K9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 actas.forEach(acta => {
                     Object.keys(acta).forEach((key, index) => {
                         worksheet.getCell(fila, index + 1).value = acta[key];
@@ -1413,9 +1413,9 @@ export const AsistenciaUT = async (req = request, res = response) => {
                     fila++;
                 });
                 worksheet.getCell(fila, 5).value = 'Total';
-                worksheet.getCell(fila, 5).style = { ...fill, font: { ...fill.font, bold: false } };
+                worksheet.getCell(fila, 5).style = fill;
                 worksheet.getCell(fila, 6).value = actas.length;
-                worksheet.getCell(fila, 6).style = { ...contenidoStyle, numFmt: '#,##0' };
+                worksheet.getCell(fila, 6).style = { ...contenidoStyle, font: { ...contenidoStyle.font, bold: true }, numFmt: '#,##0' };
                 worksheet.columns.forEach((column, i) => {
                     if ([1, 3].includes(i)) {
                         let maxLength = 0;
@@ -1503,8 +1503,8 @@ export const MesasConComputo = async (req = request, res = response) => {
                     worksheet.mergeCells('B5:E5');
                 if (!worksheet.getCell('B6').isMerged)
                     worksheet.mergeCells('B6:E6');
-                worksheet.getCell('D8').value = `Fecha: ${fecha}`;
-                worksheet.getCell('D9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
+                worksheet.getCell('E8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('E9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 resultado.forEach(res => {
                     Object.keys(res).forEach((key, index) => {
                         worksheet.getCell(fila, index + 1).value = res[key];
@@ -1603,8 +1603,8 @@ export const MesasSinComputo = async (req = request, res = response) => {
                     worksheet.mergeCells('B5:E5');
                 if (!worksheet.getCell('B6').isMerged)
                     worksheet.mergeCells('B6:E6');
-                worksheet.getCell('D8').value = `Fecha: ${fecha}`;
-                worksheet.getCell('D9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
+                worksheet.getCell('E8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('E9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 resultado.forEach(res => {
                     Object.keys(res).forEach((key, index) => {
                         worksheet.getCell(fila, index + 1).value = res[key];
@@ -1995,8 +1995,8 @@ export const ProyectosSegundoLugar = async (req = request, res = response) => {
                     worksheet.mergeCells('B5:I5');
                 if (!worksheet.getCell('B6').isMerged)
                     worksheet.mergeCells('B6:I6');
-                worksheet.getCell('J8').value = fecha;
-                worksheet.getCell('J9').value = hora.substring(0, hora.length - 3);
+                worksheet.getCell('J8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('J9').value = `Hora: ${hora.substring(0, hora.length - 3) }`;
                 let fila = 12;
                 let colonias = [];
                 proyectos.forEach(res => {
@@ -2011,12 +2011,12 @@ export const ProyectosSegundoLugar = async (req = request, res = response) => {
                 if (!worksheet.getCell(fila, 2).isMerged)
                     worksheet.mergeCells(fila, 2, fila, 3);
                 for (let i = 1; i <= 10; i++)
-                    worksheet.getCell(fila, i).style = [4, 7].includes(i) ? { ...contenidoStyle, numFmt: '#,##0' } : contenidoStyle;
+                    worksheet.getCell(fila, i).style = [4, 7].includes(i) ? { ...contenidoStyle, font: { ...contenidoStyle.font, bold: true }, numFmt: '#,##0' } : contenidoStyle;
                 worksheet.getCell(fila, 2).value = 'Total de Unidades Territoriales';
-                worksheet.getCell(fila, 2).style = { ...fill, font: { ...fill.font, bold: false } };
+                worksheet.getCell(fila, 2).style = fill;
                 worksheet.getCell(fila, 4).value = colonias.length;
                 worksheet.getCell(fila, 6).value = 'Total de Proyectos';
-                worksheet.getCell(fila, 6).style = { ...fill, font: { ...fill.font, bold: false } };
+                worksheet.getCell(fila, 6).style = fill;
                 worksheet.getCell(fila, 7).value = proyectos.length;
                 worksheet.columns.forEach((column, i) => {
                     if ([1, 3, 5, 6].includes(i)) {
@@ -2072,7 +2072,7 @@ export const ProyectosEmpateSegundoLugar = async (req = request, res = response)
     const { anio } = req.query;
     const workbook = new ExcelJs.Workbook();
     try {
-        const proyectos = await SICOVACC.sequelize.query(`;WITH CA AS (
+        const proyectos = (await SICOVACC.sequelize.query(`;WITH CA AS (
             SELECT id_distrito, clave_colonia
             FROM consulta_actas
             WHERE modalidad = 1 AND anio = ${anio}${id_distrito != 0 ? ` AND id_distrito = ${id_distrito}` : ''}
@@ -2111,8 +2111,8 @@ export const ProyectosEmpateSegundoLugar = async (req = request, res = response)
         SELECT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, rubro_general, nom_proyecto, votos, votos_sei, total_votos
         FROM Ranking
         WHERE DR = 2 AND empate > 1 AND total_votos > 0
-        ORDER BY id_distrito, nombre_delegacion, nombre_colonia, secuencial ASC`);
-        if (proyectos[1] == 0)
+        ORDER BY id_distrito, nombre_delegacion, nombre_colonia, secuencial ASC`))[0];
+        if (!proyectos.length)
             return res.status(404).json({
                 success: false,
                 msg: '¡No existe información!'
@@ -2137,11 +2137,11 @@ export const ProyectosEmpateSegundoLugar = async (req = request, res = response)
                     worksheet.mergeCells('B5:I5');
                 if (!worksheet.getCell('B6').isMerged)
                     worksheet.mergeCells('B6:I6');
-                worksheet.getCell('J8').value = fecha;
-                worksheet.getCell('J9').value = hora.substring(0, hora.length - 3);
+                worksheet.getCell('J8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('J9').value = `Hora: ${hora.substring(0, hora.length - 3) }`;
                 let fila = 12;
                 let colonias = [];
-                proyectos[0].forEach(res => {
+                proyectos.forEach(res => {
                     if (!colonias.includes(res.clave_colonia))
                         colonias.push(res.clave_colonia);
                     Object.keys(res).forEach((key, index) => {
@@ -2153,12 +2153,12 @@ export const ProyectosEmpateSegundoLugar = async (req = request, res = response)
                 if (!worksheet.getCell(fila, 2).isMerged)
                     worksheet.mergeCells(fila, 2, fila, 3);
                 for (let i = 1; i <= 10; i++)
-                    worksheet.getCell(fila, i).style = [4, 7].includes(i) ? { ...contenidoStyle, numFmt: '#,##0' } : contenidoStyle;
+                    worksheet.getCell(fila, i).style = [4, 7].includes(i) ? { ...contenidoStyle, font: { ...contenidoStyle.font, bold: true }, numFmt: '#,##0' } : contenidoStyle;
                 worksheet.getCell(fila, 2).value = 'Total de Unidades Territoriales';
-                worksheet.getCell(fila, 2).style = { ...fill, font: { ...fill.font, bold: false } };
+                worksheet.getCell(fila, 2).style = fill;
                 worksheet.getCell(fila, 4).value = colonias.length;
                 worksheet.getCell(fila, 6).value = 'Total de Proyectos';
-                worksheet.getCell(fila, 6).style = { ...fill, font: { ...fill.font, bold: false } };
+                worksheet.getCell(fila, 6).style = fill;
                 worksheet.getCell(fila, 7).value = proyectos.length;
                 worksheet.columns.forEach((column, i) => {
                     if ([1, 3, 5, 6].includes(i)) {
@@ -2256,9 +2256,9 @@ export const LevantadaDistrito = async (req = request, res = response) => {
                     fila++;
                 });
                 worksheet.getCell(fila, 5).value = 'Total';
-                worksheet.getCell(fila, 5).style = { ...fill, font: { ...fill.font, bold: false } };
+                worksheet.getCell(fila, 5).style = fill;
                 worksheet.getCell(fila, 6).value = resultado.length;
-                worksheet.getCell(fila, 6).style = { ...fill, font: { ...fill.font, bold: false }, numFmt: '#,##0' };
+                worksheet.getCell(fila, 6).style = { ...fill, numFmt: '#,##0' };
                 worksheet.columns.forEach((column, i) => {
                     if ([2, 5].includes(i)) {
                         let maxLength = 0;

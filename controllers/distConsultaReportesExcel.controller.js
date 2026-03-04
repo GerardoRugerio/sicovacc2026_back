@@ -1,13 +1,13 @@
 import ExcelJs from 'exceljs';
 import { request, response } from 'express';
 import path from 'path';
-import { aniosCAT, autor, contenidoStyle, fill, IECMLogo, plantillas, titulos, tituloStyle } from '../helpers/Constantes.js';
+import { aniosCAT, autor, contenidoStyle, fill, IECMLogo, plantillas, titulos } from '../helpers/Constantes.js';
 import { ConsultaTipoEleccion, FechaServer } from '../helpers/Consultas.js';
 import { SICOVACC } from '../models/consulta_usuarios_sicovacc.model.js';
 
 //? Consulta de Resultados Por Unidad Territorial
 
-export const UTValidadas = async (req = request, res = response) => {
+export const  UTValidadas = async (req = request, res = response) => {
     const { id_distrito } = req.params;
     const { anio } = req.query;
     const workbook = new ExcelJs.Workbook();
@@ -53,7 +53,7 @@ export const UTValidadas = async (req = request, res = response) => {
                     worksheet.mergeCells('B5:C5');
                 if (!worksheet.getCell('B6').isMerged)
                     worksheet.mergeCells('B6:C6');
-                worksheet.getCell('A8').value = `Dirección Distrital: ${id_distrito}`;
+                worksheet.getCell('A8').value = `DIRECCIÓN DISTRITAL: ${id_distrito}`;
                 worksheet.getCell('C8').value = `Fecha: ${fecha}`;
                 worksheet.getCell('C9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 colonias.forEach(colonia => {
@@ -63,7 +63,7 @@ export const UTValidadas = async (req = request, res = response) => {
                     });
                     fila++;
                 });
-                worksheet.getCell(fila, 2).value = 'Total:';
+                worksheet.getCell(fila, 2).value = 'Total';
                 worksheet.getCell(fila, 2).style = fill;
                 worksheet.getCell(fila, 3).value = colonias.length;
                 worksheet.getCell(fila, 3).style = { ...fill, numFmt: '#,##0' };
@@ -140,7 +140,7 @@ export const UTPorValidar = async (req = request, res = response) => {
                     worksheet.mergeCells('B5:C5');
                 if (!worksheet.getCell('B6').isMerged)
                     worksheet.mergeCells('B6:C6');
-                worksheet.getCell('A8').value = `Dirección Distrital: ${id_distrito}`;
+                worksheet.getCell('A8').value = `DIRECCIÓN DISTRITAL: ${id_distrito}`;
                 worksheet.getCell('C8').value = `Fecha: ${fecha}`;
                 worksheet.getCell('C9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 colonias.forEach(colonia => {
@@ -150,7 +150,7 @@ export const UTPorValidar = async (req = request, res = response) => {
                     });
                     fila++;
                 });
-                worksheet.getCell(fila, 2).value = 'Total:';
+                worksheet.getCell(fila, 2).value = 'Total';
                 worksheet.getCell(fila, 2).style = fill;
                 worksheet.getCell(fila, 3).value = colonias.length;
                 worksheet.getCell(fila, 3).style = { ...fill, numFmt: '#,##0' };
@@ -214,8 +214,7 @@ export const ListadoProyectos = async (req = request, res = response) => {
                 worksheet.getCell('A3').value = titulos[1];
                 worksheet.getCell('A5').value = subtitulo;
                 worksheet.getCell('A6').value = 'CONCENTRADO DE PROYECTOS PARTICIPANTES POR UNIDAD TERRITORIAL';
-                worksheet.getCell('A8').value = `Dirección Distrital: ${id_distrito}`;
-                worksheet.getCell('A8').style = { ...fill, font: { ...fill.font, size: 12 } };
+                worksheet.getCell('A8').value = `DIRECCIÓN DISTRITAL: ${id_distrito}`;
                 worksheet.getCell('F8').value = `Fecha: ${fecha}`;
                 worksheet.getCell('F9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 if (!worksheet.getCell('A2').isMerged)
@@ -233,10 +232,10 @@ export const ListadoProyectos = async (req = request, res = response) => {
                     });
                     fila++;
                 });
-                worksheet.getCell(fila, 2).value = 'Total:';
+                worksheet.getCell(fila, 2).value = 'Total';
                 worksheet.getCell(fila, 2).style = fill;
                 worksheet.getCell(fila, 3).value = proyectos.length;
-                worksheet.getCell(fila, 3).style = { ...contenidoStyle, numFmt: '#,##0' };
+                worksheet.getCell(fila, 3).style = { ...contenidoStyle, font: { ...contenidoStyle.font, bold: true }, numFmt: '#,##0' };
                 worksheet.columns.forEach((column, i) => {
                     if ([0, 2, 3, 5].includes(i)) {
                         let maxLength = 0;
@@ -365,10 +364,9 @@ export const ValidacionResultados = async (req = request, res = response) => {
                 worksheet.getCell('A3').value = titulos[1];
                 worksheet.getCell('A5').value = subtitulo;
                 worksheet.getCell('A6').value = 'VALIDACIÓN DE RESULTADOS DE LA CONSULTA POR UNIDAD TERRITORIAL';
-                worksheet.getCell('A8').value = `Dirección Distrital: ${id_distrito}`;
-                worksheet.getCell('A8').style = { ...fill, font: { ...fill.font, size: 12 } };
-                worksheet.getCell('L8').value = `Fecha: ${fecha}`;
-                worksheet.getCell('L9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
+                worksheet.getCell('A8').value = `DIRECCIÓN DISTRITAL: ${id_distrito}`;
+                worksheet.getCell('M8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('M9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 for (let i = 1; i <= max; i++) {
                     for (let j = 1; j <= 3; j++)
                         worksheet.spliceColumns(celda, 0, [null]);
@@ -588,10 +586,9 @@ export const ValidacionResultadosDetalle = async (req = request, res = response)
                 worksheet.getCell('A3').value = titulos[1];
                 worksheet.getCell('A5').value = subtitulo;
                 worksheet.getCell('A6').value = 'VALIDACIÓN DE RESULTADOS DE LA CONSULTA DETALLE MESA';
-                worksheet.getCell('A8').value = `Dirección Distrital: ${id_distrito}`;
-                worksheet.getCell('A8').style = { ...fill, font: { ...fill.font, size: 12 } };
-                worksheet.getCell('O8').value = `Fecha: ${fecha}`;
-                worksheet.getCell('O9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
+                worksheet.getCell('A8').value = `DIRECCIÓN DISTRITAL: ${id_distrito}`;
+                worksheet.getCell('P8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('P9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 for (let i = 1; i <= max; i++) {
                     for (let j = 1; j <= 3; j++)
                         worksheet.spliceColumns(celda, 0, [null]);
@@ -808,9 +805,9 @@ export const ValidacionResultadosNombre = async (req = request, res = response) 
                 const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
                 worksheet.getCell('A5').value = subtitulo;
-                worksheet.getCell('B8').value = id_distrito;
-                worksheet.getCell('L8').value = `Fecha: ${fecha}`;
-                worksheet.getCell('L9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
+                worksheet.getCell('A8').value = `DIRECCIÓN DISTRITAL: ${id_distrito}`;
+                worksheet.getCell('M8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('M9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 for (const [i, proyecto] of JSON.parse(actas[0].proyectos).entries()) {
                     const { proyecto: nom } = proyecto;
                     for (let j = 1; j <= 3; j++)
@@ -1015,9 +1012,9 @@ export const ValidacionResultadosNombreDetalle = async (req = request, res = res
                 const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
                 worksheet.getCell('A5').value = subtitulo;
-                worksheet.getCell('B8').value = id_distrito;
-                worksheet.getCell('Q8').value = `Fecha: ${fecha}`;
-                worksheet.getCell('Q9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
+                worksheet.getCell('A8').value = `DIRECCIÓN DISTRITAL: ${id_distrito}`;
+                worksheet.getCell('R8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('R9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 for (const [i, proyecto] of JSON.parse(actas[0].proyectos).entries()) {
                     const { proyecto: nom } = proyecto;
                     for (let j = 1; j <= 3; j++)
@@ -1198,10 +1195,9 @@ export const MesasConComputo = async (req = request, res = response) => {
                     worksheet.mergeCells('B5:C5');
                 if (!worksheet.getCell('B6').isMerged)
                     worksheet.mergeCells('B6:C6');
-                worksheet.getCell('A8').value = `Dirección Distrital: ${id_distrito}`;
-                worksheet.getCell('A8').style = { ...fill, font: { ...fill.font, size: 12 } };
-                worksheet.getCell('C8').value = `Fecha: ${fecha}`;
-                worksheet.getCell('C9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
+                worksheet.getCell('A8').value = `DIRECCIÓN DISTRITAL: ${id_distrito}`;
+                worksheet.getCell('D8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('D9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 resultado.forEach(res => {
                     Object.keys(res).forEach((key, index) => {
                         worksheet.getCell(fila, index + 1).value = res[key];
@@ -1301,10 +1297,9 @@ export const MesasSinComputo = async (req = request, res = response) => {
                     worksheet.mergeCells('B5:C5');
                 if (!worksheet.getCell('B6').isMerged)
                     worksheet.mergeCells('B6:C6');
-                worksheet.getCell('A8').value = `Dirección Distrital: ${id_distrito}`;
-                worksheet.getCell('A8').style = { ...fill, font: { ...fill.font, size: 12 } };
-                worksheet.getCell('C8').value = `Fecha: ${fecha}`;
-                worksheet.getCell('C9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
+                worksheet.getCell('A8').value = `DIRECCIÓN DISTRITAL: ${id_distrito}`;
+                worksheet.getCell('D8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('D9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 resultado.forEach(res => {
                     Object.keys(res).forEach((key, index) => {
                         worksheet.getCell(fila, index + 1).value = res[key];
@@ -1440,12 +1435,9 @@ export const ResultadosOpiMesa = async (req = request, res = response) => {
                 worksheet.getCell('A6').value = 'RESULTADOS DE OPINIONES POR MESA';
                 if (!worksheet.getCell('A6').isMerged)
                     worksheet.mergeCells('A6:I6');
-                worksheet.getCell('A8').value = 'Dirección Distrital';
-                worksheet.getCell('A8').style = { ...fill, font: { ...fill.font, size: 12 } };
-                worksheet.getCell('B8').value = id_distrito;
-                worksheet.getCell('B8').style = { ...contenidoStyle, font: { ...contenidoStyle.font, size: 12 } };
-                worksheet.getCell('I8').value = fecha;
-                worksheet.getCell('I9').value = hora.substring(0, hora.length - 3);
+                worksheet.getCell('A8').value = `DIRECCIÓN DISTRITAL: ${id_distrito}`;
+                worksheet.getCell('I8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('I9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 worksheet.getCell('D11').value = 'Clave del Proyecto y Opiniones Nulas'
                 worksheet.getCell('F11').value = 'Nombre del Proyecto Específico';
                 for (let acta of actas) {
@@ -1584,22 +1576,21 @@ export const ProyectosPrimerLugar = async (req = request, res = response) => {
                 worksheet.spliceColumns(1, 1);
                 const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
-                worksheet.getCell('B2').value = titulos[0];
-                worksheet.getCell('B3').value = titulos[1];
-                worksheet.getCell('B5').value = subtitulo;
-                worksheet.getCell('B6').value = 'PROYECTOS POR UNIDAD TERRITORIAL QUE OBTUVIERON EL PRIMER LUGAR EN LA CONSULTA DE PRESUPUESTO PARTICIPATIVO';
-                if (!worksheet.getCell('B2').isMerged)
-                    worksheet.mergeCells('B2:I2');
-                if (!worksheet.getCell('B3').isMerged)
-                    worksheet.mergeCells('B3:I3');
-                if (!worksheet.getCell('B5').isMerged)
-                    worksheet.mergeCells('B5:I5');
-                if (!worksheet.getCell('B6').isMerged)
-                    worksheet.mergeCells('B6:I6');
-                worksheet.getCell('A8').value = `Dirección Distrital: ${id_distrito}`;
-                worksheet.getCell('A8').style = { ...fill, font: { ...fill.font, size: 12 } };
-                worksheet.getCell('I8').value = fecha;
-                worksheet.getCell('I9').value = hora.substring(0, hora.length - 3);
+                worksheet.getCell('A2').value = titulos[0];
+                worksheet.getCell('A3').value = titulos[1];
+                worksheet.getCell('A5').value = subtitulo;
+                worksheet.getCell('A6').value = 'PROYECTOS POR UNIDAD TERRITORIAL QUE OBTUVIERON EL PRIMER LUGAR EN LA CONSULTA DE PRESUPUESTO PARTICIPATIVO';
+                if (!worksheet.getCell('A2').isMerged)
+                    worksheet.mergeCells('A2:I2');
+                if (!worksheet.getCell('A3').isMerged)
+                    worksheet.mergeCells('A3:I3');
+                if (!worksheet.getCell('A5').isMerged)
+                    worksheet.mergeCells('A5:I5');
+                if (!worksheet.getCell('A6').isMerged)
+                    worksheet.mergeCells('A6:I6');
+                worksheet.getCell('A8').value = `DIRECCIÓN DISTRITAL: ${id_distrito}`;
+                worksheet.getCell('I8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('I9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 let fila = 12;
                 let colonias = [];
                 proyectos.forEach(res => {
@@ -1614,12 +1605,12 @@ export const ProyectosPrimerLugar = async (req = request, res = response) => {
                 if (!worksheet.getCell(fila, 1).isMerged)
                     worksheet.mergeCells(fila, 1, fila, 2);
                 for (let i = 1; i <= 9; i++)
-                    worksheet.getCell(fila, i).style = i == 3 || i == 6 ? { ...contenidoStyle, numFmt: '#,##0' } : contenidoStyle;
+                    worksheet.getCell(fila, i).style = i == 3 || i == 6 ? { ...contenidoStyle, font: { ...contenidoStyle.font, bold: true }, numFmt: '#,##0' } : contenidoStyle;
                 worksheet.getCell(fila, 1).value = 'Total de Unidades Territoriales';
-                worksheet.getCell(fila, 1).style = { ...fill, font: { ...fill.font, bold: false } };
+                worksheet.getCell(fila, 1).style = fill;
                 worksheet.getCell(fila, 3).value = colonias.length;
                 worksheet.getCell(fila, 5).value = 'Total de Proyectos';
-                worksheet.getCell(fila, 5).style = { ...fill, font: { ...fill.font, bold: false } };
+                worksheet.getCell(fila, 5).style = fill;
                 worksheet.getCell(fila, 6).value = proyectos.length;
                 worksheet.columns.forEach((column, i) => {
                     if ([0, 2, 4, 5].includes(i)) {
@@ -1729,43 +1720,42 @@ export const ProyectosSegundoLugar = async (req = request, res = response) => {
                 worksheet.spliceColumns(1, 1);
                 const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
-                worksheet.getCell('B2').value = titulos[0];
-                worksheet.getCell('B3').value = titulos[1];
-                worksheet.getCell('B5').value = subtitulo;
-                worksheet.getCell('B6').value = 'PROYECTOS POR UNIDAD TERRITORIAL QUE OBTUVIERON EL SEGUNDO LUGAR EN CONSULTA DE PRESUPUESTO PARTICIPATIVO';
-                if (!worksheet.getCell('B2').isMerged)
-                    worksheet.mergeCells('B2:I2');
-                if (!worksheet.getCell('B3').isMerged)
-                    worksheet.mergeCells('B3:I3');
-                if (!worksheet.getCell('B5').isMerged)
-                    worksheet.mergeCells('B5:I5');
-                if (!worksheet.getCell('B6').isMerged)
-                    worksheet.mergeCells('B6:I6');
-                worksheet.getCell('A8').value = `Dirección Distrital: ${id_distrito}`;
-                worksheet.getCell('A8').style = { ...fill, font: { ...fill.font, size: 12 } };
-                worksheet.getCell('I8').value = fecha;
-                worksheet.getCell('I9').value = hora.substring(0, hora.length - 3);
+                worksheet.getCell('A2').value = titulos[0];
+                worksheet.getCell('A3').value = titulos[1];
+                worksheet.getCell('A5').value = subtitulo;
+                worksheet.getCell('A6').value = 'PROYECTOS POR UNIDAD TERRITORIAL QUE OBTUVIERON EL SEGUNDO LUGAR EN CONSULTA DE PRESUPUESTO PARTICIPATIVO';
+                if (!worksheet.getCell('A2').isMerged)
+                    worksheet.mergeCells('A2:I2');
+                if (!worksheet.getCell('A3').isMerged)
+                    worksheet.mergeCells('A3:I3');
+                if (!worksheet.getCell('A5').isMerged)
+                    worksheet.mergeCells('A5:I5');
+                if (!worksheet.getCell('A6').isMerged)
+                    worksheet.mergeCells('A6:I6');
+                worksheet.getCell('A8').value = `DIRECCIÓN DISTRITAL: ${id_distrito}`;
+                worksheet.getCell('I8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('I9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 let fila = 12;
                 let colonias = [];
                 proyectos.forEach(res => {
                     if (!colonias.includes(res.clave_colonia))
                         colonias.push(res.clave_colonia);
                     Object.keys(res).forEach((key, index) => {
-                        worksheet.getCell(fila, index + 1).value = index >= 6 && index <= 8 ? Intl.NumberFormat('es-MX').format(res[key]) : res[key];
-                        worksheet.getCell(fila, index + 1).style = contenidoStyle;
+                        worksheet.getCell(fila, index + 1).value = res[key];
+                        worksheet.getCell(fila, index + 1).style = index >= 6 ? { ...contenidoStyle, numFmt: '#,##0' } : contenidoStyle;
                     });
                     fila++;
                 });
                 if (!worksheet.getCell(fila, 1).isMerged)
                     worksheet.mergeCells(fila, 1, fila, 2);
                 for (let i = 1; i <= 9; i++)
-                    worksheet.getCell(fila, i).style = contenidoStyle;
+                    worksheet.getCell(fila, i).style = i == 3 || i == 6 ? { ...contenidoStyle, font: { ...contenidoStyle.font, bold: true }, numFmt: '#,##0' } : contenidoStyle;
                 worksheet.getCell(fila, 1).value = 'Total de Unidades Territoriales';
-                worksheet.getCell(fila, 1).style = { ...fill, font: { ...fill.font, bold: false } };
-                worksheet.getCell(fila, 3).value = Intl.NumberFormat('es-MX').format(colonias.length);
+                worksheet.getCell(fila, 1).style = fill
+                worksheet.getCell(fila, 3).value = colonias.length
                 worksheet.getCell(fila, 5).value = 'Total de Proyectos';
-                worksheet.getCell(fila, 5).style = { ...fill, font: { ...fill.font, bold: false } };
-                worksheet.getCell(fila, 6).value = Intl.NumberFormat('es-MX').format(proyectos[1]);
+                worksheet.getCell(fila, 5).style = fill
+                worksheet.getCell(fila, 6).value = proyectos.length;
                 worksheet.columns.forEach((column, i) => {
                     if ([0, 2, 5, 4].includes(i)) {
                         let maxLength = 0;
@@ -1866,30 +1856,29 @@ export const ProyectosEmpatePrimerLugar = async (req = request, res = response) 
                 msg: '¡No existe información!'
             });
         const { fecha, hora } = await FechaServer();
-        const titulo = `CONSULTA DE ${(await ConsultaTipoEleccion(anio)).toUpperCase()}`;
-        workbook.xlsx.readFile(path.join(plantillas, 'Proyectos-GE.xlsx'))
+        const subtitulo = `CONSULTA DE ${(await ConsultaTipoEleccion(anio)).toUpperCase()}`;
+        workbook.xlsx.readFile(path.join(plantillas[2], 'Proyectos-GE.xlsx'))
             .then(() => {
                 workbook.creator = autor;
                 const worksheet = workbook.getWorksheet(1);
                 worksheet.spliceColumns(1, 1);
                 const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
-                worksheet.getCell('B2').value = 'DIRECCIÓN EJECUTIVA DE ORGANIZACIÓN ELECTORAL Y GEOSTADÍSTICA';
-                worksheet.getCell('B2').style = { ...tituloStyle, font: { ...tituloStyle.font, size: 16 } };
-                worksheet.getCell('B4').value = titulo;
-                worksheet.getCell('B4').style = { ...tituloStyle, font: { ...tituloStyle.font, size: 14 } };
-                worksheet.getCell('B5').value = 'CASOS DE EMPATES DE LOS PROYECTOS QUE OBTUVIERON EL PRIMER LUGAR';
-                worksheet.getCell('B5').style = { ...tituloStyle, font: { ...tituloStyle.font, size: 14 } };
-                if (!worksheet.getCell('B2').isMerged)
-                    worksheet.mergeCells('B2:I2');
-                if (!worksheet.getCell('B4').isMerged)
-                    worksheet.mergeCells('B4:I4');
-                if (!worksheet.getCell('B5').isMerged)
-                    worksheet.mergeCells('B5:I5');
-                worksheet.getCell('A8').value = `Dirección Distrital: ${id_distrito}`;
-                worksheet.getCell('A8').style = { ...fill, font: { ...fill.font, size: 12 } };
-                worksheet.getCell('I8').value = fecha;
-                worksheet.getCell('I9').value = hora.substring(0, hora.length - 3);
+                worksheet.getCell('A2').value = titulos[0];
+                worksheet.getCell('A3').value = titulos[1];
+                worksheet.getCell('A5').value = subtitulo;
+                worksheet.getCell('A6').value = 'CASOS DE EMPATES DE LOS PROYECTOS QUE OBTUVIERON EL PRIMER LUGAR';
+                if (!worksheet.getCell('A2').isMerged)
+                    worksheet.mergeCells('A2:I2');
+                if (!worksheet.getCell('A3').isMerged)
+                    worksheet.mergeCells('A3:I3');
+                if (!worksheet.getCell('A5').isMerged)
+                    worksheet.mergeCells('A5:I5');
+                if (!worksheet.getCell('A6').isMerged)
+                    worksheet.mergeCells('A6:I6');
+                worksheet.getCell('A8').value = `DIRECCIÓN DISTRITAL: ${id_distrito}`;
+                worksheet.getCell('I8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('I9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 let fila = 12;
                 let colonias = [];
                 proyectos.forEach(res => {
@@ -1904,12 +1893,12 @@ export const ProyectosEmpatePrimerLugar = async (req = request, res = response) 
                 if (!worksheet.getCell(fila, 1).isMerged)
                     worksheet.mergeCells(fila, 1, fila, 2);
                 for (let i = 1; i <= 9; i++)
-                    worksheet.getCell(fila, i).style = i == 3 || i == 6 ? { ...contenidoStyle, numFmt: '#,##0' } : contenidoStyle;
+                    worksheet.getCell(fila, i).style = i == 3 || i == 6 ? { ...contenidoStyle, font: { ...contenidoStyle.font, bold: true }, numFmt: '#,##0' } : contenidoStyle;
                 worksheet.getCell(fila, 1).value = 'Total de Unidades Territoriales';
-                worksheet.getCell(fila, 1).style = { ...fill, font: { ...fill.font, bold: false } };
+                worksheet.getCell(fila, 1).style = fill
                 worksheet.getCell(fila, 3).value = colonias.length;
                 worksheet.getCell(fila, 5).value = 'Total de Proyectos';
-                worksheet.getCell(fila, 5).style = { ...fill, font: { ...fill.font, bold: false } };
+                worksheet.getCell(fila, 5).style = fill
                 worksheet.getCell(fila, 6).value = proyectos.length;
                 worksheet.columns.forEach((column, i) => {
                     if ([0, 2, 4, 5].includes(i)) {
@@ -2019,43 +2008,42 @@ export const ProyectosEmpateSegundoLugar = async (req = request, res = response)
                 worksheet.spliceColumns(1, 1);
                 const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
-                worksheet.getCell('B2').value = titulos[0];
-                worksheet.getCell('B3').value = titulos[1];
-                worksheet.getCell('B5').value = subtitulo;
-                worksheet.getCell('B6').value = 'CASOS DE EMPATE DE LOS PROYECTOS QUE OBTUVIERON EL SEGUNDO LUGAR';
-                if (!worksheet.getCell('B2').isMerged)
-                    worksheet.mergeCells('B2:I2');
-                if (!worksheet.getCell('B3').isMerged)
-                    worksheet.mergeCells('B3:I3');
-                if (!worksheet.getCell('B5').isMerged)
-                    worksheet.mergeCells('B5:I5');
-                if (!worksheet.getCell('B6').isMerged)
-                    worksheet.mergeCells('B6:I6');
-                worksheet.getCell('A8').value = `Dirección Distrital: ${id_distrito}`;
-                worksheet.getCell('A8').style = { ...fill, font: { ...fill.font, size: 12 } };
-                worksheet.getCell('I8').value = fecha;
-                worksheet.getCell('I9').value = hora.substring(0, hora.length - 3);
+                worksheet.getCell('A2').value = titulos[0];
+                worksheet.getCell('A3').value = titulos[1];
+                worksheet.getCell('A5').value = subtitulo;
+                worksheet.getCell('A6').value = 'CASOS DE EMPATE DE LOS PROYECTOS QUE OBTUVIERON EL SEGUNDO LUGAR';
+                if (!worksheet.getCell('A2').isMerged)
+                    worksheet.mergeCells('A2:I2');
+                if (!worksheet.getCell('A3').isMerged)
+                    worksheet.mergeCells('A3:I3');
+                if (!worksheet.getCell('A5').isMerged)
+                    worksheet.mergeCells('A5:I5');
+                if (!worksheet.getCell('A6').isMerged)
+                    worksheet.mergeCells('A6:I6');
+                worksheet.getCell('A8').value = `DIRECCIÓN DISTRITAL: ${id_distrito}`;
+                worksheet.getCell('I8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('I9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 let fila = 12;
                 let colonias = [];
                 proyectos.forEach(res => {
                     if (!colonias.includes(res.clave_colonia))
                         colonias.push(res.clave_colonia);
                     Object.keys(res).forEach((key, index) => {
-                        worksheet.getCell(fila, index + 1).value = index >= 6 && index <= 8 ? Intl.NumberFormat('es-MX').format(res[key]) : res[key];
-                        worksheet.getCell(fila, index + 1).style = contenidoStyle;
+                        worksheet.getCell(fila, index + 1).value = res[key];
+                        worksheet.getCell(fila, index + 1).style = index >= 6 ? { ...contenidoStyle, numFmt: '#,##0' } : contenidoStyle;
                     });
                     fila++;
                 })
                 if (!worksheet.getCell(fila, 1).isMerged)
                     worksheet.mergeCells(fila, 1, fila, 2);
                 for (let i = 1; i <= 9; i++)
-                    worksheet.getCell(fila, i).style = contenidoStyle;
+                    worksheet.getCell(fila, i).style = i == 3 || i == 6 ? { ...contenidoStyle, font: { ...contenidoStyle.font, bold: true }, numFmt: '#,##0' } : contenidoStyle;
                 worksheet.getCell(fila, 1).value = 'Total de Unidades Territoriales';
-                worksheet.getCell(fila, 1).style = { ...fill, font: { ...fill.font, bold: false } };
-                worksheet.getCell(fila, 3).value = Intl.NumberFormat('es-MX').format(colonias.length);
+                worksheet.getCell(fila, 1).style = fill
+                worksheet.getCell(fila, 3).value = colonias.length;
                 worksheet.getCell(fila, 5).value = 'Total de Proyectos';
-                worksheet.getCell(fila, 5).style = { ...fill, font: { ...fill.font, bold: false } };
-                worksheet.getCell(fila, 6).value = Intl.NumberFormat('es-MX').format(proyectos[1]);
+                worksheet.getCell(fila, 5).style = fill
+                worksheet.getCell(fila, 6).value = proyectos.length;
                 worksheet.columns.forEach((column, i) => {
                     if ([0, 2, 4, 5].includes(i)) {
                         let maxLength = 0;
@@ -2157,12 +2145,9 @@ export const ProyectosUTSinOpiniones = async (req = request, res = response) => 
                     worksheet.mergeCells('A5:I5');
                 if (!worksheet.getCell('A6').isMerged)
                     worksheet.mergeCells('A6:I6');
-                worksheet.getCell('A8').value = 'Dirección Distrital:';
-                worksheet.getCell('A8').style = { ...fill, font: { ...fill.font, size: 12 } };
-                worksheet.getCell('B8').value = id_distrito;
-                worksheet.getCell('B8').style = contenidoStyle;
-                worksheet.getCell('I8').value = fecha;
-                worksheet.getCell('I9').value = hora.substring(0, hora.length - 3);
+                worksheet.getCell('A8').value = `DIRECCIÓN DISTRITAL: ${id_distrito}`;
+                worksheet.getCell('I8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('I9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 let fila = 12;
                 proyectos.forEach(res => {
                     Object.keys(res).forEach((key, index) => {
@@ -2172,9 +2157,9 @@ export const ProyectosUTSinOpiniones = async (req = request, res = response) => 
                     fila++;
                 });
                 worksheet.getCell(fila, 5).value = 'Total';
-                worksheet.getCell(fila, 5).style = { ...fill, font: { ...fill.font, bold: false } };
+                worksheet.getCell(fila, 5).style = fill
                 worksheet.getCell(fila, 6).value = proyectos.length;
-                worksheet.getCell(fila, 6).style = { ...fill, font: { ...fill.font, bold: false }, numFmt: '#,##0' };
+                worksheet.getCell(fila, 6).style = { ...fill, numFmt: '#,##0' };
                 worksheet.columns.forEach((column, i) => {
                     if ([0, 2, 4, 5].includes(i)) {
                         let maxLength = 0;
@@ -2251,7 +2236,7 @@ export const ProyectosOpinar = async (req = request, res = response) => {
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
                 worksheet.getCell('A5').value = titulo;
                 worksheet.getCell('A6').value = 'PROYECTOS A OPINAR';
-                worksheet.getCell('B8').value = id_distrito;
+                worksheet.getCell('A8').value = `DIRECCIÓN DISTRITAL: ${id_distrito}`;
                 worksheet.getCell('F8').value = `Fecha: ${fecha}`;
                 worksheet.getCell('F9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 proyectos.forEach(proyecto => {
@@ -2261,10 +2246,10 @@ export const ProyectosOpinar = async (req = request, res = response) => {
                     });
                     fila++;
                 });
-                worksheet.getCell(fila, 2).value = 'Total:';
+                worksheet.getCell(fila, 2).value = 'Total';
                 worksheet.getCell(fila, 2).style = fill;
                 worksheet.getCell(fila, 3).value = proyectos.length;
-                worksheet.getCell(fila, 3).style = { ...contenidoStyle, numFmt: '#,##0' };
+                worksheet.getCell(fila, 3).style = { ...contenidoStyle, font: { ...contenidoStyle.font, bold: true }, numFmt: '#,##0' };
                 worksheet.columns.forEach((column, index) => {
                     if ([0, 2, 5].includes(index)) {
                         let maxLength = 0;
@@ -2359,13 +2344,9 @@ export const LevantadaDistrito = async (req = request, res = response) => {
                 worksheet.getCell('B6').value = 'ACTAS LEVANTADAS EN DIRECCIÓN DISTRITAL (CAUSALES DE RECUENTO)';
                 if (!worksheet.getCell('B6').isMerged)
                     worksheet.mergeCells('B6:E6');
+                worksheet.getCell('A8').value = `DIRECCIÓN DISTRITAL: ${id_distrito}`;
                 worksheet.getCell('E8').value = `Fecha: ${fecha}`;
                 worksheet.getCell('E9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
-                worksheet.getCell('A8').value = `Dirección Distrital:`;
-                worksheet.getCell('A8').style = { ...fill, font: { ...fill.font, size: 12 } };
-                worksheet.getCell('B8').value = id_distrito;
-                worksheet.getCell('B8').style = contenidoStyle;
-                worksheet.getCell('A8').style = { ...fill, font: { ...fill.font, size: 12 } };
                 resultado[0].forEach(res => {
                     Object.keys(res).forEach((key, index) => {
                         worksheet.getCell(fila, index + 1).value = res[key];
@@ -2373,10 +2354,10 @@ export const LevantadaDistrito = async (req = request, res = response) => {
                     });
                     fila++;
                 });
-                worksheet.getCell(fila, 4).value = 'Total: ';
-                worksheet.getCell(fila, 4).style = { ...fill, font: { ...fill.font, bold: false } };
+                worksheet.getCell(fila, 4).value = 'Total';
+                worksheet.getCell(fila, 4).style = fill
                 worksheet.getCell(fila, 5).value = resultado[1];
-                worksheet.getCell(fila, 5).style = { ...fill, font: { ...fill.font, bold: false }, numFmt: '#,##0' };
+                worksheet.getCell(fila, 5).style = { ...fill, numFmt: '#,##0' };
                 worksheet.columns.forEach((column, i) => {
                     if ([1, 4].includes(i)) {
                         let maxLength = 0;
