@@ -1,19 +1,9 @@
 {
     "name": "sicovacc",
     "version": "1.0.0",
-    "description": "Backend del Sistema de Cómputos y Validaciones para las Consultas Ciudadanas 2026 y 2027",
-    "homepage": "https://github.com/GerardoRugerio/sicovacc2026_back#readme",
-    "bugs": {
-        "url": "https://github.com/GerardoRugerio/sicovacc2026_back/issues"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/GerardoRugerio/sicovacc2026_back.git"
-    },
-    "license": "ISC",
-    "author": "",
-    "type": "module",
+    "description": "Backend de SICOVACC",
     "main": "index.js",
+    "type": "module",
     "scripts": {
         "start": "node index.js",
         "start:dev": "cls && nodemon index.js",
@@ -22,31 +12,43 @@
         "pm2:reset": "pm2 stop SICOVACC && pm2 delete SICOVACC",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
+    "repository": {
+        "type": "git",
+        "url": ""
+    },
+    "keywords": [
+        "SICOVACC",
+        "Backend"
+    ],
+    "author": "Luis Valenzuela",
+    "license": "ISC",
+    "homepage": "",
     "dependencies": {
         "@socket.io/redis-adapter": "8.3.0",
-        "bcrypt": "5.1.1",
-        "cors": "2.8.5",
+        "bcrypt": "6.0.0",
+        "cors": "2.8.6",
         "crypto-js": "4.2.0",
-        "docxtemplater": "3.54.0",
+        "docxtemplater": "3.68.3",
         "docxtemplater-image-module-free": "1.1.1",
-        "dotenv": "16.4.5",
+        "dotenv": "17.3.1",
         "exceljs": "4.4.0",
-        "express": "4.19.2",
-        "express-validator": "7.1.0",
-        "jsonwebtoken": "9.0.2",
+        "express": "5.2.1",
+        "express-validator": "7.3.1",
+        "jsonwebtoken": "9.0.3",
         "pako": "2.1.0",
-        "pdfkit": "0.15.0",
-        "pizzip": "3.1.7",
-        "redis": "5.9.0",
+        "pdfkit": "0.17.2",
+        "pizzip": "3.2.0",
+        "redis": "5.11.0",
         "request": "2.88.2",
-        "sequelize": "6.37.3",
-        "socket.io": "4.8.1",
-        "tedious": "18.2.1",
+        "sequelize": "6.37.7",
+        "socket.io": "4.8.3",
+        "tedious": "19.2.1",
+        "undici": "7.22.0",
         "useragent": "2.3.0",
         "yamlparser": "0.0.2"
     },
     "devDependencies": {
-        "@types/cors": "2.8.17",
-        "@types/express": "5.0.0"
+        "@types/cors": "2.8.19",
+        "@types/express": "5.0.6"
     }
 }

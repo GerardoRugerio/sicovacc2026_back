@@ -119,7 +119,7 @@ export const NumAMes = num => {
  * @param {object} data Información a encriptar
  * @returns {string} Información encriptada
  */
-export const EncryptData = data => CryptoJS.AES.encrypt(CryptoJS.lib.WordArray.create(Pako.deflate(JSON.stringify(data))), config().parsed.SECRET_KEY).toString();
+export const EncryptData = data => CryptoJS.AES.encrypt(CryptoJS.lib.WordArray.create(Pako.deflate(JSON.stringify(data))), config({ quiet: true }).parsed.SECRET_KEY).toString();
 
 /**
  * Función que convierte un Número a Letra/s

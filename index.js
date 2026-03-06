@@ -25,8 +25,8 @@ const sslOption = {
 };
 const app = express();
 const server = createServer(sslOption, app);
-const HOST = config().parsed.HOST;
-const PORT = config().parsed.PORT;
+const HOST = config({ quiet: true }).parsed.HOST;
+const PORT = config({ quiet: true }).parsed.PORT;
 const io = new Server(server, { cors: { origin: true, credentials: true } });
 
 app.use(cors({
@@ -35,7 +35,6 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization'],
     optionsSuccessStatus: 204
 }));
-app.options('*', cors());
 
 app.use(cors({ origin: '*' }));
 app.use(json());
@@ -70,4 +69,4 @@ app.use('/api/central', centralRouter);
 
 app.use('/api/cat', catRouter);
 
-server.listen(PORT, () => console.log(`Servidor escuchando en ${HOST}:${PORT}`));
+server.listen(PORT, () => console.log(`Servidor escuchando en ${HOST}:${PORT}`)); 

@@ -15,13 +15,13 @@ export const autor = 'SICOVACC';
 export const titulos = {
     0: 'DIRECCIÓN EJECUTIVA DE ORGANIZACIÓN ELECTORAL Y GEOESTADÍSTICA',
     1: `SISTEMA DE CÓMPUTO Y VALIDACIONES PARA LAS CONSULTAS CIUDADANAS\nSICOVACC 2026`
-}
+}; //! ACTUALIZARLO SI ES NECESARIO
 
 export const plantillas = {
     0: './plantillas/',
     1: './plantillas/eleccion/',
     2: './plantillas/consulta/'
-}
+};
 
 export const alignment = {
     horizontal: 'center',
@@ -42,7 +42,7 @@ export const tituloStyle = {
         bold: true
     },
     alignment
-}
+};
 
 export const contenidoStyle = {
     font: {
@@ -76,10 +76,10 @@ export const aniosCAT = {
     },
     1: {
         1: '',
-        2: '',
-        3: ''
+        2: 'VTA_RES_PROYECTOS_2',
+        3: 'VTA_RES_PROYECTOS_2_C2'
     }
-}
+};
 
 export const TipoMesa = tipo => {
     switch (tipo) {
@@ -87,4 +87,4 @@ export const TipoMesa = tipo => {
         case 4: return 'MECPPP';
         default: return '';
     }
-}
+};

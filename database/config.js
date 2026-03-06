@@ -112,8 +112,8 @@ const reconnect = async (nombre, conexion) => {
  *   - port: Puerto del servidor SQL
  *   - encrypt: Indica si se requiere encriptar la conexión
  */
-export const sqlConnector_SICOVACC = crearConexion('SICOVACC', JSON.parse(config().parsed.DB_SICOVACC));
-export const sqlConnector_VSEI = crearConexion('SEI', JSON.parse(config().parsed.DB_SEI));
+export const sqlConnector_SICOVACC = crearConexion('SICOVACC', JSON.parse(config({ quiet: true }).parsed.DB_SICOVACC));
+export const sqlConnector_VSEI = crearConexion('SEI', JSON.parse(config({ quiet: true }).parsed.DB_SEI));
 
 export const conectarTodas = async () => await Promise.all([
     conectarBD('SICOVACC', sqlConnector_SICOVACC),

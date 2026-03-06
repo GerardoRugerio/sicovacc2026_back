@@ -1,6 +1,7 @@
 import { request, response } from 'express';
+import { Agent } from 'undici';
 import { Audit } from '../helpers/Audit.js';
-import { aniosCAT } from '../helpers/Constantes.js';
+import { anioN, aniosCAT } from '../helpers/Constantes.js';
 import { Comillas } from '../helpers/Funciones.js';
 import { VTA_RES_PROYECTOS_2 } from '../models/VTA_RES_PROYECTOS_2.model.js';
 import { SICOVACC } from '../models/consulta_usuarios_sicovacc.model.js';
@@ -63,35 +64,42 @@ export const ImportarProyectosAprobados = async (req = request, res = response) 
     const { id_distrito } = req.body;
     try {
         let proyectos = {};
+        const agent = new Agent({ connect: { rejectUnauthorized: false } });
         const myHeaders = new Headers();
         //? Configuración del header con la API
-        myHeaders.append('X-API-KEY', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.KMUFsIDTnFmyG3nMiGM6H9FNFUROf3wh7SmqJp-QM39');
+        myHeaders.append('X-API-KEY', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.KMUFsIDTnFmyG3nMiGM6H9FNFUROf3wh7SmqJp-QV30');
         const requestOptions = {
             method: 'GET',
             headers: myHeaders,
-            redirect: 'follow'
+            dispatcher: agent
         };
         //? Se hace la peticion al WebService y se transforma a JSON
-        proyectos = await fetch('https://app.iecm.mx/siproe-aleatorio2025/api/reportdata/exportar', requestOptions).then(response => response.json());
-        // proyectos = await fetch('http://145.0.46.37:4000/api/reportdata/exportar', requestOptions).then(response => response.json());
-        await SICOVACC.sequelize.query(`EXEC BorrarProyectos ${id_distrito == 'TODOS' ? 0 : id_distrito}`);
+        proyectos = await fetch('https://aplicaciones2.iecm.mx/siproe-aleatorio-2026-2027/api/reportdata/exportar', requestOptions).then(response => response.json());
+        // await SICOVACC.sequelize.query(`EXEC BorrarProyectos ${id_distrito == 'TODOS' ? 0 : id_distrito}`);
+        console.log(id_distrito);
         if (id_distrito != 'TODOS')
-            proyectos = proyectos.filter(proyecto => proyecto.distrito === id_distrito);
+            proyectos = proyectos.filter(proyecto => proyecto.distrito == id_distrito);
         for (const proyecto of proyectos) {
             const { id, distrito, id_demarcacion, ut, numero_aleatorio, nombre, destino_recursos, ut_mejoramiento, ut_infraestructura, ut_obras, ut_servicios, ut_act_dep, ut_act_rec, ut_act_cul,
                 uh_mejoramiento, uh_mantenimiento, uh_obras, uh_reparaciones, uh_servicios, uh_act_dep, uh_act_rec, uh_act_cul, ciudadano_proponente, presupuesto_aut, pe_toda,
                 pe_per_may, pe_nna, pe_jovenes, pe_mujeres, pe_hombres, pe_otra, pe_desc_otra, pe_per_disc, tipo_ubicacion, calles, num_ext, fecha_alta, descripcion, folio, sorteo, ejer_fis
             } = proyecto;
-            const existe = (await SICOVACC.sequelize.query(`SELECT * FROM consulta_prelacion_proyectos WHERE id_prelacion = ${id} AND id_distrito = ${distrito} AND id_delegacion = ${id_demarcacion} AND clave_colonia = '${ut}'`))[0];
-            if (existe == 0)
-                await SICOVACC.sequelize.query(`INSERT consulta_prelacion_proyectos (id_prelacion, id_distrito, id_delegacion, clave_colonia, num_proyecto, nom_proyecto, tipo_rubro, rubro1, rubro2, rubro3, rubro4, rubro5, rubro6, rubro7, rubro8, propuesto_por, ciudadano_presenta,
+            console.log(`INSERT consulta_prelacion_proyectos (id_prelacion, id_distrito, id_delegacion, clave_colonia, num_proyecto, nom_proyecto, tipo_rubro, rubro1, rubro2, rubro3, rubro4, rubro5, rubro6, rubro7, rubro8, propuesto_por, ciudadano_presenta,
                 costo_aproximado, poblacion_benef, pob1, pob2, pob3, pob4, pob5, pob6, pob7, pob8, ubicacion_exacta, fecha_presenta, opinion_favorable, descripcion, folio_proy_web, id_sorteo, anio, fecha_alta, id_usuario, estatus) VALUES (${id}, ${distrito}, ${id_demarcacion}, '${ut}', ${numero_aleatorio}, UPPER('${Comillas(nombre)}'),
                 ${destino_recursos}, ${destino_recursos == 1 ? ut_mejoramiento : uh_mejoramiento}, ${destino_recursos == 1 ? ut_infraestructura : uh_mantenimiento}, ${destino_recursos == 1 ? ut_obras : uh_obras}, ${destino_recursos == 1 ? ut_servicios : uh_reparaciones}, ${destino_recursos == 1 ? ut_act_dep : uh_servicios},
                 ${destino_recursos == 1 ? ut_act_rec : uh_act_dep}, ${destino_recursos == 1 ? ut_act_cul : uh_act_rec}, ${destino_recursos == 1 ? 0 : uh_act_cul}, UPPER('${ciudadano_proponente}'), UPPER('${ciudadano_proponente}'), '${presupuesto_aut}', NULL, ${pe_toda}, ${pe_per_may}, ${pe_per_disc}, ${pe_nna},
-                ${pe_jovenes}, ${pe_mujeres}, ${pe_hombres}, ${pe_otra ? `UPPER('${pe_desc_otra}')` : 'NULL'}, ${tipo_ubicacion == 1 ? "'TODA LA UT'" : `UPPER('${calles}, ${num_ext}')`}, '${fecha_alta}', 'SI', UPPER('${Comillas(descripcion)}'), '${folio}', ${sorteo}, ${ejer_fis}, CURRENT_TIMESTAMP, ${id_usuario}, 1)`);
+                ${pe_jovenes}, ${pe_mujeres}, ${pe_hombres}, ${pe_otra ? `UPPER('${pe_desc_otra}')` : 'NULL'}, ${tipo_ubicacion == 1 ? "'TODA LA UT'" : `UPPER('${calles}, ${num_ext}')`}, '${fecha_alta}', 'SI', UPPER('${Comillas(descripcion)}'), '${folio}', ${sorteo},
+                ${Object.keys(anioN).find(key => anioN[key] === ejer_fis)}, CURRENT_TIMESTAMP, ${id_usuario}, 1)`);
+            // const existe = (await SICOVACC.sequelize.query(`SELECT * FROM consulta_prelacion_proyectos WHERE id_prelacion = ${id} AND id_distrito = ${distrito} AND id_delegacion = ${id_demarcacion} AND clave_colonia = '${ut}'`))[0];
+            // if (existe == 0)
+            //     await SICOVACC.sequelize.query(`INSERT consulta_prelacion_proyectos (id_prelacion, id_distrito, id_delegacion, clave_colonia, num_proyecto, nom_proyecto, tipo_rubro, rubro1, rubro2, rubro3, rubro4, rubro5, rubro6, rubro7, rubro8, propuesto_por, ciudadano_presenta,
+            //     costo_aproximado, poblacion_benef, pob1, pob2, pob3, pob4, pob5, pob6, pob7, pob8, ubicacion_exacta, fecha_presenta, opinion_favorable, descripcion, folio_proy_web, id_sorteo, anio, fecha_alta, id_usuario, estatus) VALUES (${id}, ${distrito}, ${id_demarcacion}, '${ut}', ${numero_aleatorio}, UPPER('${Comillas(nombre)}'),
+            //     ${destino_recursos}, ${destino_recursos == 1 ? ut_mejoramiento : uh_mejoramiento}, ${destino_recursos == 1 ? ut_infraestructura : uh_mantenimiento}, ${destino_recursos == 1 ? ut_obras : uh_obras}, ${destino_recursos == 1 ? ut_servicios : uh_reparaciones}, ${destino_recursos == 1 ? ut_act_dep : uh_servicios},
+            //     ${destino_recursos == 1 ? ut_act_rec : uh_act_dep}, ${destino_recursos == 1 ? ut_act_cul : uh_act_rec}, ${destino_recursos == 1 ? 0 : uh_act_cul}, UPPER('${ciudadano_proponente}'), UPPER('${ciudadano_proponente}'), '${presupuesto_aut}', NULL, ${pe_toda}, ${pe_per_may}, ${pe_per_disc}, ${pe_nna},
+            //     ${pe_jovenes}, ${pe_mujeres}, ${pe_hombres}, ${pe_otra ? `UPPER('${pe_desc_otra}')` : 'NULL'}, ${tipo_ubicacion == 1 ? "'TODA LA UT'" : `UPPER('${calles}, ${num_ext}')`}, '${fecha_alta}', 'SI', UPPER('${Comillas(descripcion)}'), '${folio}', ${sorteo},
+            //     ${Object.keys(anioN).find(key => anioN[key] === ejer_fis)}, CURRENT_TIMESTAMP, ${id_usuario}, 1)`);
         }
-        await SICOVACC.sequelize.query(`UPDATE consulta_prelacion_proyectos SET nom_proyecto = UPPER('${Comillas(`"Arte en revolución y expresión: 'Revolucionarte'"`)}') WHERE clave_colonia = '14-043' AND num_proyecto = 10`);
-        await Audit(id_transaccion, id_usuario, distrito, `IMPORTÓ LOS PROYECTOS DE SIPROE${id_distrito != 'TODOS' ? ` DEL DISTRITO ${id_distrito}` : ''}`);
+        // await Audit(id_transaccion, id_usuario, distrito, `IMPORTÓ LOS PROYECTOS DE SIPROE${id_distrito != 'TODOS' ? ` DEL DISTRITO ${id_distrito}` : ''}`);
         res.json({
             success: true,
             msg: 'Proyectos importados con exito'

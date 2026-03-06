@@ -323,7 +323,7 @@ export const VerificarConsultaMesa = async (req = request, res = response) => {
             SELECT UPPER(D.nombre_delegacion) AS nombre_delegacion, COALESCE(A2.bol_nulas, 0) AS bol_nulas_sei, COALESCE(A2.votacion_total_emitida, 0) AS opi_total_sei, I.id_distrito, I.clave_colonia, I.num_mro, I.tipo_mro${anio != 1 ? ', I.anio' : ''}
             FROM I
             LEFT JOIN consulta_mros M ON I.id_distrito = M.id_distrito AND I.clave_colonia = M.clave_colonia AND I.num_mro = M.num_mro AND I.tipo_mro = M.tipo_mro
-            LEFT JOIN ${anio == 1 ? 'copaco' : 'consulta'}_actas A2 ON I.id_distrito = A2.id_distrito AND I.clave_colonia = A2.clave_colonia AND I.num_mro = A2.num_mro AND I.tipo_mro = A2.tipo_mro AND A2.modalidad = 2 AND A2.estatus = 2${anio != 1 ? ' AND I.anio = A2.anio' : ''}
+            LEFT JOIN ${anio == 1 ? 'copaco' : 'consulta'}_actas A2 ON I.id_distrito = A2.id_distrito AND I.clave_colonia = A2.clave_colonia AND I.num_mro = A2.num_mro AND I.tipo_mro = A2.tipo_mro AND A2.modalidad = 2 AND A2.estatus = 1${anio != 1 ? ' AND I.anio = A2.anio' : ''}
             LEFT JOIN consulta_cat_delegacion D ON M.id_delegacion = D.id_delegacion
         ),
         V AS (

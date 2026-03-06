@@ -11,7 +11,7 @@ export const decryptPayload = (req = request, res = response, next) => {
             msg: 'Payload faltante'
         });
     try {
-        const compressed = Buffer.from(CryptoJS.AES.decrypt(payload, config().parsed.SECRET_KEY).toString(CryptoJS.enc.Base64), 'base64');
+        const compressed = Buffer.from(CryptoJS.AES.decrypt(payload, config({ quiet: true }).parsed.SECRET_KEY).toString(CryptoJS.enc.Base64), 'base64');
         const data = JSON.parse(Pako.inflate(compressed, { to: 'string' }));
         req.body = data;
         delete req.body.payload;

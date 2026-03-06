@@ -10,7 +10,7 @@ const router = Router();
 router.post('/importarVotosSEI', [
     chkToken([99]),
     dataToken,
-    body('id_distrito').exists().notEmpty().isNumeric(),
+    body('id_distrito').exists(),
     body('anio').exists().notEmpty().isInt({ min: 1, max: 3 }).withMessage('El valor debe de ser 1 al 3'),
     Validator,
     chkDistrito(undefined, true)
@@ -19,7 +19,7 @@ router.post('/importarVotosSEI', [
 router.post('/importarProyectos', [
     chkToken([99]),
     dataToken,
-    body('id_distrito').exists().notEmpty().isNumeric(),
+    body('id_distrito').exists(),
     Validator,
     chkDistrito(undefined, true)
 ], ImportarProyectosAprobados);
@@ -27,7 +27,7 @@ router.post('/importarProyectos', [
 router.post('/importarParticipantes', [
     chkToken([99]),
     dataToken,
-    body('id_distrito').exists().notEmpty().isNumeric(),
+    body('id_distrito').exists(),
     Validator,
     chkDistrito(undefined, true)
 ], ImportarParticipantesAprobados);

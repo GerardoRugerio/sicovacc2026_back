@@ -21,7 +21,7 @@ export const chkToken = (rol = undefined) => {
             });
         const token = authorization.split(' ')[1];
         try {
-            const { perfil } = JWT.verify(token, config().parsed.SECRET);
+            const { perfil } = JWT.verify(token, config({ quiet: true }).parsed.SECRET);
             if (rol && !rol.includes(perfil))
                 return res.status(403).json({
                     success: false,
