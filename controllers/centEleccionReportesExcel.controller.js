@@ -4,6 +4,7 @@ import path from 'path';
 import { autor, contenidoStyle, fill, IECMLogo, plantillas, titulos } from '../helpers/Constantes.js';
 import { FechaServer } from '../helpers/Consultas.js';
 import { SICOVACC } from '../models/consulta_usuarios_sicovacc.model.js';
+import { NumeroALetras } from '../helpers/Funciones.js';
 
 //? Cómputo total de las Candidaturas por UT
 
@@ -212,13 +213,13 @@ export const ResultadoComputoTotalMesa = async (req = request, res = response) =
                         worksheet.mergeCells(11, celda, 11, celda + 2);
                     for (let j = celda; j <= celda + 2; j++)
                         worksheet.getCell(11, j).style = contenidoStyle;
-                    worksheet.getCell(11, celda).value = i;
+                    worksheet.getCell(11, celda).value = NumeroALetras(i);
                     worksheet.getCell(11, celda).style = fill;
-                    worksheet.getCell(12, celda).value = 'Opiniones Mesa';
+                    worksheet.getCell(12, celda).value = 'Mesa';
                     worksheet.getCell(12, celda).style = fill;
-                    worksheet.getCell(12, celda + 1).value = 'Opiniones (SEI)';
+                    worksheet.getCell(12, celda + 1).value = 'SEI';
                     worksheet.getCell(12, celda + 1).style = fill;
-                    worksheet.getCell(12, celda + 2).value = `Total de Opiniones Participante ${i}`;
+                    worksheet.getCell(12, celda + 2).value = `Total de Votos Candidatura ${NumeroALetras(i)}`;
                     worksheet.getCell(12, celda + 2).style = fill;
                     celda += 3;
                 }
@@ -430,13 +431,13 @@ export const ResultadoComputoTotalUT = async (req = request, res = response) => 
                         worksheet.mergeCells(11, celda, 11, celda + 2);
                     for (let j = celda; j <= celda + 2; j++)
                         worksheet.getCell(11, j).style = contenidoStyle;
-                    worksheet.getCell(11, celda).value = i;
+                    worksheet.getCell(11, celda).value = NumeroALetras(i);
                     worksheet.getCell(11, celda).style = fill;
-                    worksheet.getCell(12, celda).value = 'Opiniones Mesa';
+                    worksheet.getCell(12, celda).value = 'Mesa';
                     worksheet.getCell(12, celda).style = fill;
-                    worksheet.getCell(12, celda + 1).value = 'Opiniones (SEI)';
+                    worksheet.getCell(12, celda + 1).value = 'SEI';
                     worksheet.getCell(12, celda + 1).style = fill;
-                    worksheet.getCell(12, celda + 2).value = `Total de Opiniones Participante ${i}`;
+                    worksheet.getCell(12, celda + 2).value = `Total de Votos Candidatura ${NumeroALetras(i)}`;
                     worksheet.getCell(12, celda + 2).style = fill;
                     celda += 3;
                 }
@@ -1754,7 +1755,7 @@ export const ActasAlerta = async (req = request, res = response) => {
             .then(() => {
                 workbook.creator = autor;
                 const worksheet = workbook.getWorksheet(1);
-                let fila = 10;
+                let fila = 11;
                 const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
                 worksheet.getCell('A2').value = titulos[0];
