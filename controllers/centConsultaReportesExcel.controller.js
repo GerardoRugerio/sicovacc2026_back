@@ -300,7 +300,7 @@ export const ConsultaCiudadanaDetalle = async (req = request, res = response) =>
                 worksheet.getCell('A2').value = titulos[0];
                 worksheet.getCell('A3').value = titulos[1];
                 worksheet.getCell('A5').value = subtitulo;
-                worksheet.getCell('A6').value = 'VALIDACIÓN DE RESULTADOS DE LA CONSULTA CIUDADANA DETALLE MESA';
+                worksheet.getCell('A6').value = 'VALIDACIÓN DE RESULTADOS DE LA CONSULTA CIUDADANA DETALLE MESA (INCLUYE LOS RESULTADOS DE MRVyO, MECPEP, MECPPP Y SEI)';
                 worksheet.getCell('Q8').value = `Fecha: ${fecha}`;
                 worksheet.getCell('Q9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 for (let i = 1; i <= max; i++) {
@@ -517,7 +517,7 @@ export const OpinionesMesa = async (req = request, res = response) => {
                 worksheet.getCell('A5').value = subtitulo;
                 if (!worksheet.getCell('A5').isMerged)
                     worksheet.mergeCells('A5:J5');
-                worksheet.getCell('A6').value = 'RESULTADOS DE OPINIONES POR MESA';
+                worksheet.getCell('A6').value = 'RESULTADOS DE OPINIONES POR MESA (INCLUYE LOS RESULTADOS DE MRVyO, MECPEP, MECPPP Y SEI)';
                 if (!worksheet.getCell('A6').isMerged)
                     worksheet.mergeCells('A6:J6');
                 worksheet.getCell('J8').value = `Fecha: ${fecha}`;
@@ -678,7 +678,7 @@ export const ConsultaUnidadTerritorial = async (req = request, res = response) =
                 worksheet.getCell('A2').value = titulos[0];
                 worksheet.getCell('A3').value = titulos[1];
                 worksheet.getCell('A5').value = subtitulo;
-                worksheet.getCell('A6').value = 'VALIDACIÓN DE RESULTADOS DE LA CONSULTA POR UNIDAD TERRITORIAL';
+                worksheet.getCell('A6').value = 'VALIDACIÓN DE RESULTADOS DE LA CONSULTA POR UNIDAD TERRITORIAL (INCLUYE LOS RESULTADOS DE MRVyO, MECPEP, MECPPP Y SEI)';
                 worksheet.getCell('N8').value = `Fecha: ${fecha}`;
                 worksheet.getCell('N9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 for (let i = 1; i <= max; i++) {
@@ -1005,12 +1005,12 @@ export const ProyectosPrimerLugar = async (req = request, res = response) => {
             GROUP BY id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, rubro_general, nom_proyecto
         ),
         RANKING AS (
-            SELECT *, DENSE_RANK() OVER (PARTITION BY clave_colonia ORDER BY total_votos DESC) AS DR, COUNT(*) OVER (PARTITION BY clave_colonia, total_votos) AS empate
+            SELECT *, DENSE_RANK() OVER (PARTITION BY clave_colonia ORDER BY total_votos DESC) AS DR
             FROM Votos
         )
         SELECT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, rubro_general, nom_proyecto, votos, votos_sei, total_votos
         FROM RANKING
-        WHERE DR = 1 AND empate <= 1 AND total_votos > 0
+        WHERE DR = 1 AND total_votos > 0
         ORDER BY id_distrito, nombre_delegacion, nombre_colonia, secuencial ASC`))[0];
         if (!proyectos.length)
             return res.status(404).json({
@@ -1028,7 +1028,7 @@ export const ProyectosPrimerLugar = async (req = request, res = response) => {
                 worksheet.getCell('B2').value = titulos[0];
                 worksheet.getCell('B3').value = titulos[1];
                 worksheet.getCell('B5').value = subtitulo;
-                worksheet.getCell('B6').value = 'PROYECTOS POR UNIDAD TERRITORIAL QUE OBTUVIERON EL PRIMER LUGAR EN LA CONSULTA DE PRESUPUESTO PARTICIPATIVO';
+                worksheet.getCell('B6').value = 'PROYECTOS POR UNIDAD TERRITORIAL QUE OBTUVIERON EL PRIMER LUGAR';
                 if (!worksheet.getCell('B2').isMerged)
                     worksheet.mergeCells('B2:I2');
                 if (!worksheet.getCell('B3').isMerged)
@@ -1494,7 +1494,7 @@ export const MesasConComputo = async (req = request, res = response) => {
                 worksheet.getCell('B2').value = titulos[0];
                 worksheet.getCell('B3').value = titulos[1];
                 worksheet.getCell('B5').value = subtitulo;
-                worksheet.getCell('B6').value = 'MESAS RECEPTORAS DE OPINIÓN CON CÓMPUTO CAPTURADO';
+                worksheet.getCell('B6').value = 'MESAS RECEPTORAS DE VOTACIÓN Y OPINIÓN CON CÓMPUTO CAPTURADO';
                 if (!worksheet.getCell('B2').isMerged)
                     worksheet.mergeCells('B2:E2');
                 if (!worksheet.getCell('B3').isMerged)
@@ -1594,7 +1594,7 @@ export const MesasSinComputo = async (req = request, res = response) => {
                 worksheet.getCell('B2').value = titulos[0];
                 worksheet.getCell('B3').value = titulos[1];
                 worksheet.getCell('B5').value = subtitulo;
-                worksheet.getCell('B6').value = 'MESAS RECEPTORAS DE OPINIÓN SIN CÓMPUTO CAPTURADO';
+                worksheet.getCell('B6').value = 'MESAS RECEPTORAS DE VOTACIÓN Y OPINIÓN SIN CÓMPUTO CAPTURADO';
                 if (!worksheet.getCell('B2').isMerged)
                     worksheet.mergeCells('B2:E2');
                 if (!worksheet.getCell('B3').isMerged)
@@ -1963,12 +1963,12 @@ export const ProyectosSegundoLugar = async (req = request, res = response) => {
             GROUP BY id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, rubro_general, nom_proyecto
         ),
         RANKING AS (
-            SELECT *, DENSE_RANK() OVER (PARTITION BY clave_colonia ORDER BY total_votos DESC) AS DR, COUNT(*) OVER (PARTITION BY clave_colonia, total_votos) AS empate
+            SELECT *, DENSE_RANK() OVER (PARTITION BY clave_colonia ORDER BY total_votos DESC) AS DR
             FROM Votos
         )
         SELECT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, rubro_general, nom_proyecto, votos, votos_sei, total_votos
         FROM RANKING
-        WHERE DR = 2 AND empate <= 1 AND total_votos > 0
+        WHERE DR = 2 AND total_votos > 0
         ORDER BY id_distrito, nombre_delegacion, nombre_colonia, secuencial ASC`))[0];
         if (!proyectos.length)
             return res.status(404).json({
@@ -1986,7 +1986,7 @@ export const ProyectosSegundoLugar = async (req = request, res = response) => {
                 worksheet.getCell('B2').value = titulos[0];
                 worksheet.getCell('B3').value = titulos[1];
                 worksheet.getCell('B5').value = subtitulo;
-                worksheet.getCell('B6').value = 'PROYECTOS POR UNIDAD TERRITORIAL QUE OBTUVIERON EL SEGUNDO LUGAR EN CONSULTA DE PRESUPUESTO PARTICIPATIVO';
+                worksheet.getCell('B6').value = 'PROYECTOS POR UNIDAD TERRITORIAL QUE OBTUVIERON EL SEGUNDO LUGAR';
                 if (!worksheet.getCell('B2').isMerged)
                     worksheet.mergeCells('B2:I2');
                 if (!worksheet.getCell('B3').isMerged)
