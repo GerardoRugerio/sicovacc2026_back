@@ -327,13 +327,13 @@ export const VerificarConsultaMesa = async (req = request, res = response) => {
             LEFT JOIN consulta_cat_delegacion D ON M.id_delegacion = D.id_delegacion
         ),
         V AS (
-            SELECT secuencial, ${anio == 1 ? 'nombreC' : 'nom_proyecto'} AS nom_p${anio != 1 ? ', rubro_general' : ''}, '' AS votos, votos_sei, id_distrito, clave_colonia, num_mro, tipo_mro${anio != 1 ? ', anio' : ''}
+            SELECT secuencial, ${anio == 1 ? 'nombreC' : 'nom_proyecto'} AS nom_p${anio != 1 ? ', destino_recursos' : ''}, '' AS votos, votos_sei, id_distrito, clave_colonia, num_mro, tipo_mro${anio != 1 ? ', anio' : ''}
             FROM ${anio == 1 ? 'copaco' : 'consulta'}_actas_VVS
             WHERE estatus = 1
         )
         SELECT (
             SELECT nombre_delegacion, bol_nulas_sei, opi_total_sei, (
-                SELECT ${anio == 1 ? 'dbo.NumeroALetras(secuencial) AS ' : ''}secuencial, nom_p${anio != 1 ? ', rubro_general' : ''}, votos, votos_sei
+                SELECT ${anio == 1 ? 'dbo.NumeroALetras(secuencial) AS ' : ''}secuencial, nom_p${anio != 1 ? ', destino_recursos' : ''}, votos, votos_sei
                 FROM V
                 WHERE id_distrito = C.id_distrito AND clave_colonia = C.clave_colonia AND num_mro = C.num_mro AND tipo_mro = C.tipo_mro${anio != 1 ? ' AND anio = C.anio' : ''}
                 ORDER BY V.secuencial ASC
@@ -371,14 +371,14 @@ export const DatosActa = async (req = request, res = response) => {
             WHERE CA1.id_acta = ${id_acta} AND CA1.modalidad = 1 AND CA1.estatus = 1${anio != 1 ? ` AND CA1.anio = ${anio}` : ''}
         ),
         V AS (
-            SELECT secuencial, ${anio == 1 ? 'nombreC' : 'nom_proyecto'} AS nom_p,${anio != 1 ? ' rubro_general,' : ''} votos, votos_sei, id_distrito, clave_colonia, num_mro, tipo_mro${anio != 1 ? ', anio' : ''}
+            SELECT secuencial, ${anio == 1 ? 'nombreC' : 'nom_proyecto'} AS nom_p,${anio != 1 ? ' destino_recursos,' : ''} votos, votos_sei, id_distrito, clave_colonia, num_mro, tipo_mro${anio != 1 ? ', anio' : ''}
             FROM ${anio == 1 ? 'copaco' : 'consulta'}_actas_VVS
             WHERE estatus = 1
         )
         SELECT COALESCE((
             SELECT id_acta, clave_colonia, nombre_colonia, id_delegacion, nombre_delegacion, num_mro, tipo_mro, mro, coordinador_sino, num_integrantes, observador_sino, levantada_distrito, razon_distrital, bol_recibidas, bol_adicionales,
             total_ciudadanos, bol_sobrantes, bol_nulas, bol_nulas_sei, bol_total_emitidas, opi_total_sei, (
-                SELECT ${anio == 1 ? 'dbo.NumeroALetras(secuencial) AS ' : ''}secuencial, nom_p,${anio != 1 ? ' rubro_general,' : ''} votos, votos_sei
+                SELECT ${anio == 1 ? 'dbo.NumeroALetras(secuencial) AS ' : ''}secuencial, nom_p,${anio != 1 ? ' destino_recursos,' : ''} votos, votos_sei
                 FROM V
                 WHERE id_distrito = C.id_distrito AND clave_colonia = C.clave_colonia AND num_mro = C.num_mro AND tipo_mro = C.tipo_mro${anio != 1 ? ' AND anio = C.anio' : ''}
                 ORDER BY V.secuencial ASC

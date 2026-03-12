@@ -12,7 +12,7 @@ export const ProyectosParticipantes = async (req = request, res = response) => {
     const { id_distrito } = req.params;
     const { clave_colonia, anio } = req.body;
     try {
-        const consulta = (await SICOVACC.sequelize.query(`SELECT secuencial, folio, rubro_general, nom_proyecto
+        const consulta = (await SICOVACC.sequelize.query(`SELECT secuencial, folio, destino_recursos, nom_proyecto
         FROM consulta_prelacion_proyectos_VVS
         WHERE id_distrito = ${id_distrito} AND clave_colonia = '${clave_colonia}' AND anio = ${anio}
         ORDER BY secuencial ASC`))[0];
@@ -35,7 +35,7 @@ export const ProyectosParticipantes = async (req = request, res = response) => {
         const encabezados = [
             [{ text: 'NÚMERO DE PROYECTO', font: 'Helvetica-Bold', fontSize: 14, background: '#C0C0C0' }],
             [{ text: 'FOLIO DE REGISTRO', font: 'Helvetica-Bold', fontSize: 14, background: '#C0C0C0' }],
-            [{ text: 'RUBRO GENERAL', font: 'Helvetica-Bold', fontSize: 14, background: '#C0C0C0' }],
+            [{ text: 'DESTINO DE LOS RECURSOS', font: 'Helvetica-Bold', fontSize: 14, background: '#C0C0C0' }],
             [{ text: 'NOMBRE DEL PROYECTO', font: 'Helvetica-Bold', fontSize: 14, background: '#C0C0C0' }]
         ];
         const columnas = [

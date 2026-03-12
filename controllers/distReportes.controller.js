@@ -7,7 +7,7 @@ export const ListaProyectos = async (req = request, res = response) => {
     const { id_distrito } = req.data;
     const { clave_colonia, anio } = req.body;
     try {
-        const datos = (await SICOVACC.sequelize.query(`SELECT secuencial AS num_proyecto, fecha, costo_aproximado, folio, rubro_general, nom_proyecto, ciudadano_presenta, poblacion_benef, ubicacion_exacta, descripcion
+        const datos = (await SICOVACC.sequelize.query(`SELECT secuencial AS num_proyecto, fecha, costo_aproximado, folio, destino_recursos, nom_proyecto, ciudadano_presenta, poblacion_benef, ubicacion_exacta, descripcion
         FROM consulta_prelacion_proyectos_VVS
         WHERE id_distrito = ${id_distrito} AND clave_colonia = '${clave_colonia}' AND anio = ${anio}
         ORDER BY num_proyecto, folio ASC`))[0];

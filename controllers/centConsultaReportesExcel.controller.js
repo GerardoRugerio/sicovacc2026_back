@@ -22,7 +22,7 @@ export const BaseDatos = async (req = request, res = response) => {
         ),
         ProyectosJSON AS (
             SELECT id_distrito, clave_Colonia, num_mro, tipo_mro, anio, (
-                SELECT secuencial, nom_proyecto, descripcion, rubro_general, votos, votos_sei, total_votos
+                SELECT secuencial, nom_proyecto, descripcion, destino_recursos, votos, votos_sei, total_votos
                 FROM consulta_actas_VVS V2
                 WHERE V2.id_distrito = V1.id_distrito AND V2.clave_colonia = V1.clave_colonia AND V2.num_mro = V1.num_mro AND V2.tipo_mro = V1.tipo_mro AND V2.anio = V1.anio
                 ORDER BY secuencial ASC
@@ -58,9 +58,9 @@ export const BaseDatos = async (req = request, res = response) => {
                     let sum_total = 0;
                     const { nombre_delegacion, id_distrito: distrito, clave_colonia, nombre_colonia, mesa, bol_nulas, bol_nulas_sei, proyectos } = acta;
                     for (let proyecto of JSON.parse(proyectos)) {
-                        const { secuencial, nom_proyecto, descripcion, rubro_general, votos, votos_sei, total_votos } = proyecto;
+                        const { secuencial, nom_proyecto, descripcion, destino_recursos, votos, votos_sei, total_votos } = proyecto;
                         sum_total += total_votos;
-                        const X = { nombre_delegacion, distrito, clave_colonia, nombre_colonia, mesa, secuencial, nom_proyecto, descripcion, rubro_general, votos, votos_sei, total_votos };
+                        const X = { nombre_delegacion, distrito, clave_colonia, nombre_colonia, mesa, secuencial, nom_proyecto, descripcion, destino_recursos, votos, votos_sei, total_votos };
                         for (let i = 1; i <= 13; i++)
                             worksheet.getCell(fila, i).style = [2, 6, 10, 11, 12].includes(i) ? { ...contenidoStyle, numFmt: '#,##0' } : contenidoStyle;
                         Object.keys(X).forEach((key, i) => {
@@ -131,7 +131,7 @@ export const ProyectosParticipantes = async (req = request, res = response) => {
     const { anio } = req.query;
     const workbook = new ExcelJs.Workbook();
     try {
-        const proyectos = (await SICOVACC.sequelize.query(`SELECT DISTINCT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, folio, secuencial, rubro_general, nom_proyecto
+        const proyectos = (await SICOVACC.sequelize.query(`SELECT DISTINCT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, folio, secuencial, destino_recursos, nom_proyecto
         FROM consulta_actas_VVS
         WHERE anio = 2${id_distrito != 0 ? ` AND id_distrito = 6` : ''}
         ORDER BY id_distrito, nombre_delegacion, nombre_colonia, secuencial ASC`))[0];
@@ -851,10 +851,10 @@ export const OpinionesUT = async (req = request, res = response) => {
         ),
         ProyectosJSON AS (
             SELECt id_distrito, clave_colonia, anio, (
-                SELECT secuencial, nom_proyecto, rubro_general, SUM(votos) AS votos, SUM(votos_sei) AS votos_sei, SUM(total_votos) AS total_votos
+                SELECT secuencial, nom_proyecto, destino_recursos, SUM(votos) AS votos, SUM(votos_sei) AS votos_sei, SUM(total_votos) AS total_votos
                 FROM consulta_actas_VVS V2
                 WHERE V2.id_distrito = V1.id_distrito AND V2.clave_colonia = V1.clave_colonia AND V2.anio = V1.anio
-                GROUP BY secuencial, nom_proyecto, rubro_general
+                GROUP BY secuencial, nom_proyecto, destino_recursos
                 ORDER BY secuencial ASC
                 FOR JSON PATH
             ) AS proyectos
@@ -995,20 +995,20 @@ export const ProyectosPrimerLugar = async (req = request, res = response) => {
             WHERE C.capturadas = E.total
         ),
         ActasValidadas AS (
-            SELECT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, rubro_general, nom_proyecto, votos, votos_sei, total_votos
+            SELECT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, destino_recursos, nom_proyecto, votos, votos_sei, total_votos
             FROM consulta_actas_VVS V
             WHERE EXISTS (SELECT 1 FROM Mesas WHERE id_distrito = V.id_distrito AND clave_colonia = V.clave_colonia) AND anio = ${anio} AND estatus = 1
         ),
         Votos AS (
-            SELECT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, rubro_general, nom_proyecto, SUM(votos) AS votos, SUM(votos_sei) AS votos_sei, SUM(total_votos) AS total_votos
+            SELECT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, destino_recursos, nom_proyecto, SUM(votos) AS votos, SUM(votos_sei) AS votos_sei, SUM(total_votos) AS total_votos
             FROM ActasValidadas
-            GROUP BY id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, rubro_general, nom_proyecto
+            GROUP BY id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, destino_recursos, nom_proyecto
         ),
         RANKING AS (
             SELECT *, DENSE_RANK() OVER (PARTITION BY clave_colonia ORDER BY total_votos DESC) AS DR
             FROM Votos
         )
-        SELECT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, rubro_general, nom_proyecto, votos, votos_sei, total_votos
+        SELECT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, destino_recursos, nom_proyecto, votos, votos_sei, total_votos
         FROM RANKING
         WHERE DR = 1 AND total_votos > 0
         ORDER BY id_distrito, nombre_delegacion, nombre_colonia, secuencial ASC`))[0];
@@ -1137,20 +1137,20 @@ export const ProyectosEmpatePrimerLugar = async (req = request, res = response) 
             WHERE C.capturadas = E.total
         ),
         ActasValidadas AS (
-            SELECT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, rubro_general, nom_proyecto, votos, votos_sei, total_votos
+            SELECT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, destino_recursos, nom_proyecto, votos, votos_sei, total_votos
             FROM consulta_actas_VVS V
             WHERE EXISTS (SELECT 1 FROM Mesas WHERE id_distrito = V.id_distrito AND clave_colonia = V.clave_colonia) AND estatus = 1 AND anio = ${anio}
         ),
         Votos AS (
-            SELECT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, rubro_general, nom_proyecto, SUM(votos) AS votos, SUM(votos_sei) AS votos_sei, SUM(total_votos) AS total_votos
+            SELECT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, destino_recursos, nom_proyecto, SUM(votos) AS votos, SUM(votos_sei) AS votos_sei, SUM(total_votos) AS total_votos
             FROM ActasValidadas
-            GROUP BY id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, rubro_general, nom_proyecto
+            GROUP BY id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, destino_recursos, nom_proyecto
         ),
         Ranking AS (
             SELECT *, DENSE_RANK() OVER (PARTITION BY clave_colonia ORDER BY total_votos DESC) AS DR, COUNT(*) OVER (PARTITION BY clave_colonia, total_votos) AS empate
             FROM Votos
         )
-        SELECT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, rubro_general, nom_proyecto, votos, votos_sei, total_votos
+        SELECT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, destino_recursos, nom_proyecto, votos, votos_sei, total_votos
         FROM Ranking
         WHERE DR = 1 AND empate > 1 AND total_votos > 0
         ORDER BY id_distrito, nombre_delegacion, nombre_colonia, secuencial ASC`))[0];
@@ -1256,36 +1256,27 @@ export const ProyectosSinOpiniones = async (req = request, res = response) => {
     const { anio } = req.query;
     const workbook = new ExcelJs.Workbook();
     try {
-        const proyectos = (await SICOVACC.sequelize.query(`;WITH CA AS (
+        const proyectos = (await SICOVACC.sequelize.query(`;WITH Mesas AS (
             SELECT id_distrito, clave_colonia, modalidad, anio
-            FROM consulta_actas
-            WHERE anio = ${anio}${id_distrito != 0 ? ` AND id_distrito = ${id_distrito}` : ''} AND votacion_total_emitida = 0
-        ),
-        MesasEsperadas aS (
-            SELECT id_distrito, clave_colonia, COUNT(*) AS total
-            FROM consulta_mros
+            FROM consulta_actas CA
             WHERE estatus = 1
-            GROUP BY id_distrito, clave_colonia
-        ),
-        MesasCapturadas AS (
-            SELECT id_distrito, clave_colonia, modalidad, anio, COUNT(*) AS capturadas
-            FROM CA
             GROUP BY id_distrito, clave_colonia, modalidad, anio
-        ),
-        Mesas AS (
-            SELECt C.id_distrito, C.clave_colonia, C.modalidad, C.anio
-            FROM MesasCapturadas C
-            INNER JOIN MesasEsperadas E ON C.id_distrito = E.id_distrito AND C.clave_colonia = E.clave_colonia
-            WHERE C.capturadas = E.total
+            HAVING COUNT(*) = (
+                SELECT COUNT(*)
+                FROM consulta_mros
+                WHERE id_distrito = CA.id_distrito AND clave_colonia = CA.clave_colonia AND estatus = 1
+            )
         ),
         V AS (
-            SELECT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, rubro_general, nom_proyecto, votos, votos_sei, total_votos, anio
+            SELECT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, destino_recursos, nom_proyecto, votos, votos_sei, total_votos, anio
             FROM consulta_actas_VVS
+            WHERE anio = ${anio}${id_distrito != 0 ? ` AND id_distrito = ${id_distrito}` : ''}
         )
-        SELECT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, rubro_general, nom_proyecto, votos, votos_sei, total_votos
+        SELECT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, destino_recursos, nom_proyecto, votos, votos_sei, total_votos
         FROM V
         WHERE EXISTS (SELECT 1 FROM Mesas WHERE id_distrito = V.id_distrito AND clave_colonia = V.clave_colonia AND anio = V.anio AND modalidad = 1)
         AND EXISTS (SELECT 1 FROM Mesas WHERE id_distrito = V.id_distrito AND clave_colonia = V.clave_colonia AND anio = V.anio AND modalidad = 2)
+        AND clave_colonia IN (SELECT clave_colonia FROM V GROUP BY clave_colonia HAVING SUM(total_votos) = 0)
         ORDER BY id_distrito, nombre_delegacion, nombre_colonia, secuencial ASC`))[0];
         if (!proyectos.length)
             return res.status(404).json({
@@ -1303,7 +1294,7 @@ export const ProyectosSinOpiniones = async (req = request, res = response) => {
                 worksheet.getCell('A2').value = titulos[0];
                 worksheet.getCell('A3').value = titulos[1];
                 worksheet.getCell('A5').value = subtitulo;
-                worksheet.getCell('A6').value = 'CONCENTRADO DE UNIDADES TERRITORIALES QUE NO RECIBIERON OPINIONES';
+                worksheet.getCell('A6').value = 'CONCENTRADO DE UNIDADES TERRITORIALES QUE NO RECIBIERON OPINIONES EN NINGUNO DE SUS PROYECTOS';
                 if (!worksheet.getCell('A2').isMerged)
                     worksheet.mergeCells('A2:J2');
                 if (!worksheet.getCell('A3').isMerged)
@@ -1953,20 +1944,20 @@ export const ProyectosSegundoLugar = async (req = request, res = response) => {
             WHERE C.capturadas = E.total
         ),
         ActasValidadas AS (
-            SELECT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, rubro_general, nom_proyecto, votos, votos_sei, total_votos
+            SELECT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, destino_recursos, nom_proyecto, votos, votos_sei, total_votos
             FROM consulta_actas_VVS V
             WHERE EXISTS (SELECT 1 FROM Mesas WHERE id_distrito = V.id_distrito AND clave_colonia = V.clave_colonia) AND estatus = 1 AND anio = ${anio}
         ),
         Votos AS (
-            SELECT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, rubro_general, nom_proyecto, SUM(votos) AS votos, SUM(votos_sei) AS votos_sei, SUM(total_votos) AS total_votos
+            SELECT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, destino_recursos, nom_proyecto, SUM(votos) AS votos, SUM(votos_sei) AS votos_sei, SUM(total_votos) AS total_votos
             FROM ActasValidadas
-            GROUP BY id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, rubro_general, nom_proyecto
+            GROUP BY id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, destino_recursos, nom_proyecto
         ),
         RANKING AS (
             SELECT *, DENSE_RANK() OVER (PARTITION BY clave_colonia ORDER BY total_votos DESC) AS DR
             FROM Votos
         )
-        SELECT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, rubro_general, nom_proyecto, votos, votos_sei, total_votos
+        SELECT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, destino_recursos, nom_proyecto, votos, votos_sei, total_votos
         FROM RANKING
         WHERE DR = 2 AND total_votos > 0
         ORDER BY id_distrito, nombre_delegacion, nombre_colonia, secuencial ASC`))[0];
@@ -2045,7 +2036,7 @@ export const ProyectosSegundoLugar = async (req = request, res = response) => {
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_GanadoresSegundoaLugar-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_SegundoaLugar-${fecha}-${hora}.xlsx`,
                     buffer
                 });
             })
@@ -2095,20 +2086,20 @@ export const ProyectosEmpateSegundoLugar = async (req = request, res = response)
             WHERE C.capturadas = E.total
         ),
         ActasValidadas AS (
-            SELECT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, rubro_general, nom_proyecto, votos, votos_sei, total_votos
+            SELECT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, destino_recursos, nom_proyecto, votos, votos_sei, total_votos
             FROM consulta_actas_VVS V
             WHERE EXISTS (SELECT 1 FROM Mesas WHERE id_distrito = V.id_distrito AND clave_colonia = V.clave_colonia) AND estatus = 1 AND anio = ${anio}
         ),
         Votos AS (
-            SELECT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, rubro_general, nom_proyecto, SUM(votos) AS votos, SUM(votos_sei) AS votos_sei, SUM(total_votos) AS total_votos
+            SELECT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, destino_recursos, nom_proyecto, SUM(votos) AS votos, SUM(votos_sei) AS votos_sei, SUM(total_votos) AS total_votos
             FROM ActasValidadas
-            GROUP BY id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, rubro_general, nom_proyecto
+            GROUP BY id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, destino_recursos, nom_proyecto
         ),
         Ranking AS (
             SELECT *, DENSE_RANK() OVER (PARTITION BY clave_colonia ORDER BY total_votos DESC) AS DR, COUNT(*) OVER (PARTITION BY clave_colonia, total_votos) AS empate
             FROM Votos
         )
-        SELECT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, rubro_general, nom_proyecto, votos, votos_sei, total_votos
+        SELECT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, destino_recursos, nom_proyecto, votos, votos_sei, total_votos
         FROM Ranking
         WHERE DR = 2 AND empate > 1 AND total_votos > 0
         ORDER BY id_distrito, nombre_delegacion, nombre_colonia, secuencial ASC`))[0];
