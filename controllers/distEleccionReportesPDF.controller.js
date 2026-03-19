@@ -170,7 +170,10 @@ export const ActaComputoTotalPDF = async (req = request, res = response) => {
             }
         }
         const paginas = doc.bufferedPageRange().count;
-        y = doc.page.height - 155 - (paginas > 1 ? 15 : 0);
+        const coorA = CalcularAltoAncho(doc, [{ text: coordinador_puesto, font: 'Helvetica', fontSize: 10 }], 0, 280, 1.15).totalHeight;
+        const secA = CalcularAltoAncho(doc, [{ text: secretario_puesto, font: 'Helvetica', fontSize: 10 }], 0, 280, 1.15).totalHeight;
+        console.log({ coorA, secA });
+        y = doc.page.height - (120 + coorA + secA) - (paginas > 1 ? 15 : 0);
         doc.rect(50, y, 740, 20).fillAndStroke('#F2F2F2', '#BFBFBF').font('Helvetica-Bold', 14).fillColor('#000').text('POR LA DIRECCIÓN DISTRITAL, SUSCRIBEN:', 50, y + 5, { width: 740, align: 'center' });
         DibujarTablaPDF(doc, 50, y + 20, [
             [{ text: 'CARGO', font: 'Helvetica-Bold', fontSize: 14, background: '#F2F2F2', strokeColor: '#BFBFBF' }],
@@ -192,8 +195,7 @@ export const ActaComputoTotalPDF = async (req = request, res = response) => {
                 [{ text: '', font: 'Helvetica', fontSize: 10, strokeColor: '#BFBFBF' }]
             ]
         ]);
-        x = CalcularAltoAncho(doc, [{ text: secretario_puesto, font: 'Helvetica', fontSize: 10 }], 0, 280, 1.15).totalHeight;
-        doc.font('Helvetica', 8).text('SE LEVANTA LA PRESENTE ACTA CON FUNDAMENTO EN LO DISPUESTO EN LOS ARTÍCULOS 6 FRACCIÓN I, 36 PÁRRAFO PRIMERO, 113 FRACCIÓN V, 362 PRIMER Y SEGUNDO PARRAFO, Y 367 DEL CÓDIGO DE INSTITUCIONES Y PROCEDIMIENTOS ELECTORALES DE LA CIUDAD DE MÉXICO; 83, 96 PRIMER PÁRRAFO, 97 Y 106 DE LA LEY DE PARTICIPACIÓN CIUDADANA DE LA CIUDAD DE MÉXICO; ASÍ COMO DEL NUMERAL 16 DE LAS DISPOSICIONES GENERALES DE LA CONVOCATORIA ÚNICA APROBADA POR EL CONSEJO GENERAL DEL INSTITUTO ELECTORAL DE LA CIUDAD DE MÉXICO MEDIANTE ACUERDO IECM/ACU-CG-004/2026 DE FECHA 09 DE ENERO DE 2026.', 50, doc.y + (x / 2) + 9, { width: 740, align: 'justify' });
+        doc.font('Helvetica', 8).text('SE LEVANTA LA PRESENTE ACTA CON FUNDAMENTO EN LO DISPUESTO EN LOS ARTÍCULOS 6 FRACCIÓN I, 36 PÁRRAFO PRIMERO, 113 FRACCIÓN V, 362 PRIMER Y SEGUNDO PARRAFO, Y 367 DEL CÓDIGO DE INSTITUCIONES Y PROCEDIMIENTOS ELECTORALES DE LA CIUDAD DE MÉXICO; 83, 96 PRIMER PÁRRAFO, 97 Y 106 DE LA LEY DE PARTICIPACIÓN CIUDADANA DE LA CIUDAD DE MÉXICO; ASÍ COMO DEL NUMERAL 16 DE LAS DISPOSICIONES GENERALES DE LA CONVOCATORIA ÚNICA APROBADA POR EL CONSEJO GENERAL DEL INSTITUTO ELECTORAL DE LA CIUDAD DE MÉXICO MEDIANTE ACUERDO IECM/ACU-CG-004/2026 DE FECHA 09 DE ENERO DE 2026.', 50, doc.y + (secA/ 2) + 9, { width: 740, align: 'justify' });
         if (paginas > 1)
             for (let i = 0; i < paginas; i++) {
                 doc.switchToPage(i);
@@ -211,6 +213,7 @@ export const ActaComputoTotalPDF = async (req = request, res = response) => {
             });
         });
     } catch (err) {
+        console.log(err);
         console.error(`Error al generar el Acta de Cómputo Total en PDF: ${err}`);
         res.status(500).json({
             success: false,
