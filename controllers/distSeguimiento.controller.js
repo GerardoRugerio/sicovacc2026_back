@@ -1,8 +1,8 @@
 import { request, response } from 'express';
 import { Audit } from '../helpers/Audit.js';
-import { TipoMesa } from '../helpers/Constantes.js';
+import { Letras, TipoMesa } from '../helpers/Constantes.js';
 import { ConsultaClaveColonia, ConsultaDelegacion, ConsultaExistenciaActas, ConsultaVerificaInicioCierre, ConsultaVerificaProyectos } from '../helpers/Consultas.js';
-import { Comillas, EncryptData, LetrasANumero } from '../helpers/Funciones.js';
+import { Comillas, EncryptData } from '../helpers/Funciones.js';
 import { SICOVACC } from '../models/consulta_usuarios_sicovacc.model.js';
 
 //? Estado de la Base de Datos
@@ -224,7 +224,7 @@ export const GuardarIncidente = async (req = request, res = response) => {
 
 export const EditarIncidente = async (req = request, res = response) => {
     const { id_transaccion, id_usuario, id_distrito } = req.data;
-    const { id_incidente, num_mro, tipo_mro, incidente_1, incidente_2, incidente_3, incidente_4, incidente_5, incidente_6, incidente_7, incidente_8, fecha, hora, participantes, hechos, acciones } = req.body;
+    const { id_incidente, num_mro, tipo_mro, incidente_1, incidente_2, incidente_3, incidente_4, incidente_5, incidente_6, incidente_7, incidente_8, fecha, hora, participantes, hechos, acciones, anio } = req.body;
     try {
         const { clave_colonia, mro } = (await SICOVACC.sequelize.query(`SELECT clave_colonia, num_mro AS mro FROM consulta_incidentes WHERE id_incidente = ${id_incidente}`))[0][0];
         await SICOVACC.sequelize.query(`UPDATE consulta_incidentes SET num_mro = ${num_mro}, tipo_mro = ${tipo_mro}, incidente_1 = ${incidente_1 ? 1 : 0}, incidente_2 = ${incidente_2 ? 1 : 0}, incidente_3 = ${incidente_3 ? 1 : 0}, incidente_4 = ${incidente_4 ? 1 : 0}, incidente_5 = ${incidente_5 ? 1 : 0}, incidente_6 = 0, incidente_7 = 0, incidente_8 = 0,
@@ -248,7 +248,7 @@ export const EliminarIncidente = async (req = request, res = response) => {
     const { id_transaccion, id_usuario, id_distrito } = req.data;
     const { id_incidente } = req.body;
     try {
-        const { clave_colonia, num_mro, tipo_mro } = (await SICOVACC.sequelize.query(`SELECT clave_colonia, num_mro, tipo_mro FROM consulta_incidentes WHERE id_incidente = ${id_incidente}`))[0][0];
+        const { clave_colonia, num_mro, tipo_mro, anio } = (await SICOVACC.sequelize.query(`SELECT clave_colonia, num_mro, tipo_mro, anio FROM consulta_incidentes WHERE id_incidente = ${id_incidente}`))[0][0];
         const resp = await SICOVACC.sequelize.query(`DELETE FROM consulta_incidentes WHERE id_incidente = ${id_incidente}`);
         if (resp[1] == 0)
             return res.status(404).json({
@@ -333,10 +333,10 @@ export const VerificarConsultaMesa = async (req = request, res = response) => {
         )
         SELECT (
             SELECT nombre_delegacion, bol_nulas_sei, opi_total_sei, (
-                SELECT ${anio == 1 ? 'dbo.NumeroALetras(secuencial) AS ' : ''}secuencial, nom_p${anio != 1 ? ', destino_recursos' : ''}, votos, votos_sei
+                SELECT secuencial, nom_p${anio != 1 ? ', destino_recursos' : ''}, votos, votos_sei
                 FROM V
                 WHERE id_distrito = C.id_distrito AND clave_colonia = C.clave_colonia AND num_mro = C.num_mro AND tipo_mro = C.tipo_mro${anio != 1 ? ' AND anio = C.anio' : ''}
-                ORDER BY V.secuencial ASC
+                ORDER BY LEN(secuencial), secuencial ASC
                 FOR JSON PATH
             ) AS integraciones
             FROM C
@@ -376,12 +376,12 @@ export const DatosActa = async (req = request, res = response) => {
             WHERE estatus = 1
         )
         SELECT COALESCE((
-            SELECT id_acta, clave_colonia, nombre_colonia, id_delegacion, nombre_delegacion, num_mro, tipo_mro, mro, coordinador_sino, num_integrantes, observador_sino, levantada_distrito, razon_distrital, bol_recibidas, bol_adicionales,
+            SELECT id_acta, clave_colonia, nombre_colonia, id_delegacion, nombre_delegacion, num_mro, tipo_mro, mro, coordinador_sino, num_integrantes, observador_sino, levantada_distrito, razon_distrital, bol_recibidas,
             total_ciudadanos, bol_sobrantes, bol_nulas, bol_nulas_sei, bol_total_emitidas, opi_total_sei, (
-                SELECT ${anio == 1 ? 'dbo.NumeroALetras(secuencial) AS ' : ''}secuencial, nom_p,${anio != 1 ? ' destino_recursos,' : ''} votos, votos_sei
+                SELECT secuencial, nom_p,${anio != 1 ? ' destino_recursos,' : ''} votos, votos_sei
                 FROM V
                 WHERE id_distrito = C.id_distrito AND clave_colonia = C.clave_colonia AND num_mro = C.num_mro AND tipo_mro = C.tipo_mro${anio != 1 ? ' AND anio = C.anio' : ''}
-                ORDER BY V.secuencial ASC
+                ORDER BY LEN(secuencial), secuencial ASC
                 FOR JSON PATH
             ) AS integraciones
             FROM C
@@ -422,7 +422,7 @@ export const RegistrarActa = async (req = request, res = response) => {
                     success: false,
                     msg: 'Favor de llenar todos los votos con opiniones'
                 });
-            insertVotos += `${anio == 1 ? `participante${LetrasANumero(sec)}` : `proyecto${sec}_votos`}, `
+            insertVotos += `${anio == 1 ? `participante${Letras.findIndex(letra => letra == sec) + 1}` : `proyecto${sec}_votos`}, `
             valuesVotos += `${votos}, `;
         }
         // if (!levantada_distrito && !forzar) {
@@ -438,9 +438,9 @@ export const RegistrarActa = async (req = request, res = response) => {
         //         });
         // }
         const { id_delegacion } = await ConsultaDelegacion(id_distrito, clave_colonia);
-        const { id_acta } = (await SICOVACC.sequelize.query(`INSERT ${anio == 1 ? 'copaco' : 'consulta'}_actas (id_distrito, id_delegacion, clave_colonia, num_mro, tipo_mro, modalidad, coordinador_sino, num_integrantes, bol_recibidas, total_ciudadanos, bol_sobrantes, bol_nulas, opi_total_computada, votacion_total_emitida, ${insertVotos.substring(0, insertVotos.length - 2)}, bol_adicionales, levantada_distrito, observador_sino, razon_distrital,${anio != 1 ? ' anio,' : ''} id_incidencia, id_usuario, fecha_alta, estatus)
+        const { id_acta } = (await SICOVACC.sequelize.query(`INSERT ${anio == 1 ? 'copaco' : 'consulta'}_actas (id_distrito, id_delegacion, clave_colonia, num_mro, tipo_mro, modalidad, coordinador_sino, num_integrantes, total_ciudadanos, bol_recibidas, bol_sobrantes, bol_nulas, opi_total_computada, votacion_total_emitida, ${insertVotos.substring(0, insertVotos.length - 2)}, levantada_distrito, observador_sino, razon_distrital,${anio != 1 ? ' anio,' : ''} id_incidencia, id_usuario, fecha_alta, estatus)
         OUTPUT INSERTED.id_acta
-        VALUES (${id_distrito}, ${id_delegacion}, '${clave_colonia}', ${num_mro}, ${tipo_mro}, 1, ${coordinador_sino ? 1 : 0}, ${num_integrantes ? num_integrantes : 'NULL'}, ${bol_recibidas}, ${total_ciudadanos}, ${bol_sobrantes}, ${bol_nulas}, 0, ${bol_total_emitidas}, ${valuesVotos.substring(0, valuesVotos.length - 2)}, ${bol_adicionales}, ${levantada_distrito ? 1 : 0}, ${observador_sino ? 1 : 0}, ${razon_distrital ? `'${razon_distrital}'` : 'NULL'},${anio != 1 ? ` ${anio},` : ''} ${id_incidencia ? id_incidencia : 'NULL'}, ${id_usuario}, CURRENT_TIMESTAMP, 1)`))[0][0];
+        VALUES (${id_distrito}, ${id_delegacion}, '${clave_colonia}', ${num_mro}, ${tipo_mro}, 1, ${coordinador_sino ? 1 : 0}, ${num_integrantes ? num_integrantes : 'NULL'}, ${total_ciudadanos}, ${tipo_mro == 1 ? 'NULL' : bol_recibidas}, ${bol_sobrantes}, ${bol_nulas}, 0, ${bol_total_emitidas}, ${valuesVotos.substring(0, valuesVotos.length - 2)}, ${levantada_distrito ? 1 : 0}, ${observador_sino ? 1 : 0}, ${razon_distrital ? `'${razon_distrital}'` : 'NULL'},${anio != 1 ? ` ${anio},` : ''} ${id_incidencia ? id_incidencia : 'NULL'}, ${id_usuario}, CURRENT_TIMESTAMP, 1)`))[0][0];
         await Audit(id_transaccion, id_usuario, id_distrito, `REGISTRÓ EL ACTA DE LA ${anio == 1 ? 'ELECCIÓN' : 'CONSULTA'}, DE LA UT ${clave_colonia}, MESA M${String(num_mro).padStart(2, '0')}${tipo_mro != 1 ? `, DE TIPO DE MESA ${TipoMesa(tipo_mro)}` : ''}`);
         res.json({
             success: true,
@@ -468,7 +468,7 @@ export const ActualizarActa = async (req = request, res = response) => {
                     success: false,
                     msg: 'Favor de llenar todos los votos con opiniones'
                 });
-            updateVotos += `${anio == 1 ? `participante${LetrasANumero(sec)}` : `proyecto${sec}_votos`} = ${votos}, `;
+            updateVotos += `${anio == 1 ? `participante${Letras.findIndex(letra => letra == sec) + 1}` : `proyecto${sec}_votos`} = ${votos}, `;
         }
         // if (!levantada_distrito && !forzar) {
         //     if (bol_recibidas + bol_adicionales != bol_total_emitidas + bol_sobrantes)
@@ -500,8 +500,8 @@ export const ActualizarActa = async (req = request, res = response) => {
         });
         const { clave_colonia, num_mro, tipo_mro } = acta;
         // await SIVACC.sequelize.query(`INSERT consulta_actas_hist (${insert}) VALUES (${values})`);
-        await SICOVACC.sequelize.query(`UPDATE ${anio == 1 ? 'copaco' : 'consulta'}_actas SET coordinador_sino = ${coordinador_sino ? 1 : 0}, num_integrantes = ${num_integrantes ? num_integrantes : 'NULL'}, bol_recibidas = ${bol_recibidas}, total_ciudadanos = ${total_ciudadanos}, bol_sobrantes = ${bol_sobrantes}, bol_nulas = ${bol_nulas}, votacion_total_emitida = ${bol_total_emitidas}, ${updateVotos.substring(0, updateVotos.length - 2)},
-        bol_adicionales = ${bol_adicionales}, levantada_distrito = ${levantada_distrito ? 1 : 0}, razon_distrital = ${razon_distrital ? `'${razon_distrital}'` : 'NULL'}, id_incidencia = ${id_incidencia ? id_incidencia : 'NULL'}, observador_sino = ${observador_sino ? 1 : 0}, fecha_modif = CURRENT_TIMESTAMP
+        await SICOVACC.sequelize.query(`UPDATE ${anio == 1 ? 'copaco' : 'consulta'}_actas SET coordinador_sino = ${coordinador_sino ? 1 : 0}, num_integrantes = ${num_integrantes ? num_integrantes : 'NULL'}, bol_recibidas = ${tipo_mro == 1 ? 'NULL' : bol_recibidas}, total_ciudadanos = ${total_ciudadanos}, bol_sobrantes = ${bol_sobrantes}, bol_nulas = ${bol_nulas}, votacion_total_emitida = ${bol_total_emitidas}, ${updateVotos.substring(0, updateVotos.length - 2)},
+        levantada_distrito = ${levantada_distrito ? 1 : 0}, razon_distrital = ${razon_distrital ? `'${razon_distrital}'` : 'NULL'}, id_incidencia = ${id_incidencia ? id_incidencia : 'NULL'}, observador_sino = ${observador_sino ? 1 : 0}, fecha_modif = CURRENT_TIMESTAMP
         WHERE modalidad = 1 AND estatus = 1 AND id_acta = ${id_acta}`);
         await Audit(id_transaccion, id_usuario, id_distrito, `ACTUALIZÓ EL ACTA DE LA ${anio == 1 ? 'ELECCIÓN' : 'CONSULTA'}, DE LA UT ${clave_colonia}, MESA M${String(num_mro).padStart(2, '0')}${tipo_mro != 1 ? `, DE TIPO DE MESA ${TipoMesa(tipo_mro)}` : ''}`);
         res.json({

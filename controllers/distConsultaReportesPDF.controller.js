@@ -316,17 +316,17 @@ export const ActaValidacionPDF = async (req = request, res = response) => {
                 doc.rect(50, 185, 740, 20).fillAndStroke('#F2F2F2', '#BFBFBF').font('Helvetica-Bold', 14).fillColor('#000').text('INFORMACIÓN DE LA VALIDACIÓN', 50, 190, { width: 740, align: 'center' });
                 TextoMultiFuente(doc, 50, 210, 740, 10, [
                     { text: 'En la Ciudad de México, siendo las', font: 'Helvetica' },
-                    { text: `${horaActa}`, font: 'Helvetica', underline: true },
+                    { text: `${horaActa}`, font: 'Helvetica' },
                     { text: ' horas del', font: 'Helvetica' },
-                    { text: `${fechaActa.split('/')[0]}`, font: 'Helvetica', underline: true },
+                    { text: `${fechaActa.split('/')[0]}`, font: 'Helvetica' },
                     { text: ' de', font: 'Helvetica' },
-                    { text: `${NumAMes(+fechaActa.split('/')[1]).toLowerCase()}`, font: 'Helvetica', underline: true },
+                    { text: `${NumAMes(+fechaActa.split('/')[1]).toLowerCase()}`, font: 'Helvetica' },
                     { text: ' de', font: 'Helvetica' },
                     { text: `${fechaActa.split('/')[2]}`, font: 'Helvetica' },
                     { text: ', en el domicilio que ocupa la Dirección Distrital', font: 'Helvetica' },
-                    { text: `${id_distrito}`, font: 'Helvetica', underline: true },
+                    { text: `${id_distrito}`, font: 'Helvetica' },
                     { text: ', situada en', font: 'Helvetica' },
-                    { text: `${direccion}`, font: 'Helvetica', underline: true },
+                    { text: `${direccion}`, font: 'Helvetica' },
                     { text: ', se realizó el', font: 'Helvetica' },
                     { text: 'cómputo total', font: 'Helvetica-Bold' },
                     { text: 'de la Unidad Territorial referida en la presente acta, correspondiente a la', font: 'Helvetica' },
@@ -361,7 +361,7 @@ export const ActaValidacionPDF = async (req = request, res = response) => {
             }
         }
         const paginas = doc.bufferedPageRange().count;
-        y = doc.page.height - 145 - (paginas > 1 ? 15 : 0);
+        y = doc.page.height - 155 - (paginas > 1 ? 15 : 0);
         doc.rect(50, y, 740, 20).fillAndStroke('#F2F2F2', '#BFBFBF').font('Helvetica-Bold', 14).fillColor('#000').text('POR LA DIRECCIÓN DISTRITAL, SUSCRIBEN:', 50, y + 5, { width: 740, align: 'center' });
         DibujarTablaPDF(doc, 50, y + 20, [
             [{ text: 'CARGO', font: 'Helvetica-Bold', fontSize: 14, background: '#F2F2F2', strokeColor: '#BFBFBF' }],

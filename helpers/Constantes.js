@@ -14,7 +14,7 @@ export const autor = 'SICOVACC';
 
 export const titulos = {
     0: 'DIRECCIÓN EJECUTIVA DE ORGANIZACIÓN ELECTORAL Y GEOESTADÍSTICA',
-    1: `SISTEMA DE CÓMPUTO Y VALIDACIONES PARA LAS CONSULTAS CIUDADANAS\nSICOVACC 2026`
+    1: `SISTEMA DE CÓMPUTO Y VALIDACIONES PARA LAS CONSULTAS CIUDADANAS\nSICOVACC`
 }; //! ACTUALIZARLO SI ES NECESARIO
 
 export const plantillas = {
@@ -88,3 +88,17 @@ export const TipoMesa = tipo => {
         default: return '';
     }
 };
+
+export const Letras = [
+    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
+    'K', 'L', 'M', 'N', 'Ñ', 'O', 'P', 'Q', 'R', 'S',
+    'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+    'AA', 'AB', 'AC', 'AD', 'AE', 'AF', 'AG', 'AH', 'AI', 'AJ',
+    'AK', 'AL', 'AM', 'AN', 'AÑ', 'AO', 'AP', 'AQ', 'AR', 'AS',
+    'AT', 'AU', 'AV', 'AW', 'AX', 'AY', 'AZ',
+    'BA', 'BB', 'BC', 'BD', 'BE', 'BF', 'BG', 'BH', 'BI', 'BJ',
+    'BK', 'BL', 'BM', 'BN', 'BÑ', 'BO', 'BP', 'BQ', 'BR', 'BS',
+    'BT', 'BU', 'BV', 'BW', 'BX', 'BY', 'BZ',
+    'CA', 'CB', 'CC', 'CD', 'CE', 'CF', 'CG', 'CH', 'CI', 'CJ',
+    'CK', 'CL', 'CM', 'CN', 'CÑ', 'CO', 'CP', 'CQ', 'CR'
+];

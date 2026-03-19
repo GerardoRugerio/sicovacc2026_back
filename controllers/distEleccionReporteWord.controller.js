@@ -26,7 +26,7 @@ export const ActaComputoTotalWord = async (req = request, res = response) => {
             GROUP BY id_distrito, clave_colonia, modalidad
         ),
         Acta AS (
-            SELECT V.secuencial AS orden, dbo.NumeroALetras(V.secuencial) AS secuencial, SUM(V.votos) AS votos, SUM(V.votos_sei) AS votos_sei, SUM(V.total_votos) AS total_votos
+            SELECT V.secuencial AS orden, secuencial, SUM(V.votos) AS votos, SUM(V.votos_sei) AS votos_sei, SUM(V.total_votos) AS total_votos
             FROM CA
             INNER JOIN copaco_actas_VVS V ON CA.id_distrito = V.id_distrito AND CA.clave_colonia = V.clave_colonia
             WHERE CA.modalidad = 1
@@ -34,7 +34,7 @@ export const ActaComputoTotalWord = async (req = request, res = response) => {
         )
         SELECT secuencial, votos, votos_sei, total_votos
         FROM (
-            SELECT 0 AS orden, '0' AS secuencial, A1.bol_nulas AS votos, COALESCE(A2.bol_nulas, 0) AS votos_sei, A1.bol_nulas + COALESCE(A2.bol_nulas, 0) AS total_votos
+            SELECT '0' AS orden, '0' AS secuencial, A1.bol_nulas AS votos, COALESCE(A2.bol_nulas, 0) AS votos_sei, A1.bol_nulas + COALESCE(A2.bol_nulas, 0) AS total_votos
             FROM CA A1
             LEFT JOIN CA A2 ON A2.modalidad = 2
             WHERE A1.modalidad = 1

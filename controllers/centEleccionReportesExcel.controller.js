@@ -1,10 +1,9 @@
 import ExcelJs from 'exceljs';
 import { request, response } from 'express';
 import path from 'path';
-import { autor, contenidoStyle, fill, IECMLogo, plantillas, titulos } from '../helpers/Constantes.js';
+import { autor, contenidoStyle, fill, IECMLogo, Letras, plantillas, titulos } from '../helpers/Constantes.js';
 import { FechaServer } from '../helpers/Consultas.js';
 import { SICOVACC } from '../models/consulta_usuarios_sicovacc.model.js';
-import { NumeroALetras } from '../helpers/Funciones.js';
 
 //? Cómputo total de las Candidaturas por UT
 
@@ -23,10 +22,10 @@ export const ComputoTotalUT = async (req = request, res = response) => {
             WHERE estatus = 1
             GROUP BY id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, nombre, paterno, materno
         )
-        SELECT A.id_distrito, nombre_delegacion, A.clave_colonia, nombre_colonia, dbo.NumeroALetras(secuencial) AS secuencial, nombre, paterno, materno, votos, votos_sei, total_votos
+        SELECT A.id_distrito, nombre_delegacion, A.clave_colonia, nombre_colonia, secuencial, nombre, paterno, materno, votos, votos_sei, total_votos
         FROM CA A
         LEFT JOIN Info I ON A.id_distrito = I.id_distrito AND A.clave_colonia = I.clave_colonia
-        ORDER BY A.id_distrito, nombre_delegacion, nombre_colonia, I.secuencial ASC`))[0];
+        ORDER BY A.id_distrito, nombre_delegacion, nombre_colonia, LEN(secuencial) ASC`))[0];
         if (!actas.length)
             return res.status(404).json({
                 success: false,
@@ -171,7 +170,7 @@ export const ResultadoComputoTotalMesa = async (req = request, res = response) =
                 SELECT secuencial, votos, votos_sei, total_votos
                 FROM copaco_actas_VVS V2
                 WHERE V2.id_distrito = V1.id_distrito AND V2.clave_colonia = V1.clave_colonia AND V2.num_mro = V1.num_mro AND V2.tipo_mro = V1.tipo_mro
-                ORDER BY secuencial ASC
+                ORDER BY LEN(secuencial), secuencial ASC
                 FOR JSON PATH
             ) AS participantes
             FROM copaco_actas_VVS V1
@@ -213,13 +212,13 @@ export const ResultadoComputoTotalMesa = async (req = request, res = response) =
                         worksheet.mergeCells(11, celda, 11, celda + 2);
                     for (let j = celda; j <= celda + 2; j++)
                         worksheet.getCell(11, j).style = contenidoStyle;
-                    worksheet.getCell(11, celda).value = NumeroALetras(i);
+                    worksheet.getCell(11, celda).value = Letras[i - 1];
                     worksheet.getCell(11, celda).style = fill;
                     worksheet.getCell(12, celda).value = 'Mesa';
                     worksheet.getCell(12, celda).style = fill;
                     worksheet.getCell(12, celda + 1).value = 'SEI';
                     worksheet.getCell(12, celda + 1).style = fill;
-                    worksheet.getCell(12, celda + 2).value = `Total de Votos Candidatura ${NumeroALetras(i)}`;
+                    worksheet.getCell(12, celda + 2).value = `Total de Votos Candidatura ${Letras[i - 1]}`;
                     worksheet.getCell(12, celda + 2).style = fill;
                     celda += 3;
                 }
@@ -388,7 +387,7 @@ export const ResultadoComputoTotalUT = async (req = request, res = response) => 
                 FROM copaco_actas_VVS V2
                 WHERE V2.id_distrito = V1.id_distrito AND V2.clave_colonia = V1.clave_colonia
                 GROUP BY secuencial
-                ORDER BY secuencial ASC
+                ORDER BY LEN(secuencial), secuencial ASC
                 FOR JSON PATH
             ) AS participantes
             FROM copaco_actas_VVS V1
@@ -431,13 +430,13 @@ export const ResultadoComputoTotalUT = async (req = request, res = response) => 
                         worksheet.mergeCells(11, celda, 11, celda + 2);
                     for (let j = celda; j <= celda + 2; j++)
                         worksheet.getCell(11, j).style = contenidoStyle;
-                    worksheet.getCell(11, celda).value = NumeroALetras(i);
+                    worksheet.getCell(11, celda).value = Letras[i - 1];
                     worksheet.getCell(11, celda).style = fill;
                     worksheet.getCell(12, celda).value = 'Mesa';
                     worksheet.getCell(12, celda).style = fill;
                     worksheet.getCell(12, celda + 1).value = 'SEI';
                     worksheet.getCell(12, celda + 1).style = fill;
-                    worksheet.getCell(12, celda + 2).value = `Total de Votos Candidatura ${NumeroALetras(i)}`;
+                    worksheet.getCell(12, celda + 2).value = `Total de Votos Candidatura ${Letras[i - 1]}`;
                     worksheet.getCell(12, celda + 2).style = fill;
                     celda += 3;
                 }
@@ -816,10 +815,10 @@ export const ResultadosMesa = async (req = request, res = response) => {
         ),
         ProyectosJSON AS (
             SELECT id_distrito, clave_colonia, num_mro, tipo_mro, (
-                SELECT dbo.NumeroALetras(secuencial) AS secuencial, nombreC, votos, votos_sei, total_votos
+                SELECT secuencial, nombreC, votos, votos_sei, total_votos
                 FROM copaco_actas_VVS V2
                 WHERE V2.id_distrito = V1.id_distrito AND V2.clave_colonia = V1.clave_colonia AND V2.num_mro = V1.num_mro AND V2.tipo_mro = V1.tipo_mro
-                ORDER BY V2.secuencial ASC
+                ORDER BY LEN(secuencial), secuencial ASC
                 FOR JSON PATH
             ) AS participantes
             FROM copaco_actas_VVS V1

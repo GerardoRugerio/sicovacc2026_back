@@ -20,10 +20,10 @@ router.put('/datosDistrito', [
     // body('codigo_postal').exists().notEmpty().isNumeric(),
     body('coordinador').isString(),
     body('coordinador_puesto').isString(),
-    body('coordinador_genero').isString(),
+    // body('coordinador_genero').isString(),
     body('secretario').isString(),
     body('secretario_puesto').isString(),
-    body('secretario_genero').isString(),
+    // body('secretario_genero').isString(),
     Validator
 ], ActualizarDatosDistrito);
 

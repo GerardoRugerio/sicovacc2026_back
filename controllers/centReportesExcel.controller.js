@@ -54,6 +54,35 @@ export const InicioCierreValidacion = async (req = request, res = response) => {
                     });
                     fila++;
                 });
+                const rangos = [[3, 10], [13, 20]];
+                rangos.forEach(([InicioCierreValidacion, fin]) => {
+                    for (let i = InicioCierreValidacion; i <= fin; i++)
+                        worksheet.getCell(fila, i).style = { ...contenidoStyle, font: { ...contenidoStyle.font, bold: true } };
+                });
+                const totales = {};
+                validacion.forEach(v => {
+                    Object.entries(v).forEach(([key, value]) => {
+                        if (!totales[key])
+                            totales[key] = 0;
+                        totales[key] += value || 0;
+                    });
+                });
+                worksheet.getCell(fila, 3).value = 'TOTAL';
+                worksheet.getCell(fila, 4).value = totales.inicio_asistencia1;
+                worksheet.getCell(fila, 5).value = totales.inicio_asistencia2;
+                worksheet.getCell(fila, 6).value = totales.inicio_asistencia4;
+                worksheet.getCell(fila, 7).value = totales.inicio_asistencia5;
+                worksheet.getCell(fila, 8).value = totales.inicio_asistencia6;
+                worksheet.getCell(fila, 9).value = totales.inicio_asistencia7;
+                worksheet.getCell(fila, 10).value = totales.inicio_total
+                worksheet.getCell(fila, 13).value = 'TOTAL';
+                worksheet.getCell(fila, 14).value = totales.cierre_asistencia1;
+                worksheet.getCell(fila, 15).value = totales.cierre_asistencia2;
+                worksheet.getCell(fila, 16).value = totales.cierre_asistencia4;
+                worksheet.getCell(fila, 17).value = totales.cierre_asistencia5;
+                worksheet.getCell(fila, 18).value = totales.cierre_asistencia6;
+                worksheet.getCell(fila, 19).value = totales.cierre_asistencia7;
+                worksheet.getCell(fila, 20).value = totales.cierre_total;
                 worksheet.getColumn(1).width = 13;
                 return workbook.xlsx.writeBuffer();
             })
@@ -160,7 +189,7 @@ export const Incidentes = async (req = request, res = response) => {
                 });
                 for (let i = 0; i <= 4; i++) {
                     worksheet.getCell(fila, i + 7).value = inc[i];
-                    worksheet.getCell(fila, i + 7).style = { ...contenidoStyle, numFmt: '#,##0' };
+                    worksheet.getCell(fila, i + 7).style = { ...contenidoStyle, font: { ...contenidoStyle.font, bold: true }, numFmt: '#,##0' };
                 }
                 fila++;
                 worksheet.getCell(fila, 7).value = 'Total de Incidentes'

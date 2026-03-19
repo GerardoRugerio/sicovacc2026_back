@@ -1,10 +1,9 @@
 import ExcelJs from 'exceljs';
 import { request, response } from 'express';
 import path from 'path';
-import { autor, contenidoStyle, fill, IECMLogo, plantillas, titulos } from '../helpers/Constantes.js';
+import { autor, contenidoStyle, fill, IECMLogo, Letras, plantillas, titulos } from '../helpers/Constantes.js';
 import { FechaServer } from '../helpers/Consultas.js';
 import { SICOVACC } from '../models/consulta_usuarios_sicovacc.model.js';
-import { NumeroALetras } from '../helpers/Funciones.js';
 
 //? Cómputo Total de las Candidaturas por UT
 
@@ -13,39 +12,39 @@ export const ComputoTotalUT = async (req = request, res = response) => {
     const workbook = new ExcelJs.Workbook();
     try {
         const actas = (await SICOVACC.sequelize.query(`;WITH CA AS (
-        SELECT id_distrito, clave_colonia, num_mro, tipo_mro, modalidad
-        FROM copaco_actas
-        WHERE id_distrito = ${id_distrito}
-    ),
-    MesasEsperadas aS (
-        SELECT id_distrito, clave_colonia, COUNT(*) AS total
-        FROM consulta_mros
-        WHERE estatus = 1
-        GROUP BY id_distrito, clave_colonia
-    ),
-    MesasCapturadas AS (
-        SELECT id_distrito, clave_colonia, COUNT(*) AS capturadas
-        FROM CA
-        WHERE modalidad = 1
-        GROUP BY id_distrito, clave_colonia
-    ),
-    Mesas AS (
-        SELECt C.id_distrito, C.clave_colonia
-        FROM MesasCapturadas C
-        INNER JOIN MesasEsperadas E ON C.id_distrito = E.id_distrito AND C.clave_colonia = E.clave_colonia
-        WHERE C.capturadas = E.total
-    ),
-    Info AS (
-        SELECT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, nombre, paterno, materno, votos, votos_sei, total_votos, num_mro, tipo_mro
-        FROM copaco_actas_VVS
-        WHERE estatus = 1
-    )
-    SELECT I.nombre_delegacion, A.clave_colonia, I.nombre_colonia, dbo.NumeroALetras(I.secuencial) AS secuencial, I.nombre, I.paterno, I.materno, SUM(I.votos) AS votos, SUM(I.votos_sei) AS votos_sei, SUM(I.total_votos) AS total_votos
-    FROM CA A
-    INNER JOIN Info I ON A.id_distrito = I.id_distrito AND A.clave_colonia = I.clave_colonia AND A.num_mro = I.num_mro AND A.tipo_mro = I.tipo_mro
-    WHERE A.modalidad = 1 AND EXISTS (SELECT 1 FROM Mesas WHERE id_distrito = A.id_distrito AND clave_colonia = A.clave_colonia)
-    GROUP BY I.nombre_delegacion, A.clave_colonia, I.nombre_colonia, I.secuencial, I.nombre, I.paterno, I.materno
-    ORDER BY I.nombre_delegacion, I.nombre_colonia, I.secuencial ASC`))[0];
+            SELECT id_distrito, clave_colonia, num_mro, tipo_mro, modalidad
+            FROM copaco_actas
+            WHERE id_distrito = ${id_distrito}
+        ),
+        MesasEsperadas aS (
+            SELECT id_distrito, clave_colonia, COUNT(*) AS total
+            FROM consulta_mros
+            WHERE estatus = 1
+            GROUP BY id_distrito, clave_colonia
+        ),
+        MesasCapturadas AS (
+            SELECT id_distrito, clave_colonia, COUNT(*) AS capturadas
+            FROM CA
+            WHERE modalidad = 1
+            GROUP BY id_distrito, clave_colonia
+        ),
+        Mesas AS (
+            SELECt C.id_distrito, C.clave_colonia
+            FROM MesasCapturadas C
+            INNER JOIN MesasEsperadas E ON C.id_distrito = E.id_distrito AND C.clave_colonia = E.clave_colonia
+            WHERE C.capturadas = E.total
+        ),
+        Info AS (
+            SELECT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, nombre, paterno, materno, votos, votos_sei, total_votos, num_mro, tipo_mro
+            FROM copaco_actas_VVS
+            WHERE estatus = 1
+        )
+        SELECT I.nombre_delegacion, A.clave_colonia, I.nombre_colonia, I.secuencial, I.nombre, I.paterno, I.materno, SUM(I.votos) AS votos, SUM(I.votos_sei) AS votos_sei, SUM(I.total_votos) AS total_votos
+        FROM CA A
+        INNER JOIN Info I ON A.id_distrito = I.id_distrito AND A.clave_colonia = I.clave_colonia AND A.num_mro = I.num_mro AND A.tipo_mro = I.tipo_mro
+        WHERE A.modalidad = 1 AND EXISTS (SELECT 1 FROM Mesas WHERE id_distrito = A.id_distrito AND clave_colonia = A.clave_colonia)
+        GROUP BY I.nombre_delegacion, A.clave_colonia, I.nombre_colonia, I.secuencial, I.nombre, I.paterno, I.materno
+        ORDER BY I.nombre_delegacion, I.nombre_colonia, LEN(I.secuencial) ASC`))[0];
         if (!actas.length)
             return res.status(404).json({
                 success: false,
@@ -190,7 +189,7 @@ export const ResultadoComputoTotalMesa = async (req = request, res = response) =
                 SELECT secuencial, votos, votos_sei, total_votos
                 FROM copaco_actas_VVS V2
                 WHERE V2.id_distrito = V1.id_distrito AND V2.clave_colonia = V1.clave_colonia AND V2.num_mro = V1.num_mro AND V2.tipo_mro = V1.tipo_mro
-                ORDER BY secuencial ASC
+                ORDER BY LEN(secuencial), secuencial ASC
                 FOR JSON PATH
             ) AS participantes
             FROM copaco_actas_VVS V1
@@ -234,13 +233,13 @@ export const ResultadoComputoTotalMesa = async (req = request, res = response) =
                         worksheet.mergeCells(11, celda, 11, celda + 2);
                     for (let j = celda; j <= celda + 2; j++)
                         worksheet.getCell(11, j).style = contenidoStyle;
-                    worksheet.getCell(11, celda).value = NumeroALetras(i);
+                    worksheet.getCell(11, celda).value = Letras[i - 1];
                     worksheet.getCell(11, celda).style = fill;
                     worksheet.getCell(12, celda).value = 'Mesa';
                     worksheet.getCell(12, celda).style = fill;
                     worksheet.getCell(12, celda + 1).value = 'SEI';
                     worksheet.getCell(12, celda + 1).style = fill;
-                    worksheet.getCell(12, celda + 2).value = `Total de Votos Candidatura ${NumeroALetras(i)}`;
+                    worksheet.getCell(12, celda + 2).value = `Total de Votos Candidatura ${Letras[i - 1]}`;
                     worksheet.getCell(12, celda + 2).style = fill;
                     celda += 3;
                 }
@@ -405,7 +404,7 @@ export const ResultadoComputoTotalUT = async (req = request, res = response) => 
                 FROM copaco_actas_VVS V2
                 WHERE V2.id_distrito = V1.id_distrito AND V2.clave_colonia = V1.clave_colonia
                 GROUP BY secuencial
-                ORDER BY secuencial ASC
+                ORDER BY LEN(secuencial), secuencial ASC
                 FOR JSON PATH
             ) AS participantes
             FROM copaco_actas_VVS V1
@@ -450,13 +449,13 @@ export const ResultadoComputoTotalUT = async (req = request, res = response) => 
                         worksheet.mergeCells(11, celda, 11, celda + 2);
                     for (let j = celda; j <= celda + 2; j++)
                         worksheet.getCell(11, j).style = contenidoStyle;
-                    worksheet.getCell(11, celda).value = NumeroALetras(i);
+                    worksheet.getCell(11, celda).value = Letras[i - 1];
                     worksheet.getCell(11, celda).style = fill;
                     worksheet.getCell(12, celda).value = 'Mesa';
                     worksheet.getCell(12, celda).style = fill;
                     worksheet.getCell(12, celda + 1).value = 'SEI';
                     worksheet.getCell(12, celda + 1).style = fill;
-                    worksheet.getCell(12, celda + 2).value = `Total de Votos Candidatura ${NumeroALetras(i)}`;
+                    worksheet.getCell(12, celda + 2).value = `Total de Votos Candidatura ${Letras[i - 1]}`;
                     worksheet.getCell(12, celda + 2).style = fill;
                     celda += 3;
                 }
@@ -835,10 +834,10 @@ export const ResultadosMesa = async (req = request, res = response) => {
         ),
         ProyectosJSON AS (
             SELECT id_distrito, clave_colonia, num_mro, tipo_mro, (
-                SELECT dbo.NumeroALetras(secuencial) AS secuencial, nombreC, votos, votos_sei, total_votos
+                SELECT secuencial, nombreC, votos, votos_sei, total_votos
                 FROM copaco_actas_VVS V2
                 WHERE V2.id_distrito = V1.id_distrito AND V2.clave_colonia = V1.clave_colonia AND V2.num_mro = V1.num_mro AND V2.tipo_mro = V1.tipo_mro
-                ORDER BY V2.secuencial ASC
+                ORDER BY LEN(secuencial), secuencial ASC
                 FOR JSON PATH
             ) AS participantes
             FROM copaco_actas_VVS V1

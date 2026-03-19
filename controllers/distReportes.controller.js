@@ -35,10 +35,10 @@ export const ListaFormulas = async (req = request, res = response) => {
     const { id_distrito } = req.data;
     const { clave_colonia } = req.body;
     try {
-        const datos = (await SICOVACC.sequelize.query(`SELECT dbo.NumeroALetras(secuencial) AS secuencial, UPPER(CONCAT(nombre, ' ', paterno, ' ', materno)) AS nombre, edad, CASE genero WHEN 'F' THEN 'FEMENINO' ELSE 'MASCULINO' END AS genero, UPPER(cargo) AS cargo, folio
-        FROM copaco_formulas F
-        WHERE F.secuencial IS NOT NULL AND id_distrito = ${id_distrito} AND clave_colonia = '${clave_colonia}'
-        ORDER BY F.secuencial ASC`))[0];
+        const datos = (await SICOVACC.sequelize.query(`SELECT secuencial, UPPER(CONCAT(nombre, ' ', paterno, ' ', materno)) AS nombre, edad, CASE genero WHEN 'F' THEN 'FEMENINO' WHEN 'M' THEN 'MASCULINO' ELSE NULL END AS genero, UPPER(cargo) AS cargo, folio
+        FROM copaco_formulas
+        WHERE secuencial IS NOT NULL AND id_distrito = ${id_distrito} AND clave_colonia = '${clave_colonia}'
+        ORDER BY LEN(secuencial), secuencial ASC`))[0];
         if (!datos.length)
             return res.status(404).json({
                 success: false,
