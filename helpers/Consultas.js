@@ -78,7 +78,7 @@ export const ConsultaDelegacion = async (distrito, clave_colonia) => {
 
 //? Regresa la información del distrito
 export const ConsultaDistrito = async distrito => {
-    const consulta = await SICOVACC.sequelize.query(`SELECT UPPER(domicilio) AS direccion, COALESCE(UPPER(coordinador), '') AS coordinador, COALESCE(UPPER(coordinador_puesto), '') AS coordinador_puesto, COALESCE(UPPER(secretario), '') AS secretario, COALESCE(UPPER(secretario_puesto), '') AS secretario_puesto FROM consulta_cat_distrito WHERE id_distrito = ${distrito}`);
+    const consulta = await SICOVACC.sequelize.query(`SELECT domicilio AS direccion, COALESCE(UPPER(coordinador), '') AS coordinador, COALESCE(UPPER(coordinador_puesto), '') AS coordinador_puesto, COALESCE(UPPER(secretario), '') AS secretario, COALESCE(UPPER(secretario_puesto), '') AS secretario_puesto FROM consulta_cat_distrito WHERE id_distrito = ${distrito}`);
     return consulta[0][0];
 }
 

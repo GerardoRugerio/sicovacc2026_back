@@ -40,7 +40,7 @@ export const ActaComputoTotalPDF = async (req = request, res = response) => {
             SELECT orden, secuencial, votos, votos_sei, total_votos
             FROM Acta
         ) X
-        ORDER BY orden`))[0];
+        ORDER BY LEN(secuencial), secuencial ASC`))[0];
         const { votos: nulas, votos_sei: nulas_sei, total_votos: total_nulas } = consulta.find(participante => participante.secuencial == '0');
         const totalN = consulta.reduce((sum, participante) => sum + participante.votos, 0);
         const totalNS = consulta.reduce((sum, participante) => sum + participante.votos_sei, 0);
@@ -170,9 +170,8 @@ export const ActaComputoTotalPDF = async (req = request, res = response) => {
             }
         }
         const paginas = doc.bufferedPageRange().count;
-        const coorA = CalcularAltoAncho(doc, [{ text: coordinador_puesto, font: 'Helvetica', fontSize: 10 }], 0, 280, 1.15).totalHeight;
-        const secA = CalcularAltoAncho(doc, [{ text: secretario_puesto, font: 'Helvetica', fontSize: 10 }], 0, 280, 1.15).totalHeight;
-        console.log({ coorA, secA });
+        const coorA = CalcularAltoAncho(doc, [{ text: coordinador_puesto, font: 'Helvetica', fontSize: 10 }], 0, 280, 23, 1.15).totalHeight;
+        const secA = CalcularAltoAncho(doc, [{ text: secretario_puesto, font: 'Helvetica', fontSize: 10 }], 0, 280, 23, 1.15).totalHeight;
         y = doc.page.height - (120 + coorA + secA) - (paginas > 1 ? 15 : 0);
         doc.rect(50, y, 740, 20).fillAndStroke('#F2F2F2', '#BFBFBF').font('Helvetica-Bold', 14).fillColor('#000').text('POR LA DIRECCIÓN DISTRITAL, SUSCRIBEN:', 50, y + 5, { width: 740, align: 'center' });
         DibujarTablaPDF(doc, 50, y + 20, [
@@ -194,7 +193,7 @@ export const ActaComputoTotalPDF = async (req = request, res = response) => {
                 [{ text: secretario, font: 'Helvetica', fontSize: 10, strokeColor: '#BFBFBF' }],
                 [{ text: '', font: 'Helvetica', fontSize: 10, strokeColor: '#BFBFBF' }]
             ]
-        ]);
+        ], { height: 23 });
         doc.font('Helvetica', 8).text('SE LEVANTA LA PRESENTE ACTA CON FUNDAMENTO EN LO DISPUESTO EN LOS ARTÍCULOS 6 FRACCIÓN I, 36 PÁRRAFO PRIMERO, 113 FRACCIÓN V, 362 PRIMER Y SEGUNDO PARRAFO, Y 367 DEL CÓDIGO DE INSTITUCIONES Y PROCEDIMIENTOS ELECTORALES DE LA CIUDAD DE MÉXICO; 83, 96 PRIMER PÁRRAFO, 97 Y 106 DE LA LEY DE PARTICIPACIÓN CIUDADANA DE LA CIUDAD DE MÉXICO; ASÍ COMO DEL NUMERAL 16 DE LAS DISPOSICIONES GENERALES DE LA CONVOCATORIA ÚNICA APROBADA POR EL CONSEJO GENERAL DEL INSTITUTO ELECTORAL DE LA CIUDAD DE MÉXICO MEDIANTE ACUERDO IECM/ACU-CG-004/2026 DE FECHA 09 DE ENERO DE 2026.', 50, doc.y + (secA/ 2) + 9, { width: 740, align: 'justify' });
         if (paginas > 1)
             for (let i = 0; i < paginas; i++) {
@@ -213,7 +212,6 @@ export const ActaComputoTotalPDF = async (req = request, res = response) => {
             });
         });
     } catch (err) {
-        console.log(err);
         console.error(`Error al generar el Acta de Cómputo Total en PDF: ${err}`);
         res.status(500).json({
             success: false,

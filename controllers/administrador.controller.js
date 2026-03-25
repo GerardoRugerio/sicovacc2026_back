@@ -76,7 +76,6 @@ export const ImportarProyectosAprobados = async (req = request, res = response) 
         //? Se hace la peticion al WebService y se transforma a JSON
         proyectos = await fetch('https://aplicaciones2.iecm.mx/siproe-aleatorio-2026-2027/api/reportdata/exportar', requestOptions).then(response => response.json());
         // await SICOVACC.sequelize.query(`EXEC BorrarProyectos ${id_distrito == 'TODOS' ? 0 : id_distrito}`);
-        console.log(id_distrito);
         if (id_distrito != 'TODOS')
             proyectos = proyectos.filter(proyecto => proyecto.distrito == id_distrito);
         for (const proyecto of proyectos) {

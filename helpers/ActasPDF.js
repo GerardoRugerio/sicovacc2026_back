@@ -119,20 +119,21 @@ export const TextoMultiFuente = (doc = PDFDocument, x, y, width, fontSize, fontB
 }
 
 export const DibujarTablaPDF = (doc = PDFDocument, x, y, encabezados, columnas, datos, options = {}) => {
-    const { margen = 2, fontSize = 7 } = options;
+    const { margen = 2, fontSize = 7, height = 0 } = options;
     let offsetY = y;
     let altura = 0;
     //? Función interna para dibujas una fila
-    const dibujarFila = (blocks) => {
+    const dibujarFila = (blocks, heightP = 0) => {
         let offsetX = x, height = 0;
         //? Calcula la altura de cada celda según su contenido
         const alturas = blocks.map((block, index) => CalcularAltoAncho(doc, block, block[0].fontSize ?? fontSize, columnas[index].width - margen + 1).totalHeight);
-        const maxHeight = Math.max(...alturas) + (margen * 2);
+        let maxHeight = Math.max(...alturas) + (margen * 2);
         altura += maxHeight;
         //? Dibuja cada celda de la fila
         blocks.map((block, index) => {
             const colWidth = columnas[index].width;
             height = alturas[index];
+            maxHeight = maxHeight > heightP + (margen * 2) ? maxHeight : heightP + (margen * 2);
             doc.rect(offsetX, offsetY, colWidth, maxHeight).fillAndStroke(block[0].background ?? '#FFF', block[0].strokeColor ?? '#000');
             //? Escribir el texto dentro de la celda usanto la función TextoMultiFuente
             TextoMultiFuente(doc, offsetX + (margen / 2), offsetY + ((maxHeight - height) / 2) + 1.5, colWidth - margen, block[0].fontSize ?? fontSize, block, {
@@ -147,11 +148,11 @@ export const DibujarTablaPDF = (doc = PDFDocument, x, y, encabezados, columnas, 
     if (encabezados)
         dibujarFila(encabezados);
     if (datos)
-        datos.map(blocks => dibujarFila(blocks));
+        datos.map(blocks => dibujarFila(blocks, height));
     return altura;
 }
 
-export const CalcularAltoAncho = (doc = PDFDocument, fontBlocks, fontSize, width, lineHeight = 1.15) => {
+export const CalcularAltoAncho = (doc = PDFDocument, fontBlocks, fontSize, width, height = 0, lineHeight = 1.15) => {
     //? Asegura que fontBlocks siempre sea un arreglo
     fontBlocks = Array.isArray(fontBlocks) ? fontBlocks : [fontBlocks];
     //? Dividir el texto en palabras
@@ -196,10 +197,11 @@ export const CalcularAltoAncho = (doc = PDFDocument, fontBlocks, fontSize, width
     if (lineaActual.length > 0)
         lineas.push(lineaActual);
     //? Calcula el alto total sumando el alto de cada línea
-    const totalHeight = lineas.reduce((acc, linea) => {
+    let totalHeight = lineas.reduce((acc, linea) => {
         const maxFontSize = Math.max(...linea.map(p => p.fontSize));
         return acc + (maxFontSize * lineHeight);
     }, 0);
+    totalHeight = totalHeight > height ? totalHeight : height;
     //? Calcula ancho máximop de las lineas
     const maxWidth = Math.max(...lineas.map(linea =>
         linea.reduce((acc, palabra) => {
