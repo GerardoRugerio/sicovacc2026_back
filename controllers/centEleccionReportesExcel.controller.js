@@ -190,7 +190,10 @@ export const ResultadoComputoTotalMesa = async (req = request, res = response) =
                 msg: '¡No existe información!'
             });
         const { fecha, hora } = await FechaServer();
-        const max = Math.max(...actas.map(acta => JSON.parse(acta.participantes).length));
+        const participantesList = [... new Set([...actas.flatMap(acta => JSON.parse(acta.participantes).map(p => p.secuencial))])].sort((a, b) => Letras.indexOf(a) - Letras.indexOf(b));
+        const max = participantesList.length;
+        const mapaLetras = new Map(participantesList.map((l, i) => [l, i]));
+        const actasJSON = actas.map(acta => ({ ...acta, participantes: JSON.parse(acta.participantes) }));
         workbook.xlsx.readFile(path.join(plantillas[1], 'Resultado_Computo_Total_Mesa.xlsx'))
             .then(() => {
                 workbook.creator = autor;
@@ -205,23 +208,23 @@ export const ResultadoComputoTotalMesa = async (req = request, res = response) =
                 worksheet.getCell('A6').value = 'RESULTADOS DEL CÓMPUTO TOTAL POR MESA (INCLUYE MRVyO, MECPEP, MECPPP Y SEI)';
                 worksheet.getCell('N8').value = `Fecha: ${fecha}`;
                 worksheet.getCell('N9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
-                for (let i = 1; i <= max; i++) {
+                participantesList.forEach((sec, _) => {
                     for (let j = 1; j <= 3; j++)
                         worksheet.spliceColumns(celda, 0, [null]);
                     if (!worksheet.getCell(11, celda).isMerged)
                         worksheet.mergeCells(11, celda, 11, celda + 2);
                     for (let j = celda; j <= celda + 2; j++)
                         worksheet.getCell(11, j).style = contenidoStyle;
-                    worksheet.getCell(11, celda).value = Letras[i - 1];
+                    worksheet.getCell(11, celda).value = sec;
                     worksheet.getCell(11, celda).style = fill;
                     worksheet.getCell(12, celda).value = 'Mesa';
                     worksheet.getCell(12, celda).style = fill;
                     worksheet.getCell(12, celda + 1).value = 'SEI';
                     worksheet.getCell(12, celda + 1).style = fill;
-                    worksheet.getCell(12, celda + 2).value = `Total de Votos Candidatura ${Letras[i - 1]}`;
+                    worksheet.getCell(12, celda + 2).value = `Total de Votos Candidatura ${sec}`;
                     worksheet.getCell(12, celda + 2).style = fill;
                     celda += 3;
-                }
+                });
                 if (!worksheet.getCell(2, 1).isMerged)
                     worksheet.mergeCells(2, 1, 2, celdasTotales);
                 if (!worksheet.getCell(3, 1).isMerged)
@@ -266,17 +269,28 @@ export const ResultadoComputoTotalMesa = async (req = request, res = response) =
                 }
                 const imprimirParticipantes = (index, participantes) => {
                     let i = index;
-                    participantes.forEach(participante => {
-                        Object.entries(participante).forEach(([campo, valor]) => {
-                            if (!campo.includes('secuencial')) {
-                                imprimir(i, valor);
+                    const mapaParticipantes = new Map(participantes.map(p => [p.secuencial, p]));
+                    const secuenciales = participantes.map(p => p.secuencial);
+                    const maxIndex = Math.max(...secuenciales.map(sec => mapaLetras.get(sec) ?? -1));
+                    for (let a = 0; a <= maxIndex; a++) {
+                        const sec = participantesList[a];
+                        const acta = mapaParticipantes.get(sec);
+                        if (acta)
+                            Object.entries(acta).forEach(([campo, valor]) => {
+                                if (!campo.includes('secuencial')) {
+                                    imprimir(i, valor);
+                                    i++;
+                                }
+                            });
+                        else
+                            for (let b = 0; b < 3; b++) {
+                                imprimir(i, '');
                                 i++;
                             }
-                        });
-                    })
+                    }
                     return i;
                 }
-                actas.forEach(acta => {
+                actasJSON.forEach(acta => {
                     let i = 1;
                     Object.entries(acta).forEach(([campo, valor]) => {
                         if (!campo.match('participantes')) {
@@ -284,8 +298,9 @@ export const ResultadoComputoTotalMesa = async (req = request, res = response) =
                             i++;
                             return;
                         }
-                        i = imprimirParticipantes(i, JSON.parse(valor));
-                        const faltantes = max - JSON.parse(valor).length;
+                        i = imprimirParticipantes(i, valor);
+                        const maxIndex = Math.max(...valor.map(p => mapaLetras.get(p.secuencial) ?? -1));
+                        const faltantes = max - (maxIndex + 1);
                         for (let x = 0; x < faltantes * 3; x++) {
                             imprimir(i, '');
                             i++;
@@ -408,7 +423,10 @@ export const ResultadoComputoTotalUT = async (req = request, res = response) => 
                 msg: '¡No existe información!'
             });
         const { fecha, hora } = await FechaServer();
-        const max = Math.max(...actas.map(acta => JSON.parse(acta.participantes).length));
+        const participantesList = [... new Set([...actas.flatMap(acta => JSON.parse(acta.participantes).map(p => p.secuencial))])].sort((a, b) => Letras.indexOf(a) - Letras.indexOf(b));
+        const max = participantesList.length;
+        const mapaLetras = new Map(participantesList.map((l, i) => [l, i]));
+        const actasJSON = actas.map(acta => ({ ...acta, participantes: JSON.parse(acta.participantes) }));
         workbook.xlsx.readFile(path.join(plantillas[1], 'Resultado_Computo_Total_UT.xlsx'))
             .then(() => {
                 workbook.creator = autor;
@@ -423,23 +441,23 @@ export const ResultadoComputoTotalUT = async (req = request, res = response) => 
                 worksheet.getCell('A6').value = 'RESULTADOS DEL CÓMPUTO TOTAL POR UNIDAD TERRITORIAL (INCLUYE MRVyO, MECPEP, MECPPP Y SEI)';
                 worksheet.getCell('L8').value = `Fecha: ${fecha}`;
                 worksheet.getCell('L9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
-                for (let i = 1; i <= max; i++) {
+                participantesList.forEach((sec, _) => {
                     for (let j = 1; j <= 3; j++)
                         worksheet.spliceColumns(celda, 0, [null]);
                     if (!worksheet.getCell(11, celda).isMerged)
                         worksheet.mergeCells(11, celda, 11, celda + 2);
                     for (let j = celda; j <= celda + 2; j++)
                         worksheet.getCell(11, j).style = contenidoStyle;
-                    worksheet.getCell(11, celda).value = Letras[i - 1];
+                    worksheet.getCell(11, celda).value = sec;
                     worksheet.getCell(11, celda).style = fill;
                     worksheet.getCell(12, celda).value = 'Mesa';
                     worksheet.getCell(12, celda).style = fill;
                     worksheet.getCell(12, celda + 1).value = 'SEI';
                     worksheet.getCell(12, celda + 1).style = fill;
-                    worksheet.getCell(12, celda + 2).value = `Total de Votos Candidatura ${Letras[i - 1]}`;
+                    worksheet.getCell(12, celda + 2).value = `Total de Votos Candidatura ${sec}`;
                     worksheet.getCell(12, celda + 2).style = fill;
                     celda += 3;
-                }
+                });
                 if (!worksheet.getCell(2, 1).isMerged)
                     worksheet.mergeCells(2, 1, 2, celdasTotales);
                 if (!worksheet.getCell(3, 1).isMerged)
@@ -480,17 +498,28 @@ export const ResultadoComputoTotalUT = async (req = request, res = response) => 
                 }
                 const imprimirParticipantes = (index, participantes) => {
                     let i = index;
-                    participantes.forEach(participante => {
-                        Object.entries(participante).forEach(([campo, valor]) => {
-                            if (!campo.includes('secuencial')) {
-                                imprimir(i, valor);
+                    const mapaParticipantes = new Map(participantes.map(p => [p.secuencial, p]));
+                    const secuenciales = participantes.map(p => p.secuencial);
+                    const maxIndex = Math.max(...secuenciales.map(sec => mapaLetras.get(sec) ?? -1));
+                    for (let a = 0; a <= maxIndex; a++) {
+                        const sec = participantesList[a];
+                        const acta = mapaParticipantes.get(sec);
+                        if (acta)
+                            Object.entries(acta).forEach(([campo, valor]) => {
+                                if (!campo.includes('secuencial')) {
+                                    imprimir(i, valor);
+                                    i++;
+                                }
+                            });
+                        else
+                            for (let b = 0; b < 3; b++) {
+                                imprimir(i, '');
                                 i++;
                             }
-                        });
-                    });
+                    }
                     return i;
                 }
-                actas.forEach(acta => {
+                actasJSON.forEach(acta => {
                     let i = 1;
                     Object.entries(acta).forEach(([campo, valor]) => {
                         if (!campo.match('participantes')) {
@@ -498,8 +527,9 @@ export const ResultadoComputoTotalUT = async (req = request, res = response) => 
                             i++;
                             return;
                         }
-                        i = imprimirParticipantes(i, JSON.parse(valor));
-                        const faltantes = max - JSON.parse(valor).length;
+                        i = imprimirParticipantes(i, valor);
+                        const maxIndex = Math.max(...valor.map(p => mapaLetras.get(p.secuencial) ?? -1));
+                        const faltantes = max - (maxIndex + 1);
                         for (let x = 0; x < faltantes * 3; x++) {
                             imprimir(i, '');
                             i++;
