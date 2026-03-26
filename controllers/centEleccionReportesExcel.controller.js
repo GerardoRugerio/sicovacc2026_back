@@ -365,7 +365,7 @@ export const ResultadoComputoTotalUT = async (req = request, res = response) => 
     try {
         const actas = (await SICOVACC.sequelize.query(`;WITH CA AS (
             SELECT A.id_distrito, UPPER(D.nombre_delegacion) AS nombre_delegacion, A.clave_colonia, UPPER(C.nombre_colonia) AS nombre_colonia, A.levantada_distrito,
-            A.bol_sobrantes, A.bol_recibidas, A.total_ciudadanos, A.bol_nulas, A.votacion_total_emitida, A.modalidad
+            A.bol_sobrantes, A.bol_recibidas, A.total_ciudadanos, A.bol_nulas, A.votacion_total_emitida, A.num_mro, A.tipo_mro, A.modalidad
             FROM copaco_actas A
             INNER JOIN consulta_cat_delegacion D ON A.id_delegacion = D.id_delegacion
             INNER JOIN consulta_cat_colonia_cc1 C ON A.clave_colonia = C.clave_colonia
@@ -411,7 +411,7 @@ export const ResultadoComputoTotalUT = async (req = request, res = response) => 
         SELECT A1.id_distrito, A1.nombre_delegacion, A1.clave_colonia, A1.nombre_colonia, LD.ciudadania, LD.distrito, P.participantes, SUM(A1.bol_nulas) AS bol_nulas, SUM(COALESCE(A2.bol_nulas, 0)) AS bol_nulas_sei, SUM(A1.bol_nulas + COALESCE(A2.bol_nulas, 0)) AS total_nulas,
         SUM(A1.votacion_total_emitida) AS votacion_total_emitida, SUM(COALESCE(A2.votacion_total_emitida, 0)) AS votacion_total_emitida_sei, SUM(A1.votacion_total_emitida + COALESCE(A2.votacion_total_emitida, 0)) AS votacion_total
         FROM CA A1
-        LEFT JOIN CA A2 ON A1.id_distrito = A2.id_distrito AND A1.clave_colonia = A2.clave_colonia AND A2.modalidad = 2
+        LEFT JOIN CA A2 ON A1.id_distrito = A2.id_distrito AND A1.clave_colonia = A2.clave_colonia AND A1.num_mro = A2.num_mro AND A1.tipo_mro = A2.tipo_mro AND A2.modalidad = 2
         LEFT JOIN LD ON A1.id_distrito = LD.id_distrito AND A1.clave_colonia = LD.clave_colonia
         LEFT JOIN ParticipantesJSON P ON A1.id_distrito = P.id_distrito AND A1.clave_colonia = P.clave_colonia
         WHERE A1.modalidad = 1 AND EXISTS (SELECT 1 FROM Mesas WHERE id_distrito = A1.id_distrito AND clave_colonia = A1.clave_colonia)
@@ -889,6 +889,9 @@ export const ResultadosMesa = async (req = request, res = response) => {
                 worksheet.getCell('J9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 worksheet.getCell('E11').value = 'Letra del Participante';
                 worksheet.getCell('G11').value = 'Nombre del Participante';
+                worksheet.getCell('H11').value = 'Votos por Mesa';
+                worksheet.getCell('I11').value = 'Votos por SEI (Vía Remota)';
+                worksheet.getCell('J11').value = 'Total de Votos Obtenidos';
                 for (let acta of actas) {
                     let sum_votos = 0, sum_votos_sei = 0;
                     const { id_distrito: distrito, nombre_delegacion, clave_colonia, nombre_colonia, mesa, participantes, bol_nulas, bol_nulas_sei } = acta;
@@ -1556,6 +1559,10 @@ export const VotacionDistrito = async (req = request, res = response) => {
                 worksheet.getCell('A6').value = 'VOTACIÓN TOTAL POR DISTRITO';
                 worksheet.getCell('F8').value = `Fecha: ${fecha}`;
                 worksheet.getCell('F9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
+                worksheet.getCell('B11').value = 'Votos por Mesa';
+                worksheet.getCell('C11').value = 'votos por SEI: Vía Remota';
+                worksheet.getCell('D11').value = 'Votos Nulos Mesa';
+                worksheet.getCell('E11').value = 'Votos Nulos SEI: Vía Remota';
                 for (let res of resultado) {
                     const { id_distrito, total_votos, total_votos_sei, total_nulas, total_nulas_sei } = res;
                     const total = total_votos + total_votos_sei + total_nulas + total_nulas_sei;
@@ -1634,6 +1641,10 @@ export const VotacionDemarcacion = async (req = request, res = response) => {
                 worksheet.getCell('A6').value = 'OPINIONES POR DEMARCACIÓN';
                 worksheet.getCell('F8').value = `Fecha: ${fecha}`;
                 worksheet.getCell('F9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
+                worksheet.getCell('B11').value = 'Votos por Mesa';
+                worksheet.getCell('C11').value = 'votos por SEI: Vía Remota';
+                worksheet.getCell('D11').value = 'Votos Nulos Mesa';
+                worksheet.getCell('E11').value = 'Votos Nulos SEI: Vía Remota';
                 for (let res of resultado) {
                     const { nombre_delegacion, total_votos, total_votos_sei, total_nulas, total_nulas_sei } = res;
                     const total = total_votos + total_votos_sei + total_nulas + total_nulas_sei;

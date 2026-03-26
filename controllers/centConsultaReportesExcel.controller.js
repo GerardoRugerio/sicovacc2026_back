@@ -657,7 +657,7 @@ export const ConsultaUnidadTerritorial = async (req = request, res = response) =
         LEFT JOIN ProyectosJSON P ON A1.id_distrito = P.id_distrito AND A1.clave_colonia = P.clave_colonia AND A1.anio = P.anio
         LEFT JOIN LD ON A1.id_distrito = LD.id_distrito AND A1.clave_colonia = LD.clave_colonia
         WHERE A1.modalidad = 1 AND EXISTS (SELECT 1 FROM Mesas WHERE id_distrito = A1.id_distrito AND clave_colonia = A1.clave_colonia)
-        GROUP BY A1.id_distrito, A1.nombre_delegacion, A1.clave_colonia, A1.nombre_colonia, LD.ciudadania, LD.distrito,P.proyectos , A1.anio
+        GROUP BY A1.id_distrito, A1.nombre_delegacion, A1.clave_colonia, A1.nombre_colonia, LD.ciudadania, LD.distrito, P.proyectos, A1.anio
         ORDER BY A1.id_distrito, A1.nombre_delegacion, A1.nombre_colonia ASC`))[0];
         if (!actas.length)
             return res.status(404).json({
