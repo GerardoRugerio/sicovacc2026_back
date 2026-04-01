@@ -133,7 +133,7 @@ export const ProyectosParticipantes = async (req = request, res = response) => {
     try {
         const proyectos = (await SICOVACC.sequelize.query(`SELECT DISTINCT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, folio, secuencial, destino_recursos, nom_proyecto
         FROM consulta_actas_VVS
-        WHERE anio = 2${id_distrito != 0 ? ` AND id_distrito = 6` : ''}
+        WHERE anio = ${anio}${id_distrito != 0 ? ` AND id_distrito = 6` : ''}
         ORDER BY id_distrito, nombre_delegacion, nombre_colonia, secuencial ASC`))[0];
         if (!proyectos.length)
             return res.status(404).json({
@@ -681,7 +681,10 @@ export const ConsultaUnidadTerritorial = async (req = request, res = response) =
             });
         const { fecha, fechaM, hora, horaM } = await FechaServer();
         const subtitulo = `CONSULTA DE ${(await ConsultaTipoEleccion(anio)).toUpperCase()}`;
-        const max = Math.max(...actas.map(acta => JSON.parse(acta.proyectos).length));
+        const proyectosList = [... new Set([...actas.flatMap(acta => JSON.parse(acta.proyectos).map(p => p.secuencial))])].sort((a, b) => a - b);
+        const max = proyectosList.length;
+        const mapaNumeros = new Map(proyectosList.map((n, i) => [n, i]));
+        const actasJSON = actas.map(acta => ({ ...acta, proyectos: JSON.parse(acta.proyectos) }));
         workbook.xlsx.readFile(path.join(plantillas[2], 'Validacion_Resultados.xlsx'))
             .then(() => {
                 workbook.creator = autor;
@@ -696,23 +699,23 @@ export const ConsultaUnidadTerritorial = async (req = request, res = response) =
                 worksheet.getCell('A6').value = 'VALIDACIÓN DE RESULTADOS DE LA CONSULTA POR UNIDAD TERRITORIAL (INCLUYE LOS RESULTADOS DE MRVyO, MECPEP, MECPPP Y SEI)';
                 worksheet.getCell('N8').value = `Fecha: ${fecha}`;
                 worksheet.getCell('N9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
-                for (let i = 1; i <= max; i++) {
-                    for (let j = 1; j <= 3; j++)
+                proyectosList.forEach((num, _) => {
+                    for (let i = 1; i <= 3; i++)
                         worksheet.spliceColumns(celda, 0, [null]);
                     if (!worksheet.getCell(11, celda).isMerged)
                         worksheet.mergeCells(11, celda, 11, celda + 2);
-                    for (let j = celda; j <= celda + 2; j++)
-                        worksheet.getCell(11, j).style = contenidoStyle;
-                    worksheet.getCell(11, celda).value = i;
+                    for (let i = celda; i <= celda + 2; i++)
+                        worksheet.getCell(11, i).style = contenidoStyle;
+                    worksheet.getCell(11, celda).value = num;
                     worksheet.getCell(11, celda).style = fill;
                     worksheet.getCell(12, celda).value = 'Opiniones Mesa';
                     worksheet.getCell(12, celda).style = fill;
-                    worksheet.getCell(12, celda + 1).value = 'Opiniones (SEI)';
+                    worksheet.getCell(12, celda + 1).value = 'Opiniones (SEI: vía remota)';
                     worksheet.getCell(12, celda + 1).style = fill;
-                    worksheet.getCell(12, celda + 2).value = `Total de Opiniones Proyecto ${i}`;
+                    worksheet.getCell(12, celda + 2).value = `Total de Opiniones Proyecto ${num}`;
                     worksheet.getCell(12, celda + 2).style = fill;
                     celda += 3;
-                }
+                });
                 if (!worksheet.getCell(2, 1).isMerged)
                     worksheet.mergeCells(2, 1, 2, celdasTotales);
                 if (!worksheet.getCell(3, 1).isMerged)
@@ -755,17 +758,28 @@ export const ConsultaUnidadTerritorial = async (req = request, res = response) =
                 };
                 const imprimirProyectos = (index, proyectos) => {
                     let i = index;
-                    proyectos.forEach(proyecto => {
-                        Object.entries(proyecto).forEach(([campo, valor]) => {
-                            if (!campo.includes('secuencial')) {
-                                imprimir(i, valor);
+                    const mapaProyectos = new Map(proyectos.map(p => [p.secuencial, p]));
+                    const numeros = proyectos.map(p => p.secuencial);
+                    const maxIndex = Math.max(...numeros.map(sec => mapaNumeros.get(sec) ?? -1));
+                    for (let a = 0; a <= maxIndex; a++) {
+                        const sec = proyectosList[a];
+                        const acta = mapaProyectos.get(sec);
+                        if (acta)
+                            Object.entries(acta).forEach(([campo, valor]) => {
+                                if (!campo.includes('secuencial')) {
+                                    imprimir(i, valor);
+                                    i++;
+                                }
+                            });
+                        else
+                            for (let b = 0; b < 3; b++) {
+                                imprimir(i, '');
                                 i++;
                             }
-                        });
-                    });
+                    }
                     return i;
-                };
-                actas.forEach(acta => {
+                }
+                actasJSON.forEach(acta => {
                     let i = 1;
                     Object.entries(acta).forEach(([campo, valor]) => {
                         if (!campo.match('proyectos')) {
@@ -773,8 +787,9 @@ export const ConsultaUnidadTerritorial = async (req = request, res = response) =
                             i++;
                             return;
                         }
-                        i = imprimirProyectos(i, JSON.parse(valor));
-                        const faltantes = max - JSON.parse(valor).length;
+                        i = imprimirProyectos(i, valor);
+                        const maxIndex = Math.max(...valor.map(p => mapaNumeros.get(p.secuencial) ?? -1));
+                        const faltantes = max - (maxIndex + 1);
                         for (let x = 0; x < faltantes * 3; x++) {
                             imprimir(i, '');
                             i++;
@@ -1838,7 +1853,7 @@ export const OpinionesDemarcacion = async (req = request, res = response) => {
         const resultado = (await SICOVACC.sequelize.query(`;WITH CA AS (
             SELECT id_delegacion, SUM(votacion_total_emitida) AS total_votos, SUM(bol_nulas) AS total_nulas, modalidad
             FROM consulta_actas
-            WHERE estatus = 1 AND anio = 2
+            WHERE estatus = 1 AND anio = ${anio}
             GROUP BY id_delegacion, modalidad
         )
         SELECT UPPER(D.nombre_delegacion) AS nombre_delegacion, COALESCE(A1.total_votos - A1.total_nulas, 0) AS total_votos, COALESCE(A2.total_votos - A2.total_nulas, 0) AS total_votos_sei, COALESCE(A1.total_nulas, 0) AS total_nulas, COALESCE(A2.total_nulas, 0) AS total_nulas_sei
