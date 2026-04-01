@@ -5,6 +5,7 @@ import { autor, CalendarioAzteca, IECMLogoBN } from '../helpers/Constantes.js';
 import { ConsultaClaveColonia, ConsultaDelegacion, ConsultaDistrito, FechaHoraActa, FechaServer } from '../helpers/Consultas.js';
 import { NumAMes, NumAText } from '../helpers/Funciones.js';
 import { SICOVACC } from '../models/consulta_usuarios_sicovacc.model.js';
+import archiver from 'archiver';
 
 //? Acta de Cómputo Total
 
@@ -12,82 +13,186 @@ export const ActaComputoTotalPDF = async (req = request, res = response) => {
     const { id_distrito } = req.params;
     const { clave_colonia } = req.body;
     try {
-        const { fecha, hora } = await FechaServer();
-        const { nombre_delegacion } = await ConsultaDelegacion(id_distrito, clave_colonia);
-        const { nombre_colonia } = await ConsultaClaveColonia(clave_colonia);
-        const { direccion, coordinador, coordinador_puesto, secretario, secretario_puesto } = await ConsultaDistrito(id_distrito);
-        const { fechaActa, horaActa } = await FechaHoraActa(id_distrito, clave_colonia, 1);
-        const consulta = (await SICOVACC.sequelize.query(`;WITH CA AS (
-            SELECT id_distrito, clave_colonia, modalidad, SUM(bol_nulas) AS bol_nulas
-            FROM copaco_actas
-            WHERE id_distrito = ${id_distrito} AND clave_colonia = '${clave_colonia}'
-            GROUP BY id_distrito, clave_colonia, modalidad
-        ),
-        Acta AS (
-            SELECT V.secuencial AS orden, secuencial, SUM(V.votos) AS votos, SUM(V.votos_sei) AS votos_sei, SUM(V.total_votos) AS total_votos
-            FROM CA
-            INNER JOIN copaco_actas_VVS V ON CA.id_distrito = V.id_distrito AND CA.clave_colonia = V.clave_colonia
-            WHERE CA.modalidad = 1
-            GROUP BY V.secuencial
-        )
-        SELECT secuencial, votos, votos_sei, total_votos
-        FROM (
-            SELECT '0' AS orden, '0' AS secuencial, A1.bol_nulas AS votos, COALESCE(A2.bol_nulas, 0) AS votos_sei, A1.bol_nulas + COALESCE(A2.bol_nulas, 0) AS total_votos
-            FROM CA A1
-            LEFT JOIN CA A2 ON A2.modalidad = 2
-            WHERE A1.modalidad = 1
-            UNION ALL
-            SELECT orden, secuencial, votos, votos_sei, total_votos
-            FROM Acta
-        ) X
-        ORDER BY LEN(secuencial), secuencial ASC`))[0];
-        const { votos: nulas, votos_sei: nulas_sei, total_votos: total_nulas } = consulta.find(participante => participante.secuencial == '0');
-        const totalN = consulta.reduce((sum, participante) => sum + participante.votos, 0);
-        const totalNS = consulta.reduce((sum, participante) => sum + participante.votos_sei, 0);
-        const total = consulta.reduce((sum, participante) => sum + participante.total_votos, 0);
-        let datos = [], buffer = [], newPage = true, altura = 0;
-        consulta.filter(participante => participante.secuencial != '0').forEach(participante => {
-            let X = [];
-            Object.keys(participante).forEach((key, index) => {
-                X.push([{ text: participante[key].toString(), font: 'Helvetica', fontSize: 10, strokeColor: '#BFBFBF' }]);
-                if (index == 3)
-                    X.push([{ text: NumAText(participante[key]), font: 'Helvetica', fontSize: 10, strokeColor: '#BFBFBF' }]);
-            });
-            datos.push(X);
+        const { fechaM, horaM } = await FechaServer();
+        res.json({
+            success: true,
+            msg: 'Reporte generado correctamente',
+            contentType: 'application/pdf',
+            reporte: `ActaComputoTotal_${clave_colonia}_${fechaM}_${horaM}.pdf`,
+            buffer: await GeneradorActaPDF(id_distrito, clave_colonia)
+        })
+    } catch (err) {
+        console.error(`Error al generar el Acta de Cómputo Total en PDF: ${err}`);
+        res.status(500).json({
+            success: false,
+            msg: 'Error al generar el acta'
         });
-        datos.push([
-            [{ text: 'VOTOS NULOS', font: 'Helvetica-Bold', fontSize: 10, background: '#F2F2F2', strokeColor: '#BFBFBF' }],
-            [{ text: String(nulas), font: 'Helvetica-Bold', fontSize: 10, background: '#F2F2F2', strokeColor: '#BFBFBF' }],
-            [{ text: String(nulas_sei), font: 'Helvetica-Bold', fontSize: 10, background: '#F2F2F2', strokeColor: '#BFBFBF' }],
-            [{ text: String(total_nulas), font: 'Helvetica-Bold', fontSize: 10, background: '#F2F2F2', strokeColor: '#BFBFBF' }],
-            [{ text: NumAText(total_nulas), font: 'Helvetica-Bold', fontSize: 10, background: '#F2F2F2', strokeColor: '#BFBFBF' }],
-        ], [
-            [{ text: 'TOTAL', font: 'Helvetica-Bold', fontSize: 14, fillColor: '#FFF', background: '#000' }],
-            [{ text: String(totalN), font: 'Helvetica-Bold', fontSize: 14, background: '#F2F2F2', strokeColor: '#BFBFBF' }],
-            [{ text: String(totalNS), font: 'Helvetica-Bold', fontSize: 14, background: '#F2F2F2', strokeColor: '#BFBFBF' }],
-            [{ text: String(total), font: 'Helvetica-Bold', fontSize: 14, background: '#F2F2F2', strokeColor: '#BFBFBF' }],
-            [{ text: NumAText(total), font: 'Helvetica-Bold', fontSize: 14, background: '#F2F2F2', strokeColor: '#BFBFBF' }]
-        ]);
-        const encabezados = [
-            [{ text: 'LETRA(S) DE CANDIDATURA', font: 'Helvetica-Bold', fontSize: 12, background: '#F2F2F2', strokeColor: '#BFBFBF' }],
-            [
-                { text: 'RESULTADOS DEL ESCRUTINIO Y CÓMPUTO', font: 'Helvetica-Bold', fontSize: 12, background: '#F2F2F2', strokeColor: '#BFBFBF' },
-                { text: '(VOTOS SACADOS DE LA URNA)', font: 'Helvetica', fontSize: 12, background: '#F2F2F2', strokeColor: '#BFBFBF' }
-            ],
-            [
-                { text: 'RESULTADOS DEL CÓMPUTO DEL SEI', font: 'Helvetica-Bold', fontSize: 12, background: '#F2F2F2', strokeColor: '#BFBFBF' },
-                { text: '(ASENTADOS EN EL ACTA)', font: 'Helvetica', fontSize: 12, background: '#F2F2F2', strokeColor: '#BFBFBF' }
-            ],
-            [{ text: 'TOTAL CON NÚMERO', font: 'Helvetica-Bold', fontSize: 12, background: '#F2F2F2', strokeColor: '#BFBFBF' }],
-            [{ text: 'TOTAL CON LETRA', font: 'Helvetica-Bold', fontSize: 12, background: '#F2F2F2', strokeColor: '#BFBFBF' }]
-        ];
-        const columnas = [
-            { width: 100, align: 'center' },
-            { width: 100, align: 'center' },
-            { width: 100, align: 'center' },
-            { width: 100, align: 'center' },
-            { width: 340, align: 'center' }
-        ];
+    }
+}
+
+export const ActasComputoTotalPDFZip = async (req = request, res = response) => {
+    const { id_distrito } = req.params;
+    try {
+        const colonias = (await SICOVACC.sequelize.query(`;WITH I AS (SELECT ${id_distrito} AS id_distrito),
+        MesasEsperadas AS (
+            SELECT CM.clave_colonia, COUNT(*) AS total
+            FROM I
+            LEFT JOIN consulta_mros CM ON I.id_distrito = CM.id_distrito
+            GROUP BY CM.clave_colonia
+        ),
+        MesasCapturadas AS (
+            SELECT CA.clave_colonia, COUNT(*) AS capturadas
+            FROM I
+            LEFT JOIN copaco_actas CA ON I.id_distrito = CA.id_distrito AND CA.modalidad = 1 AND CA.estatus = 1
+            GROUP BY CA.clave_colonia
+        )
+        SELECT ME.clave_colonia, ME.total - COALESCE(MC.capturadas, 0) AS faltantes
+        FROM MesasEsperadas ME
+        LEFT JOIN MesasCapturadas MC ON ME.clave_colonia = MC.clave_colonia
+        ORDER BY ME.clave_colonia ASC`))[0];
+        const coloniasList = colonias.filter(c => c.faltantes == 0).map(c => c.clave_colonia);
+        if (coloniasList.length == 0)
+            return res.status(400).json({
+                success: false,
+                msg: 'No hay Unidades Territoriales validadas'
+            });
+        const { fechaM, horaM } = await FechaServer();
+        const generarZipBuffer = async (colonias) => {
+            return new Promise(async (resolve, reject) => {
+                const archive = archiver('zip', { zlib: { level: 9 } });
+                const buffer = [];
+                for (const clave_colonia of colonias) {
+                    const pdfBuffer = await GeneradorActaPDF(id_distrito, clave_colonia);
+                    archive.append(pdfBuffer, { name: `ActaComputoTotal_${clave_colonia}_${fechaM}_${horaM}.pdf` });
+                }
+                await archive.finalize();
+                archive.on('data', buffer.push.bind(buffer));
+                archive.on('end', () => resolve(Buffer.concat(buffer)));
+                archive.on('error', reject);
+            });
+        };
+        res.json({
+            success: true,
+            msg: 'Zip generado correctamente',
+            contentType: 'application/zip',
+            archivo: `ActasComputoTotal_${id_distrito}_${fechaM}_${horaM}.zip`,
+            buffer: await generarZipBuffer(coloniasList)
+        });
+
+        // const faltantes = colonias.filter(c => c.faltantes > 0).length 
+        // if (faltantes > 0)
+        //     return res.status(400).json({
+        //         success: false,
+        //         msg: `Faltan ${faltantes} Unidad${faltantes > 0 ? 'es' : ''} Territorial${faltantes > 0 ? 'es' : ''} por validar`
+        //     })
+        // const { fecha, hora } = await FechaServer();
+        // const generarZipBuffer = async (colonias) => {
+        //     return new Promise(async (resolve, reject) => {
+        //         const archive = archiver('zip', { zlib: { level: 9 } });
+        //         const chunks = [];
+        //         for (const clave_colonia of colonias) {
+        //             const pdfBuffer = await GeneradorActaPDF(id_distrito, clave_colonia);
+        //             archive.append(pdfBuffer, { name: `ActaComputoTotal_${clave_colonia}.pdf` });
+        //         }
+        //         await archive.finalize();
+        //         archive.on('data', chunks.push.bind(chunks));
+        //         archive.on('end', () => resolve(Buffer.concat(chunks)));
+        //         archive.on('error', reject);
+        //     });
+        // };
+        // res.json({
+        //     success: true,
+        //     msg: 'Zip generado correctamente',
+        //     contentType: 'application/zip',
+        //     archivo: `ActasComputoTotal_${id_distrito}_${fecha}-${hora}.zip`,
+        //     buffer: await generarZipBuffer(colonias.map(c => c.clave_colonia))
+        // });
+    } catch (err) {
+        console.error(`Error al generar el ZIP de Actas de Cómputo Total en PDF: ${err}`);
+        res.status(500).json({
+            success: false,
+            msg: 'Error al generar el zip de las actas'
+        });
+    }
+}
+
+const GeneradorActaPDF = async (id_distrito, clave_colonia) => {
+    const { nombre_delegacion } = await ConsultaDelegacion(id_distrito, clave_colonia);
+    const { nombre_colonia } = await ConsultaClaveColonia(clave_colonia);
+    const { direccion, coordinador, coordinador_puesto, secretario, secretario_puesto } = await ConsultaDistrito(id_distrito);
+    const { fechaActa, horaActa } = await FechaHoraActa(id_distrito, clave_colonia, 1);
+    const consulta = (await SICOVACC.sequelize.query(`;WITH CA AS (
+        SELECT id_distrito, clave_colonia, modalidad, SUM(bol_nulas) AS bol_nulas
+        FROM copaco_actas
+        WHERE id_distrito = ${id_distrito} AND clave_colonia = '${clave_colonia}'
+        GROUP BY id_distrito, clave_colonia, modalidad
+    ),
+    Acta AS (
+        SELECT V.secuencial AS orden, secuencial, SUM(V.votos) AS votos, SUM(V.votos_sei) AS votos_sei, SUM(V.total_votos) AS total_votos
+        FROM CA
+        INNER JOIN copaco_actas_VVS V ON CA.id_distrito = V.id_distrito AND CA.clave_colonia = V.clave_colonia
+        WHERE CA.modalidad = 1
+        GROUP BY V.secuencial
+    )
+    SELECT secuencial, votos, votos_sei, total_votos
+    FROM (
+        SELECT '0' AS orden, '0' AS secuencial, A1.bol_nulas AS votos, COALESCE(A2.bol_nulas, 0) AS votos_sei, A1.bol_nulas + COALESCE(A2.bol_nulas, 0) AS total_votos
+        FROM CA A1
+        LEFT JOIN CA A2 ON A2.modalidad = 2
+        WHERE A1.modalidad = 1
+        UNION ALL
+        SELECT orden, secuencial, votos, votos_sei, total_votos
+        FROM Acta
+    ) X
+    ORDER BY LEN(secuencial), secuencial ASC`))[0];
+    const { votos: nulas, votos_sei: nulas_sei, total_votos: total_nulas } = consulta.find(participante => participante.secuencial == '0');
+    const totalN = consulta.reduce((sum, participante) => sum + participante.votos, 0);
+    const totalNS = consulta.reduce((sum, participante) => sum + participante.votos_sei, 0);
+    const total = consulta.reduce((sum, participante) => sum + participante.total_votos, 0);
+    let datos = [], buffer = [], newPage = true, altura = 0;
+    consulta.filter(participante => participante.secuencial != '0').forEach(participante => {
+        let X = [];
+        Object.keys(participante).forEach((key, index) => {
+            X.push([{ text: participante[key].toString(), font: 'Helvetica', fontSize: 10, strokeColor: '#BFBFBF' }]);
+            if (index == 3)
+                X.push([{ text: NumAText(participante[key]), font: 'Helvetica', fontSize: 10, strokeColor: '#BFBFBF' }]);
+        });
+        datos.push(X);
+    });
+    datos.push([
+        [{ text: 'VOTOS NULOS', font: 'Helvetica-Bold', fontSize: 10, background: '#F2F2F2', strokeColor: '#BFBFBF' }],
+        [{ text: String(nulas), font: 'Helvetica-Bold', fontSize: 10, background: '#F2F2F2', strokeColor: '#BFBFBF' }],
+        [{ text: String(nulas_sei), font: 'Helvetica-Bold', fontSize: 10, background: '#F2F2F2', strokeColor: '#BFBFBF' }],
+        [{ text: String(total_nulas), font: 'Helvetica-Bold', fontSize: 10, background: '#F2F2F2', strokeColor: '#BFBFBF' }],
+        [{ text: NumAText(total_nulas), font: 'Helvetica-Bold', fontSize: 10, background: '#F2F2F2', strokeColor: '#BFBFBF' }],
+    ], [
+        [{ text: 'TOTAL', font: 'Helvetica-Bold', fontSize: 14, fillColor: '#FFF', background: '#000' }],
+        [{ text: String(totalN), font: 'Helvetica-Bold', fontSize: 14, background: '#F2F2F2', strokeColor: '#BFBFBF' }],
+        [{ text: String(totalNS), font: 'Helvetica-Bold', fontSize: 14, background: '#F2F2F2', strokeColor: '#BFBFBF' }],
+        [{ text: String(total), font: 'Helvetica-Bold', fontSize: 14, background: '#F2F2F2', strokeColor: '#BFBFBF' }],
+        [{ text: NumAText(total), font: 'Helvetica-Bold', fontSize: 14, background: '#F2F2F2', strokeColor: '#BFBFBF' }]
+    ]);
+    const encabezados = [
+        [{ text: 'LETRA(S) DE CANDIDATURA', font: 'Helvetica-Bold', fontSize: 12, background: '#F2F2F2', strokeColor: '#BFBFBF' }],
+        [
+            { text: 'RESULTADOS DEL ESCRUTINIO Y CÓMPUTO', font: 'Helvetica-Bold', fontSize: 12, background: '#F2F2F2', strokeColor: '#BFBFBF' },
+            { text: '(VOTOS SACADOS DE LA URNA)', font: 'Helvetica', fontSize: 12, background: '#F2F2F2', strokeColor: '#BFBFBF' }
+        ],
+        [
+            { text: 'RESULTADOS DEL CÓMPUTO DEL SEI', font: 'Helvetica-Bold', fontSize: 12, background: '#F2F2F2', strokeColor: '#BFBFBF' },
+            { text: '(ASENTADOS EN EL ACTA)', font: 'Helvetica', fontSize: 12, background: '#F2F2F2', strokeColor: '#BFBFBF' }
+        ],
+        [{ text: 'TOTAL CON NÚMERO', font: 'Helvetica-Bold', fontSize: 12, background: '#F2F2F2', strokeColor: '#BFBFBF' }],
+        [{ text: 'TOTAL CON LETRA', font: 'Helvetica-Bold', fontSize: 12, background: '#F2F2F2', strokeColor: '#BFBFBF' }]
+    ];
+    const columnas = [
+        { width: 100, align: 'center' },
+        { width: 100, align: 'center' },
+        { width: 100, align: 'center' },
+        { width: 100, align: 'center' },
+        { width: 340, align: 'center' }
+    ];
+    return new Promise((resolve, reject) => {
         const doc = new PDFDocument({ bufferPages: true, autoFirstPage: false, size: 'A3', layout: 'portrait', margin: 30 });
         doc.info.Author = autor;
         doc.addPage();
@@ -194,7 +299,7 @@ export const ActaComputoTotalPDF = async (req = request, res = response) => {
                 [{ text: '', font: 'Helvetica', fontSize: 10, strokeColor: '#BFBFBF' }]
             ]
         ], { height: 23 });
-        doc.font('Helvetica', 8).text('SE LEVANTA LA PRESENTE ACTA CON FUNDAMENTO EN LO DISPUESTO EN LOS ARTÍCULOS 6 FRACCIÓN I, 36 PÁRRAFO PRIMERO, 113 FRACCIÓN V, 362 PRIMER Y SEGUNDO PARRAFO, Y 367 DEL CÓDIGO DE INSTITUCIONES Y PROCEDIMIENTOS ELECTORALES DE LA CIUDAD DE MÉXICO; 83, 96 PRIMER PÁRRAFO, 97 Y 106 DE LA LEY DE PARTICIPACIÓN CIUDADANA DE LA CIUDAD DE MÉXICO; ASÍ COMO DEL NUMERAL 16 DE LAS DISPOSICIONES GENERALES DE LA CONVOCATORIA ÚNICA APROBADA POR EL CONSEJO GENERAL DEL INSTITUTO ELECTORAL DE LA CIUDAD DE MÉXICO MEDIANTE ACUERDO IECM/ACU-CG-004/2026 DE FECHA 09 DE ENERO DE 2026.', 50, doc.y + (secA/ 2) + 9, { width: 740, align: 'justify' });
+        doc.font('Helvetica', 8).text('SE LEVANTA LA PRESENTE ACTA CON FUNDAMENTO EN LO DISPUESTO EN LOS ARTÍCULOS 6 FRACCIÓN I, 36 PÁRRAFO PRIMERO, 113 FRACCIÓN V, 362 PRIMER Y SEGUNDO PARRAFO, Y 367 DEL CÓDIGO DE INSTITUCIONES Y PROCEDIMIENTOS ELECTORALES DE LA CIUDAD DE MÉXICO; 83, 96 PRIMER PÁRRAFO, 97 Y 106 DE LA LEY DE PARTICIPACIÓN CIUDADANA DE LA CIUDAD DE MÉXICO; ASÍ COMO DEL NUMERAL 16 DE LAS DISPOSICIONES GENERALES DE LA CONVOCATORIA ÚNICA APROBADA POR EL CONSEJO GENERAL DEL INSTITUTO ELECTORAL DE LA CIUDAD DE MÉXICO MEDIANTE ACUERDO IECM/ACU-CG-004/2026 DE FECHA 09 DE ENERO DE 2026.', 50, doc.y + (secA / 2) + 9, { width: 740, align: 'justify' });
         if (paginas > 1)
             for (let i = 0; i < paginas; i++) {
                 doc.switchToPage(i);
@@ -202,20 +307,7 @@ export const ActaComputoTotalPDF = async (req = request, res = response) => {
             }
         doc.end();
         doc.on('data', buffer.push.bind(buffer));
-        doc.on('end', () => {
-            res.json({
-                success: true,
-                msg: 'Reporte generado correctamente',
-                contentType: 'application/pdf',
-                reporte: `ActaComputoTotal_${clave_colonia}_${fecha}-${hora}.pdf`,
-                buffer: Buffer.concat(buffer)
-            });
-        });
-    } catch (err) {
-        console.error(`Error al generar el Acta de Cómputo Total en PDF: ${err}`);
-        res.status(500).json({
-            success: false,
-            msg: 'Error al generar el acta'
-        });
-    }
+        doc.on('end', () => { resolve(Buffer.concat(buffer)) });
+        doc.on('error', reject);
+    });
 }

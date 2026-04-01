@@ -32,7 +32,7 @@ export const  UTValidadas = async (req = request, res = response) => {
                 success: false,
                 msg: "¡No existe información!"
             });
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         const subtitulo = `CONSULTA DE ${(await ConsultaTipoEleccion(anio)).toUpperCase()}`;
         workbook.xlsx.readFile(path.join(plantillas[2], 'Reporte_UT-VPV.xlsx'))
             .then(() => {
@@ -74,7 +74,7 @@ export const  UTValidadas = async (req = request, res = response) => {
                     success: true,
                     msg: 'Reporte generado corectamente',
                     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_UTValidadas-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_UTValidadas_CPP_${anio == 2 ? '26' : '27'}_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -119,7 +119,7 @@ export const UTPorValidar = async (req = request, res = response) => {
                 success: false,
                 msg: '¡No existe información!'
             });
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         const subtitulo = `CONSULTA DE ${(await ConsultaTipoEleccion(anio)).toUpperCase()}`;
         workbook.xlsx.readFile(path.join(plantillas[2], 'Reporte_UT-VPV.xlsx'))
             .then(() => {
@@ -161,7 +161,7 @@ export const UTPorValidar = async (req = request, res = response) => {
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_UTPorValidar-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_UTPorValidar_CPP_${anio == 2 ? '26' : '27'}_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -200,7 +200,7 @@ export const ListadoProyectos = async (req = request, res = response) => {
                 success: false,
                 msg: '¡No existe información!'
             });
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         const subtitulo = `CONSULTA DE ${(await ConsultaTipoEleccion(anio)).toUpperCase()}`;
         workbook.xlsx.readFile(path.join(plantillas[2], 'Listado_Proyectos.xlsx'))
             .then(() => {
@@ -263,7 +263,7 @@ export const ListadoProyectos = async (req = request, res = response) => {
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_ListadoProyectos-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_ListadoProyectos_CPP_${anio == 2 ? '26' : '27'}_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -348,9 +348,12 @@ export const ValidacionResultados = async (req = request, res = response) => {
                 success: false,
                 msg: '¡No existe información!'
             });
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         const subtitulo = `CONSULTA DE ${(await ConsultaTipoEleccion(anio)).toUpperCase()}`;
-        const max = Math.max(...actas.map(acta => JSON.parse(acta.proyectos).length));
+        const proyectosList = [... new Set([...actas.flatMap(acta => JSON.parse(acta.proyectos).map(p => p.secuencial))])].sort((a, b) => a - b);
+        const max = proyectosList.length;
+        const mapaNumeros = new Map(proyectosList.map((n, i) => [n, i]));
+        const actasJSON = actas.map(acta => ({ ...acta, proyectos: JSON.parse(acta.proyectos) }));
         workbook.xlsx.readFile(path.join(plantillas[2], 'Validacion_Resultados.xlsx'))
             .then(() => {
                 workbook.creator = autor;
@@ -367,23 +370,23 @@ export const ValidacionResultados = async (req = request, res = response) => {
                 worksheet.getCell('A8').value = `DIRECCIÓN DISTRITAL: ${id_distrito}`;
                 worksheet.getCell('M8').value = `Fecha: ${fecha}`;
                 worksheet.getCell('M9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
-                for (let i = 1; i <= max; i++) {
-                    for (let j = 1; j <= 3; j++)
+                proyectosList.forEach((num, _) => {
+                    for (let i = 1; i <= 3; i++)
                         worksheet.spliceColumns(celda, 0, [null]);
                     if (!worksheet.getCell(11, celda).isMerged)
                         worksheet.mergeCells(11, celda, 11, celda + 2);
-                    for (let j = celda; j <= celda + 2; j++)
-                        worksheet.getCell(11, j).style = contenidoStyle;
-                    worksheet.getCell(11, celda).value = i;
+                    for (let i = celda; i <= celda + 2; i++)
+                        worksheet.getCell(11, i).style = contenidoStyle;
+                    worksheet.getCell(11, celda).value = num;
                     worksheet.getCell(11, celda).style = fill;
                     worksheet.getCell(12, celda).value = 'Opiniones Mesa';
                     worksheet.getCell(12, celda).style = fill;
-                    worksheet.getCell(12, celda + 1).value = 'Opiniones (SEI)';
+                    worksheet.getCell(12, celda + 1).value = 'Opiniones (SEI: vía remota)';
                     worksheet.getCell(12, celda + 1).style = fill;
-                    worksheet.getCell(12, celda + 2).value = `Total de Opiniones Proyecto ${i}`;
+                    worksheet.getCell(12, celda + 2).value = `Total de Opiniones Proyecto ${num}`;
                     worksheet.getCell(12, celda + 2).style = fill;
                     celda += 3;
-                }
+                });
                 if (!worksheet.getCell(2, 1).isMerged)
                     worksheet.mergeCells(2, 1, 2, celdasTotales);
                 if (!worksheet.getCell(3, 1).isMerged)
@@ -424,17 +427,28 @@ export const ValidacionResultados = async (req = request, res = response) => {
                 };
                 const imprimirProyectos = (index, proyectos) => {
                     let i = index;
-                    proyectos.forEach(proyecto => {
-                        Object.entries(proyecto).forEach(([campo, valor]) => {
-                            if (!campo.includes('secuencial')) {
-                                imprimir(i, valor);
+                    const mapaProyectos = new Map(proyectos.map(p => [p.secuencial, p]));
+                    const numeros = proyectos.map(p => p.secuencial);
+                    const maxIndex = Math.max(...numeros.map(sec => mapaNumeros.get(sec) ?? -1));
+                    for (let a = 0; a <= maxIndex; a++) {
+                        const sec = proyectosList[a];
+                        const acta = mapaProyectos.get(sec);
+                        if (acta)
+                            Object.entries(acta).forEach(([campo, valor]) => {
+                                if (!campo.includes('secuencial')) {
+                                    imprimir(i, valor);
+                                    i++;
+                                }
+                            });
+                        else
+                            for (let b = 0; b < 3; b++) {
+                                imprimir(i, '');
                                 i++;
                             }
-                        });
-                    });
+                    }
                     return i;
-                };
-                actas.forEach(acta => {
+                }
+                actasJSON.forEach(acta => {
                     let i = 1;
                     Object.entries(acta).forEach(([campo, valor]) => {
                         if (!campo.match('proyectos')) {
@@ -442,8 +456,9 @@ export const ValidacionResultados = async (req = request, res = response) => {
                             i++;
                             return;
                         }
-                        i = imprimirProyectos(i, JSON.parse(valor));
-                        const faltantes = max - JSON.parse(valor).length;
+                        i = imprimirProyectos(i, valor);
+                        const maxIndex = Math.max(...valor.map(p => mapaNumeros.get(p.secuencial) ?? -1));
+                        const faltantes = max - (maxIndex + 1);
                         for (let x = 0; x < faltantes * 3; x++) {
                             imprimir(i, '');
                             i++;
@@ -484,7 +499,7 @@ export const ValidacionResultados = async (req = request, res = response) => {
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_ValidacionResultado${clave_colonia ? `_${clave_colonia}_` : '-'}${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_ValidacionResultado${clave_colonia ? `_${clave_colonia}_` : '_'}CPP_${anio == 2 ? '26' : '27'}_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -570,9 +585,12 @@ export const ValidacionResultadosDetalle = async (req = request, res = response)
                 success: false,
                 msg: '¡No existe información!'
             });
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         const subtitulo = `CONSULTA DE ${(await ConsultaTipoEleccion(anio)).toUpperCase()}`;
-        const max = Math.max(...actas.map(acta => JSON.parse(acta.proyectos).length));
+        const proyectosList = [... new Set([...actas.flatMap(acta => JSON.parse(acta.proyectos).map(p => p.secuencial))])].sort((a, b) => a - b);
+        const max = proyectosList.length;
+        const mapaNumeros = new Map(proyectosList.map((n, i) => [n, i]));
+        const actasJSON = actas.map(acta => ({ ...acta, proyectos: JSON.parse(acta.proyectos) }));
         workbook.xlsx.readFile(path.join(plantillas[2], 'Validacion_Resultados_Detalle.xlsx'))
             .then(() => {
                 workbook.creator = autor;
@@ -589,23 +607,23 @@ export const ValidacionResultadosDetalle = async (req = request, res = response)
                 worksheet.getCell('A8').value = `DIRECCIÓN DISTRITAL: ${id_distrito}`;
                 worksheet.getCell('P8').value = `Fecha: ${fecha}`;
                 worksheet.getCell('P9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
-                for (let i = 1; i <= max; i++) {
-                    for (let j = 1; j <= 3; j++)
+                proyectosList.forEach((num, _) => {
+                    for (let i = 1; i <= 3; i++)
                         worksheet.spliceColumns(celda, 0, [null]);
                     if (!worksheet.getCell(11, celda).isMerged)
                         worksheet.mergeCells(11, celda, 11, celda + 2);
-                    for (let j = celda; j <= celda + 2; j++)
-                        worksheet.getCell(11, j).style = contenidoStyle;
-                    worksheet.getCell(11, celda).value = i;
+                    for (let i = celda; i <= celda + 2; i++)
+                        worksheet.getCell(11, i).style = contenidoStyle;
+                    worksheet.getCell(11, celda).value = num;
                     worksheet.getCell(11, celda).style = fill;
                     worksheet.getCell(12, celda).value = 'Opiniones Mesa';
                     worksheet.getCell(12, celda).style = fill;
-                    worksheet.getCell(12, celda + 1).value = 'Opiniones (SEI)';
+                    worksheet.getCell(12, celda + 1).value = 'Opiniones (SEI: vía remota)';
                     worksheet.getCell(12, celda + 1).style = fill;
-                    worksheet.getCell(12, celda + 2).value = `Total de Opiniones Proyecto ${i}`;
+                    worksheet.getCell(12, celda + 2).value = `Total de Opiniones Proyecto ${num}`;
                     worksheet.getCell(12, celda + 2).style = fill;
                     celda += 3;
-                }
+                });
                 if (!worksheet.getCell(2, 1).isMerged)
                     worksheet.mergeCells(2, 1, 2, celdasTotales);
                 if (!worksheet.getCell(3, 1).isMerged)
@@ -652,17 +670,28 @@ export const ValidacionResultadosDetalle = async (req = request, res = response)
                 };
                 const imprimirProyectos = (index, proyectos) => {
                     let i = index;
-                    proyectos.forEach(proyecto => {
-                        Object.entries(proyecto).forEach(([campo, valor]) => {
-                            if (!campo.includes('secuencial')) {
-                                imprimir(i, valor);
+                    const mapaProyectos = new Map(proyectos.map(p => [p.secuencial, p]));
+                    const numeros = proyectos.map(p => p.secuencial);
+                    const maxIndex = Math.max(...numeros.map(sec => mapaNumeros.get(sec) ?? -1));
+                    for (let a = 0; a <= maxIndex; a++) {
+                        const sec = proyectosList[a];
+                        const acta = mapaProyectos.get(sec);
+                        if (acta)
+                            Object.entries(acta).forEach(([campo, valor]) => {
+                                if (!campo.includes('secuencial')) {
+                                    imprimir(i, valor);
+                                    i++;
+                                }
+                            });
+                        else
+                            for (let b = 0; b < 3; b++) {
+                                imprimir(i, '');
                                 i++;
                             }
-                        });
-                    });
+                    }
                     return i;
-                };
-                actas.forEach(acta => {
+                }
+                actasJSON.forEach(acta => {
                     let i = 1;
                     Object.entries(acta).forEach(([campo, valor]) => {
                         if (!campo.match('proyectos')) {
@@ -670,8 +699,9 @@ export const ValidacionResultadosDetalle = async (req = request, res = response)
                             i++;
                             return;
                         }
-                        i = imprimirProyectos(i, JSON.parse(valor));
-                        const faltantes = max - JSON.parse(valor).length;
+                        i = imprimirProyectos(i, valor);
+                        const maxIndex = Math.max(...valor.map(p => mapaNumeros.get(p.secuencial) ?? -1));
+                        const faltantes = max - (maxIndex + 1);
                         for (let x = 0; x < faltantes * 3; x++) {
                             imprimir(i, '');
                             i++;
@@ -708,7 +738,7 @@ export const ValidacionResultadosDetalle = async (req = request, res = response)
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_ValidacionResultadoDetalle${clave_colonia ? `_${clave_colonia}_` : '-'}${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_ValidacionResultadoDetalle${clave_colonia ? `_${clave_colonia}_` : '_'}CPP_${anio == 2 ? '26' : '27'}_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -768,7 +798,7 @@ export const ValidacionResultadosNombre = async (req = request, res = response) 
         ),
         ProyectosJSON AS (
             SELECt id_distrito, clave_colonia, anio, (
-                SELECT nom_proyecto AS proyecto, SUM(votos) AS votos, SUM(votos_sei) AS votos_sei, SUM(total_votos) AS total_votos
+                SELECT secuencial, nom_proyecto, SUM(votos) AS votos, SUM(votos_sei) AS votos_sei, SUM(total_votos) AS total_votos
                 FROM consulta_actas_VVS V2
                 WHERE V2.id_distrito = V1.id_distrito AND V2.clave_colonia = V1.clave_colonia AND V2.anio = V1.anio
                 GROUP BY secuencial, nom_proyecto
@@ -793,14 +823,17 @@ export const ValidacionResultadosNombre = async (req = request, res = response) 
                 success: false,
                 msg: '¡No existe información!'
             });
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         const subtitulo = `CONSULTA DE ${(await ConsultaTipoEleccion(anio)).toUpperCase()}`;
-        const ProyT = JSON.parse(actas[0].proyectos).length;
+        const proyectosList = [...new Map(actas.flatMap(acta => JSON.parse(acta.proyectos)).map(p => [p.secuencial, [p.secuencial, p.nom_proyecto]])).values()].sort((a, b) => a - b);
+        const max = proyectosList.length;
+        const mapaNumeros = new Map(proyectosList.map(([num, _], i) => [num, i]));
+        const actasJSON = actas.map(acta => ({ ...acta, proyectos: JSON.parse(acta.proyectos) }));
         workbook.xlsx.readFile(path.join(plantillas[2], 'Validacion_Resultados_Nombre.xlsx'))
             .then(() => {
                 workbook.creator = autor;
                 const worksheet = workbook.getWorksheet(1);
-                const celdasTotales = 13 + (ProyT * 3);
+                const celdasTotales = 13 + (max * 3);
                 let fila = 13, celda = 6;
                 const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
@@ -808,24 +841,23 @@ export const ValidacionResultadosNombre = async (req = request, res = response) 
                 worksheet.getCell('A8').value = `DIRECCIÓN DISTRITAL: ${id_distrito}`;
                 worksheet.getCell('M8').value = `Fecha: ${fecha}`;
                 worksheet.getCell('M9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
-                for (const [i, proyecto] of JSON.parse(actas[0].proyectos).entries()) {
-                    const { proyecto: nom } = proyecto;
-                    for (let j = 1; j <= 3; j++)
-                        worksheet.spliceColumns(celda, 0, [null]);
-                    if (!worksheet.getCell(11, celda).isMerged)
-                        worksheet.mergeCells(11, celda, 11, celda + 2);
-                    for (let j = celda; j <= celda + 2; j++)
-                        worksheet.getCell(11, j).style = contenidoStyle;
-                    worksheet.getCell(11, celda).value = nom.trim();
-                    worksheet.getCell(11, celda).style = fill
-                    worksheet.getCell(12, celda).value = 'Opiniones Mesa';
-                    worksheet.getCell(12, celda).style = fill;
-                    worksheet.getCell(12, celda + 1).value = 'Opiniones (SEI: vía remota)';
-                    worksheet.getCell(12, celda + 1).style = fill;
-                    worksheet.getCell(12, celda + 2).value = `Total de Opiniones Proyecto ${i + 1}`;
-                    worksheet.getCell(12, celda + 2).style = fill;
-                    celda += 3;
-                }
+                proyectosList.forEach(([num, proy]) => {
+                        for (let j = 1; j <= 3; j++)
+                            worksheet.spliceColumns(celda, 0, [null]);
+                        if (!worksheet.getCell(11, celda).isMerged)
+                            worksheet.mergeCells(11, celda, 11, celda + 2);
+                        for (let j = celda; j <= celda + 2; j++)
+                            worksheet.getCell(11, j).style = contenidoStyle;
+                        worksheet.getCell(11, celda).value = proy;
+                        worksheet.getCell(11, celda).style = fill
+                        worksheet.getCell(12, celda).value = 'Opiniones Mesa';
+                        worksheet.getCell(12, celda).style = fill;
+                        worksheet.getCell(12, celda + 1).value = 'Opiniones (SEI: vía remota)';
+                        worksheet.getCell(12, celda + 1).style = fill;
+                        worksheet.getCell(12, celda + 2).value = `Total de Opiniones Proyecto ${num}`;
+                        worksheet.getCell(12, celda + 2).style = fill;
+                        celda += 3;
+                });
                 if (!worksheet.getCell(2, 1).isMerged)
                     worksheet.mergeCells(2, 1, 2, celdasTotales);
                 if (!worksheet.getCell(3, 1).isMerged)
@@ -844,47 +876,64 @@ export const ValidacionResultadosNombre = async (req = request, res = response) 
                     worksheet.mergeCells(11, 4, 12, 4);
                 if (!worksheet.getCell(11, 5).isMerged)
                     worksheet.mergeCells(11, 5, 12, 5);
-                if (!worksheet.getCell(11, 6 + (ProyT * 3)).isMerged)
-                    worksheet.mergeCells(11, 6 + (ProyT * 3), 12, 6 + (ProyT * 3));
-                if (!worksheet.getCell(11, 7 + (ProyT * 3)).isMerged)
-                    worksheet.mergeCells(11, 7 + (ProyT * 3), 12, 7 + (ProyT * 3));
-                if (!worksheet.getCell(11, 8 + (ProyT * 3)).isMerged)
-                    worksheet.mergeCells(11, 8 + (ProyT * 3), 12, 8 + (ProyT * 3));
-                if (!worksheet.getCell(11, 9 + (ProyT * 3)).isMerged)
-                    worksheet.mergeCells(11, 9 + (ProyT * 3), 12, 9 + (ProyT * 3));
-                if (!worksheet.getCell(11, 10 + (ProyT * 3)).isMerged)
-                    worksheet.mergeCells(11, 10 + (ProyT * 3), 12, 10 + (ProyT * 3));
-                if (!worksheet.getCell(11, 11 + (ProyT * 3)).isMerged)
-                    worksheet.mergeCells(11, 11 + (ProyT * 3), 12, 11 + (ProyT * 3));
-                if (!worksheet.getCell(11, 12 + (ProyT * 3)).isMerged)
-                    worksheet.mergeCells(11, 12 + (ProyT * 3), 12, 12 + (ProyT * 3));
-                if (!worksheet.getCell(11, 13 + (ProyT * 3)).isMerged)
-                    worksheet.mergeCells(11, 13 + (ProyT * 3), 12, 13 + (ProyT * 3));
+                if (!worksheet.getCell(11, 6 + (max * 3)).isMerged)
+                    worksheet.mergeCells(11, 6 + (max * 3), 12, 6 + (max * 3));
+                if (!worksheet.getCell(11, 7 + (max * 3)).isMerged)
+                    worksheet.mergeCells(11, 7 + (max * 3), 12, 7 + (max * 3));
+                if (!worksheet.getCell(11, 8 + (max * 3)).isMerged)
+                    worksheet.mergeCells(11, 8 + (max * 3), 12, 8 + (max * 3));
+                if (!worksheet.getCell(11, 9 + (max * 3)).isMerged)
+                    worksheet.mergeCells(11, 9 + (max * 3), 12, 9 + (max * 3));
+                if (!worksheet.getCell(11, 10 + (max * 3)).isMerged)
+                    worksheet.mergeCells(11, 10 + (max * 3), 12, 10 + (max * 3));
+                if (!worksheet.getCell(11, 11 + (max * 3)).isMerged)
+                    worksheet.mergeCells(11, 11 + (max * 3), 12, 11 + (max * 3));
+                if (!worksheet.getCell(11, 12 + (max * 3)).isMerged)
+                    worksheet.mergeCells(11, 12 + (max * 3), 12, 12 + (max * 3));
+                if (!worksheet.getCell(11, 13 + (max * 3)).isMerged)
+                    worksheet.mergeCells(11, 13 + (max * 3), 12, 13 + (max * 3));
                 const imprimir = (index, text) => {
                     worksheet.getCell(fila, index).value = text;
                     worksheet.getCell(fila, index).style = index > 3 && index < celdasTotales - 3 ? { ...contenidoStyle, numFmt: '#,##0' } : contenidoStyle;
                 };
                 const imprimirProyectos = (index, proyectos) => {
                     let i = index;
-                    proyectos.forEach(proyecto => {
-                        Object.entries(proyecto).forEach(([campo, valor]) => {
-                            if (!campo.includes('proyecto')) {
-                                imprimir(i, valor);
+                    const mapaProyectos = new Map(proyectos.map(p => [p.secuencial, p]));
+                    const numeros = proyectos.map(p => p.secuencial);
+                    const maxIndex = Math.max(...numeros.map(sec => mapaNumeros.get(sec) ?? -1));
+                    for (let a = 0; a <= maxIndex; a++) {
+                        const sec = proyectosList[a][0];
+                        const acta = mapaProyectos.get(sec);
+                        if (acta)
+                            Object.entries(acta).forEach(([campo, valor]) => {
+                                if (!campo.includes('secuencial') && !campo.includes('nom_proyecto')) {
+                                    imprimir(i, valor);
+                                    i++;
+                                }
+                            });
+                        else
+                            for (let b = 0; b < 3; b++) {
+                                imprimir(i, '');
                                 i++;
                             }
-                        });
-                    });
+                    }
                     return i;
-                };
-                actas.forEach(acta => {
+                }
+                actasJSON.forEach(acta => {
                     let i = 1;
                     Object.entries(acta).forEach(([campo, valor]) => {
-                        if (!campo.match('proyectos')) {
+                        if (!campo.includes('proyectos')) {
                             imprimir(i, valor);
                             i++;
                             return;
                         }
-                        i = imprimirProyectos(i, JSON.parse(valor));
+                        i = imprimirProyectos(i, valor);
+                        const maxIndex = Math.max(...valor.map(p => mapaNumeros.get(p.secuencial) ?? -1));
+                        const faltantes = max - (maxIndex + 1);
+                        for (let x = 0; x < faltantes * 3; x++) {
+                            imprimir(i, '');
+                            i++;
+                        }
                     });
                     fila++;
                 });
@@ -907,7 +956,7 @@ export const ValidacionResultadosNombre = async (req = request, res = response) 
                         else
                             column.width = maxLength;
                     }
-                    if (i > 4 && i <= 4 + (ProyT * 3))
+                    if (i > 4 && i <= 4 + (max * 3))
                         column.width = 15;
                 });
                 return workbook.xlsx.writeBuffer();
@@ -917,7 +966,7 @@ export const ValidacionResultadosNombre = async (req = request, res = response) 
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_ValidacionResultadoNombre_${clave_colonia}_${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_ValidacionResultadoNombre_${clave_colonia}_CPP_${anio == 2 ? '26' : '27'}_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -978,7 +1027,7 @@ export const ValidacionResultadosNombreDetalle = async (req = request, res = res
         ),
         ProyectosJSON AS (
             SELECt id_distrito, clave_colonia, num_mro, tipo_mro, anio, (
-                SELECT nom_proyecto AS proyecto, votos, votos_sei, total_votos
+                SELECT secuencial, nom_proyecto, votos, votos_sei, total_votos
                 FROM consulta_actas_VVS V2
                 WHERE V2.id_distrito = V1.id_distrito AND V2.clave_colonia = V1.clave_colonia AND V2.num_mro = V1.num_mro AND V2.tipo_mro = V1.tipo_mro AND V2.anio = V1.anio
                 ORDER BY secuencial ASC
@@ -1000,14 +1049,17 @@ export const ValidacionResultadosNombreDetalle = async (req = request, res = res
                 success: false,
                 msg: '¡No existe información!'
             });
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         const subtitulo = `CONSULTA DE ${(await ConsultaTipoEleccion(anio)).toUpperCase()}`;
-        const ProyT = JSON.parse(actas[0].proyectos).length;
+        const proyectosList = [...new Map(actas.flatMap(acta => JSON.parse(acta.proyectos)).map(p => [p.secuencial, [p.secuencial, p.nom_proyecto]])).values()].sort((a, b) => a - b);
+        const max = proyectosList.length;
+        const mapaNumeros = new Map(proyectosList.map(([num, _], i) => [num, i]));
+        const actasJSON = actas.map(acta => ({ ...acta, proyectos: JSON.parse(acta.proyectos) }));
         workbook.xlsx.readFile(path.join(plantillas[2], 'Validacion_Resultados_Nombre_Detalle.xlsx'))
             .then(() => {
                 workbook.creator = autor;
                 const worksheet = workbook.getWorksheet(1);
-                const celdasTotales = 18 + (ProyT * 3);
+                const celdasTotales = 18 + (max * 3);
                 let fila = 13, celda = 10;
                 const iecm = workbook.addImage({ filename: IECMLogo, extension: 'png' });
                 worksheet.addImage(iecm, { tl: { col: 0, row: 0 }, ext: { width: 231, height: 140 }, editAs: 'absolute' });
@@ -1015,24 +1067,23 @@ export const ValidacionResultadosNombreDetalle = async (req = request, res = res
                 worksheet.getCell('A8').value = `DIRECCIÓN DISTRITAL: ${id_distrito}`;
                 worksheet.getCell('R8').value = `Fecha: ${fecha}`;
                 worksheet.getCell('R9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
-                for (const [i, proyecto] of JSON.parse(actas[0].proyectos).entries()) {
-                    const { proyecto: nom } = proyecto;
+                proyectosList.forEach(([num, proy]) => {
                     for (let j = 1; j <= 3; j++)
                         worksheet.spliceColumns(celda, 0, [null]);
                     if (!worksheet.getCell(11, celda).isMerged)
                         worksheet.mergeCells(11, celda, 11, celda + 2);
                     for (let j = celda; j <= celda + 2; j++)
                         worksheet.getCell(11, j).style = contenidoStyle;
-                    worksheet.getCell(11, celda).value = nom.trim();
-                    worksheet.getCell(11, celda).style = fill;
+                    worksheet.getCell(11, celda).value = proy;
+                    worksheet.getCell(11, celda).style = fill
                     worksheet.getCell(12, celda).value = 'Opiniones Mesa';
                     worksheet.getCell(12, celda).style = fill;
                     worksheet.getCell(12, celda + 1).value = 'Opiniones (SEI: vía remota)';
                     worksheet.getCell(12, celda + 1).style = fill;
-                    worksheet.getCell(12, celda + 2).value = `total de Opiniones Proyecto ${i}`;
+                    worksheet.getCell(12, celda + 2).value = `Total de Opiniones Proyecto ${num}`;
                     worksheet.getCell(12, celda + 2).style = fill;
                     celda += 3;
-                }
+                });
                 if (!worksheet.getCell(2, 1).isMerged)
                     worksheet.mergeCells(2, 1, 2, celdasTotales);
                 if (!worksheet.getCell(3, 1).isMerged)
@@ -1059,49 +1110,66 @@ export const ValidacionResultadosNombreDetalle = async (req = request, res = res
                     worksheet.mergeCells(11, 8, 12, 8);
                 if (!worksheet.getCell(11, 9).isMerged)
                     worksheet.mergeCells(11, 9, 12, 9);
-                if (!worksheet.getCell(11, 10 + (ProyT * 3)).isMerged)
-                    worksheet.mergeCells(11, 10 + (ProyT * 3), 12, 10 + (ProyT * 3));
-                if (!worksheet.getCell(11, 11 + (ProyT * 3)).isMerged)
-                    worksheet.mergeCells(11, 11 + (ProyT * 3), 12, 11 + (ProyT * 3));
-                if (!worksheet.getCell(11, 12 + (ProyT * 3)).isMerged)
-                    worksheet.mergeCells(11, 12 + (ProyT * 3), 12, 12 + (ProyT * 3));
-                if (!worksheet.getCell(11, 13 + (ProyT * 3)).isMerged)
-                    worksheet.mergeCells(11, 13 + (ProyT * 3), 12, 13 + (ProyT * 3));
-                if (!worksheet.getCell(11, 14 + (ProyT * 3)).isMerged)
-                    worksheet.mergeCells(11, 14 + (ProyT * 3), 12, 14 + (ProyT * 3));
-                if (!worksheet.getCell(11, 15 + (ProyT * 3)).isMerged)
-                    worksheet.mergeCells(11, 15 + (ProyT * 3), 12, 15 + (ProyT * 3));
-                if (!worksheet.getCell(11, 16 + (ProyT * 3)).isMerged)
-                    worksheet.mergeCells(11, 16 + (ProyT * 3), 12, 16 + (ProyT * 3));
-                if (!worksheet.getCell(11, 17 + (ProyT * 3)).isMerged)
-                    worksheet.mergeCells(11, 17 + (ProyT * 3), 12, 17 + (ProyT * 3));
-                if (!worksheet.getCell(11, 18 + (ProyT * 3)).isMerged)
-                    worksheet.mergeCells(11, 18 + (ProyT * 3), 12, 18 + (ProyT * 3));
+                if (!worksheet.getCell(11, 10 + (max * 3)).isMerged)
+                    worksheet.mergeCells(11, 10 + (max * 3), 12, 10 + (max * 3));
+                if (!worksheet.getCell(11, 11 + (max * 3)).isMerged)
+                    worksheet.mergeCells(11, 11 + (max * 3), 12, 11 + (max * 3));
+                if (!worksheet.getCell(11, 12 + (max * 3)).isMerged)
+                    worksheet.mergeCells(11, 12 + (max * 3), 12, 12 + (max * 3));
+                if (!worksheet.getCell(11, 13 + (max * 3)).isMerged)
+                    worksheet.mergeCells(11, 13 + (max * 3), 12, 13 + (max * 3));
+                if (!worksheet.getCell(11, 14 + (max * 3)).isMerged)
+                    worksheet.mergeCells(11, 14 + (max * 3), 12, 14 + (max * 3));
+                if (!worksheet.getCell(11, 15 + (max * 3)).isMerged)
+                    worksheet.mergeCells(11, 15 + (max * 3), 12, 15 + (max * 3));
+                if (!worksheet.getCell(11, 16 + (max * 3)).isMerged)
+                    worksheet.mergeCells(11, 16 + (max * 3), 12, 16 + (max * 3));
+                if (!worksheet.getCell(11, 17 + (max * 3)).isMerged)
+                    worksheet.mergeCells(11, 17 + (max * 3), 12, 17 + (max * 3));
+                if (!worksheet.getCell(11, 18 + (max * 3)).isMerged)
+                    worksheet.mergeCells(11, 18 + (max * 3), 12, 18 + (max * 3));
                 const imprimir = (index, text) => {
                     worksheet.getCell(fila, index).value = text;
                     worksheet.getCell(fila, index).style = index > 3 && index < celdasTotales - 3 ? { ...contenidoStyle, numFmt: '#,##0' } : contenidoStyle;
                 };
                 const imprimirProyectos = (index, proyectos) => {
                     let i = index;
-                    proyectos.forEach(proyecto => {
-                        Object.entries(proyecto).forEach(([campo, valor]) => {
-                            if (!campo.includes('proyecto')) {
-                                imprimir(i, valor);
+                    const mapaProyectos = new Map(proyectos.map(p => [p.secuencial, p]));
+                    const numeros = proyectos.map(p => p.secuencial);
+                    const maxIndex = Math.max(...numeros.map(sec => mapaNumeros.get(sec) ?? -1));
+                    for (let a = 0; a <= maxIndex; a++) {
+                        const sec = proyectosList[a][0];
+                        const acta = mapaProyectos.get(sec);
+                        if (acta)
+                            Object.entries(acta).forEach(([campo, valor]) => {
+                                if (!campo.includes('secuencial') && !campo.includes('nom_proyecto')) {
+                                    imprimir(i, valor);
+                                    i++;
+                                }
+                            });
+                        else
+                            for (let b = 0; b < 3; b++) {
+                                imprimir(i, '');
                                 i++;
                             }
-                        });
-                    });
+                    }
                     return i;
-                };
-                actas.forEach(acta => {
+                }
+                actasJSON.forEach(acta => {
                     let i = 1;
                     Object.entries(acta).forEach(([campo, valor]) => {
-                        if (!campo.match('proyectos')) {
+                        if (!campo.includes('proyectos')) {
                             imprimir(i, valor);
                             i++;
                             return;
                         }
-                        i = imprimirProyectos(i, JSON.parse(valor));
+                        i = imprimirProyectos(i, valor);
+                        const maxIndex = Math.max(...valor.map(p => mapaNumeros.get(p.secuencial) ?? -1));
+                        const faltantes = max - (maxIndex + 1);
+                        for (let x = 0; x < faltantes * 3; x++) {
+                            imprimir(i, '');
+                            i++;
+                        }
                     });
                     fila++;
                 });
@@ -1124,7 +1192,7 @@ export const ValidacionResultadosNombreDetalle = async (req = request, res = res
                         else
                             column.width = maxLength;
                     }
-                    if (i > 8 && i <= 8 + (ProyT * 3))
+                    if (i > 8 && i <= 8 + (max * 3))
                         column.width = 15;
                 });
                 return workbook.xlsx.writeBuffer()
@@ -1134,7 +1202,7 @@ export const ValidacionResultadosNombreDetalle = async (req = request, res = res
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_ValidacionResultadosNombreDetalle_${clave_colonia}_${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_ValidacionResultadosNombreDetalle_${clave_colonia}_CPP_${anio == 2 ? '26' : '27'}_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -1173,7 +1241,7 @@ export const MesasConComputo = async (req = request, res = response) => {
                 success: false,
                 msg: '¡No existe información!'
             });
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         const subtitulo = `CONSULTA DE ${(await ConsultaTipoEleccion(anio)).toUpperCase()}`;
         workbook.xlsx.readFile(path.join(plantillas[2], 'Mesas_CSC.xlsx'))
             .then(() => {
@@ -1236,7 +1304,7 @@ export const MesasConComputo = async (req = request, res = response) => {
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd-openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_MesasConComputo-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_MesasConComputo_CPP_${anio == 2 ? '26' : '27'}_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -1275,7 +1343,7 @@ export const MesasSinComputo = async (req = request, res = response) => {
                 success: false,
                 msg: '¡No existe información!'
             });
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         const subtitulo = `CONSULTA DE ${(await ConsultaTipoEleccion(anio)).toUpperCase()}`;
         workbook.xlsx.readFile(path.join(plantillas[2], 'Mesas_CSC.xlsx'))
             .then(() => {
@@ -1338,7 +1406,7 @@ export const MesasSinComputo = async (req = request, res = response) => {
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd-openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_MesasSinComputo-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_MesasSinComputo_CPP_${anio == 2 ? '26' : '27'}_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -1413,7 +1481,7 @@ export const ResultadosOpiMesa = async (req = request, res = response) => {
                 success: false,
                 msg: '¡No existe información!'
             });
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         const subtitulo = `CONSULTA DE ${(await ConsultaTipoEleccion(anio)).toUpperCase()}`;
         workbook.xlsx.readFile(path.join(plantillas[0], 'Resultados_Opi_Mesa.xlsx'))
             .then(() => {
@@ -1495,7 +1563,7 @@ export const ResultadosOpiMesa = async (req = request, res = response) => {
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_ResultadosOpiMesa-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_ResultadosOpiMesa_CPP_${anio == 2 ? '26' : '27'}_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -1567,7 +1635,7 @@ export const ProyectosPrimerLugar = async (req = request, res = response) => {
                 success: false,
                 msg: '¡No existe información!'
             });
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         const subtitulo = `CONSULTA DE ${(await ConsultaTipoEleccion(anio)).toUpperCase()}`;
         workbook.xlsx.readFile(path.join(plantillas[2], 'Proyectos-GE.xlsx'))
             .then(() => {
@@ -1639,7 +1707,7 @@ export const ProyectosPrimerLugar = async (req = request, res = response) => {
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_GanadoresPrimerLugar-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_GanadoresPrimerLugar_CPP_${anio == 2 ? '26' : '27'}_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -1711,7 +1779,7 @@ export const ProyectosSegundoLugar = async (req = request, res = response) => {
                 success: false,
                 msg: '¡No existe información!'
             });
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         const subtitulo = `CONSULTA DE ${(await ConsultaTipoEleccion(anio)).toUpperCase()}`;
         workbook.xlsx.readFile(path.join(plantillas[2], 'Proyectos-GE.xlsx'))
             .then(() => {
@@ -1783,7 +1851,7 @@ export const ProyectosSegundoLugar = async (req = request, res = response) => {
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_SegundoaLugar-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_SegundoaLugar_CPP_${anio == 2 ? '26' : '27'}_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -1855,7 +1923,7 @@ export const ProyectosEmpatePrimerLugar = async (req = request, res = response) 
                 success: false,
                 msg: '¡No existe información!'
             });
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         const subtitulo = `CONSULTA DE ${(await ConsultaTipoEleccion(anio)).toUpperCase()}`;
         workbook.xlsx.readFile(path.join(plantillas[2], 'Proyectos-GE.xlsx'))
             .then(() => {
@@ -1927,7 +1995,7 @@ export const ProyectosEmpatePrimerLugar = async (req = request, res = response) 
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_EmpatadosPrimerLugar-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_EmpatadosPrimerLugar_CPP_${anio == 2 ? '26' : '27'}_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -1999,7 +2067,7 @@ export const ProyectosEmpateSegundoLugar = async (req = request, res = response)
                 success: false,
                 msg: '¡No existe información!'
             });
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         const subtitulo = `CONSULTA DE ${(await ConsultaTipoEleccion(anio)).toUpperCase()}`;
         workbook.xlsx.readFile(path.join(plantillas[2], 'Proyectos-GE.xlsx'))
             .then(() => {
@@ -2071,7 +2139,7 @@ export const ProyectosEmpateSegundoLugar = async (req = request, res = response)
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_EmpatadosSegundoLugar-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_EmpatadosSegundoLugar_CPP_${anio == 2 ? '26' : '27'}_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -2125,7 +2193,7 @@ export const ProyectosUTSinOpiniones = async (req = request, res = response) => 
                 success: false,
                 msg: '¡No existe información!'
             });
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         const subtitulo = `CONSULTA DE ${(await ConsultaTipoEleccion(anio)).toUpperCase()}`;
         workbook.xlsx.readFile(path.join(plantillas[2], 'UTNo_Recibieron_Opiniones.xlsx'))
             .then(() => {
@@ -2188,7 +2256,7 @@ export const ProyectosUTSinOpiniones = async (req = request, res = response) => 
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_UTNoRecibieronOpiniones-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_UTNoRecibieronOpiniones_CPP_${anio == 2 ? '26' : '27'}_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -2226,7 +2294,7 @@ export const ProyectosOpinar = async (req = request, res = response) => {
                 success: false,
                 msg: '¡No existe información!'
             });
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         const titulo = `CONSULTA DE ${(await ConsultaTipoEleccion(anio)).toUpperCase()}`;
         workbook.xlsx.readFile(path.join(plantillas[2], 'Proyectos_Opinar.xlsx'))
             .then(() => {
@@ -2278,7 +2346,7 @@ export const ProyectosOpinar = async (req = request, res = response) => {
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_ProyectosOpinar-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_ProyectosOpinar_CPP_${anio == 2 ? '26' : '27'}_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -2323,7 +2391,7 @@ export const LevantadaDistrito = async (req = request, res = response) => {
                 success: false,
                 msg: '¡No existe información!'
             });
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         const subtitulo = `CONSULTA DE ${(await ConsultaTipoEleccion(anio)).toUpperCase()}`;
         workbook.xlsx.readFile(path.join(plantillas[2], 'Reporte_Levantada_Distrito.xlsx'))
             .then(() => {
@@ -2386,7 +2454,7 @@ export const LevantadaDistrito = async (req = request, res = response) => {
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_LevantadaDistrito-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_LevantadaDistrito_CPP_${anio == 2 ? '26' : '27'}_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })

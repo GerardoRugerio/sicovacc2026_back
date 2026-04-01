@@ -5,6 +5,7 @@ import { anioN, autor, AveAzteca, IECMLogo, IECMLogoBN, SerpienteAzteca } from '
 import { ConsultaClaveColonia, ConsultaDelegacion, ConsultaDistrito, ConsultaTipoEleccion, FechaHoraActa, FechaServer, InformacionConstancia } from '../helpers/Consultas.js';
 import { DividirArreglo, NumAMes, NumAText } from '../helpers/Funciones.js';
 import { SICOVACC } from '../models/consulta_usuarios_sicovacc.model.js';
+import archiver from 'archiver';
 
 //? Proyectos Participantes Dictaminados Favorablemente
 
@@ -21,7 +22,7 @@ export const ProyectosParticipantes = async (req = request, res = response) => {
                 success: false,
                 msg: '¡No existe información!'
             });
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         const { nombre_colonia } = await ConsultaClaveColonia(clave_colonia);
         const titulo = `CONSULTA DE ${(await ConsultaTipoEleccion(anio)).toUpperCase()}`;
         let datos = [], buffer = [], newPage = true, altura = 0;
@@ -84,7 +85,7 @@ export const ProyectosParticipantes = async (req = request, res = response) => {
                 success: true,
                 msg: 'Reporte generado correctamente',
                 contentType: 'application/pdf',
-                reporte: `Reporte_ProyectosParticipantes_${clave_colonia}_${fecha}-${hora}.pdf`,
+                reporte: `Reporte_ProyectosParticipantes_${clave_colonia}_${fechaM}_${horaM}.pdf`,
                 buffer: Buffer.concat(buffer)
             });
         });
@@ -224,13 +225,117 @@ export const ActaValidacionPDF = async (req = request, res = response) => {
     const { id_distrito } = req.params;
     const { clave_colonia, anio } = req.body;
     try {
-        const { fecha, hora } = await FechaServer();
-        const { nombre_delegacion } = await ConsultaDelegacion(id_distrito, clave_colonia);
-        const { nombre_colonia } = await ConsultaClaveColonia(clave_colonia);
-        const { direccion, coordinador, coordinador_puesto, secretario, secretario_puesto } = await ConsultaDistrito(id_distrito);
-        const { fechaActa, horaActa } = await FechaHoraActa(id_distrito, clave_colonia, anio);
-        const eleccion = await ConsultaTipoEleccion(anio);
-        const consulta = (await SICOVACC.sequelize.query(`SELECT secuencial AS num_proyecto, SUM(total_votos) AS total_votos
+        const { fechaM, horaM } = await FechaServer();
+        res.json({
+            success: true,
+            msg: 'Reporte generado correctamente',
+            contentType: 'application/pdf',
+            reporte: `ActaValidacion_${clave_colonia}_${anio == 2 ? '2026' : '2027'}__${fechaM}_${horaM}.pdf`,
+            buffer: await GeneradorActaPDF(anio, id_distrito, clave_colonia)
+        });
+    } catch (err) {
+        console.error(`Error al generar el Acta de Validación en PDF: ${err}`);
+        res.status(500).json({
+            success: false,
+            msg: 'Error al generar el acta'
+        });
+    }
+}
+
+export const ActasValidacionZip = async (req = request, res = response) => {
+    const { id_distrito } = req.params;
+    const { anio } = req.body;
+    try {
+        const colonias = (await SICOVACC.sequelize.query(`;WITH I AS (SELECT ${id_distrito} AS id_distrito),
+        MesasEsperadas AS (
+            SELECT CM.clave_colonia, COUNT(*) AS total
+            FROM I
+            LEFT JOIN consulta_mros CM ON I.id_distrito = CM.id_distrito
+            GROUP BY CM.clave_colonia
+        ),
+        MesasCapturadas AS (
+            SELECT CA.clave_colonia, COUNT(*) AS capturadas
+            FROM I
+            LEFT JOIN consulta_actas CA ON I.id_distrito = CA.id_distrito AND CA.modalidad = 1 AND CA.anio = ${anio} AND CA.estatus = 1
+            GROUP BY CA.clave_colonia
+        )
+        SELECT ME.clave_colonia, ME.total - COALESCE(MC.capturadas, 0) AS faltantes
+        FROM MesasEsperadas ME
+        LEFT JOIN MesasCapturadas MC ON ME.clave_colonia = MC.clave_colonia
+        ORDER BY ME.clave_colonia ASC`))[0];
+        const coloniasList = colonias.filter(c => c.faltantes == 0).map(c => c.clave_colonia);
+        if (coloniasList.length == 0)
+            return res.status(400).json({
+                success: false,
+                msg: 'No hay Unidades Territoriales validadas'
+            });
+        const { fechaM, horaM } = await FechaServer();
+        const generarZipBuffer = async (colonias) => {
+            return new Promise(async (resolve, reject) => {
+                const archive = archiver('zip', { zlib: { level: 9 } });
+                const buffer = [];
+                for (const clave_colonia of colonias) {
+                    const pdfBuffer = await GeneradorActaPDF(anio, id_distrito, clave_colonia);
+                    archive.append(pdfBuffer, { name: `ActaValidacion_${clave_colonia}_${anio == 2 ? '2026' : '2027'}_${fechaM}_${horaM}.pdf` });
+                }
+                await archive.finalize();
+                archive.on('data', buffer.push.bind(buffer));
+                archive.on('end', () => resolve(Buffer.concat(buffer)));
+                archive.on('error', reject);
+            });
+        };
+        res.json({
+            success: true,
+            msg: 'Zip generado correctamente',
+            contentType: 'application/zip',
+            archivo: `ActasValidacion_${id_distrito}_${anio == 2 ? '2026' : '2027'}_${fechaM}_${horaM}.zip`,
+            buffer: await generarZipBuffer(coloniasList)
+        });
+
+        // const faltantes = colonias.filter(c => c.faltantes > 0).length 
+        // if (faltantes > 0)
+        //     return res.status(400).json({
+        //         success: false,
+        //         msg: `Faltan ${faltantes} Unidad${faltantes > 0 ? 'es' : ''} Territorial${faltantes > 0 ? 'es' : ''} por validar`
+        //     })
+        // const { fecha, hora } = await FechaServer();
+        // const generarZipBuffer = async (colonias) => {
+        //     return new Promise(async (resolve, reject) => {
+        //         const archive = archiver('zip', { zlib: { level: 9 } });
+        //         const chunks = [];
+        //         for (const clave_colonia of colonias) {
+        //             const pdfBuffer = await GeneradorActaPDF(anio, id_distrito, clave_colonia);
+        //             archive.append(pdfBuffer, { name: `ActaValidacion_${clave_colonia}.pdf` });
+        //         }
+        //         await archive.finalize();
+        //         archive.on('data', chunks.push.bind(chunks));
+        //         archive.on('end', () => resolve(Buffer.concat(chunks)));
+        //         archive.on('error', reject);
+        //     });
+        // };
+        // res.json({
+        //     success: true,
+        //     msg: 'Zip generado correctamente',
+        //     contentType: 'application/zip',
+        //     archivo: `ActasValidacion_${id_distrito}_${fecha}-${hora}.zip`,
+        //     buffer: await generarZipBuffer(colonias.map(c => c.clave_colonia))
+        // });
+    } catch (err) {
+        console.error(`Error al generar el ZIP de Actas de Validación en PDF: ${err}`);
+        res.status(500).json({
+            success: false,
+            msg: 'Error al generar el zip de las actas'
+        });
+    }
+}
+
+const GeneradorActaPDF = async (anio, id_distrito, clave_colonia) => {
+    const { nombre_delegacion } = await ConsultaDelegacion(id_distrito, clave_colonia);
+    const { nombre_colonia } = await ConsultaClaveColonia(clave_colonia);
+    const { direccion, coordinador, coordinador_puesto, secretario, secretario_puesto } = await ConsultaDistrito(id_distrito);
+    const { fechaActa, horaActa } = await FechaHoraActa(id_distrito, clave_colonia, anio);
+    const eleccion = await ConsultaTipoEleccion(anio);
+    const consulta = (await SICOVACC.sequelize.query(`SELECT secuencial AS num_proyecto, SUM(total_votos) AS total_votos
         FROM consulta_actas_VVS
         WHERE anio = ${anio} AND id_distrito = ${id_distrito} AND clave_colonia = '${clave_colonia}'
         GROUP BY secuencial
@@ -239,37 +344,38 @@ export const ActaValidacionPDF = async (req = request, res = response) => {
         FROM consulta_actas
         WHERE anio = ${anio} AND id_distrito = ${id_distrito} AND clave_colonia = '${clave_colonia}'
         ORDER BY secuencial`))[0];
-        const { total_votos: bol_nulas } = consulta.find(proyecto => proyecto.num_proyecto == 0);
-        const total = consulta.reduce((sum, proyecto) => sum + proyecto.total_votos, 0);
-        let datos = [], buffer = [], newPage = true, altura = 0;
-        consulta.filter(proyecto => proyecto.num_proyecto != 0).forEach(proyecto => {
-            let X = [];
-            Object.keys(proyecto).forEach((key, index) => {
-                X.push([{ text: proyecto[key].toString(), font: 'Helvetica', fontSize: 10, strokeColor: '#BFBFBF' }]);
-                if (index == 1)
-                    X.push([{ text: NumAText(proyecto[key]), font: 'Helvetica', fontSize: 10, strokeColor: '#BFBFBF' }]);
-            });
-            datos.push(X);
+    const { total_votos: bol_nulas } = consulta.find(proyecto => proyecto.num_proyecto == 0);
+    const total = consulta.reduce((sum, proyecto) => sum + proyecto.total_votos, 0);
+    let datos = [], buffer = [], newPage = true, altura = 0;
+    consulta.filter(proyecto => proyecto.num_proyecto != 0).forEach(proyecto => {
+        let X = [];
+        Object.keys(proyecto).forEach((key, index) => {
+            X.push([{ text: proyecto[key].toString(), font: 'Helvetica', fontSize: 10, strokeColor: '#BFBFBF' }]);
+            if (index == 1)
+                X.push([{ text: NumAText(proyecto[key]), font: 'Helvetica', fontSize: 10, strokeColor: '#BFBFBF' }]);
         });
-        datos.push([
-            [{ text: 'OPINIONES NULAS', font: 'Helvetica-Bold', fontSize: 10, background: '#F2F2F2', strokeColor: '#BFBFBF' }],
-            [{ text: String(bol_nulas), font: 'Helvetica-Bold', fontSize: 10, background: '#F2F2F2', strokeColor: '#BFBFBF' }],
-            [{ text: NumAText(bol_nulas), font: 'Helvetica-Bold', fontSize: 10, background: '#F2F2F2', strokeColor: '#BFBFBF' }]
-        ], [
-            [{ text: 'TOTAL', font: 'Helvetica-Bold', fontSize: 14, fillColor: '#FFF', background: '#000' }],
-            [{ text: String(total), font: 'Helvetica-Bold', fontSize: 10, background: '#F2F2F2', strokeColor: '#BFBFBF' }],
-            [{ text: NumAText(total), font: 'Helvetica-Bold', fontSize: 10, background: '#F2F2F2', strokeColor: '#BFBFBF' }]
-        ]);
-        const encabezados = [
-            [{ text: 'NÚMERO DE PROYECTO', font: 'Helvetica-Bold', fontSize: 12, background: '#F2F2F2', strokeColor: '#BFBFBF' }],
-            [{ text: 'TOTAL CON NÚMERO', font: 'Helvetica-Bold', fontSize: 12, background: '#F2F2F2', strokeColor: '#BFBFBF' }],
-            [{ text: 'TOTAL CON LETRA', font: 'Helvetica-Bold', fontSize: 12, background: '#F2F2F2', strokeColor: '#BFBFBF' }]
-        ];
-        const columnas = [
-            { width: 100, align: 'center' },
-            { width: 100, align: 'center' },
-            { width: 540, align: 'center' }
-        ];
+        datos.push(X);
+    });
+    datos.push([
+        [{ text: 'OPINIONES NULAS', font: 'Helvetica-Bold', fontSize: 10, background: '#F2F2F2', strokeColor: '#BFBFBF' }],
+        [{ text: String(bol_nulas), font: 'Helvetica-Bold', fontSize: 10, background: '#F2F2F2', strokeColor: '#BFBFBF' }],
+        [{ text: NumAText(bol_nulas), font: 'Helvetica-Bold', fontSize: 10, background: '#F2F2F2', strokeColor: '#BFBFBF' }]
+    ], [
+        [{ text: 'TOTAL', font: 'Helvetica-Bold', fontSize: 14, fillColor: '#FFF', background: '#000' }],
+        [{ text: String(total), font: 'Helvetica-Bold', fontSize: 10, background: '#F2F2F2', strokeColor: '#BFBFBF' }],
+        [{ text: NumAText(total), font: 'Helvetica-Bold', fontSize: 10, background: '#F2F2F2', strokeColor: '#BFBFBF' }]
+    ]);
+    const encabezados = [
+        [{ text: 'NÚMERO DE PROYECTO', font: 'Helvetica-Bold', fontSize: 12, background: '#F2F2F2', strokeColor: '#BFBFBF' }],
+        [{ text: 'TOTAL CON NÚMERO', font: 'Helvetica-Bold', fontSize: 12, background: '#F2F2F2', strokeColor: '#BFBFBF' }],
+        [{ text: 'TOTAL CON LETRA', font: 'Helvetica-Bold', fontSize: 12, background: '#F2F2F2', strokeColor: '#BFBFBF' }]
+    ];
+    const columnas = [
+        { width: 100, align: 'center' },
+        { width: 100, align: 'center' },
+        { width: 540, align: 'center' }
+    ];
+    return new Promise((resolve, reject) => {
         const doc = new PDFDocument({ bufferPages: true, autoFirstPage: false, size: 'A3', layout: 'portrait', margin: 30 });
         doc.info.Author = autor;
         doc.addPage();
@@ -393,20 +499,7 @@ export const ActaValidacionPDF = async (req = request, res = response) => {
             }
         doc.end();
         doc.on('data', buffer.push.bind(buffer));
-        doc.on('end', () => {
-            res.json({
-                success: true,
-                msg: 'Reporte generado correctamente',
-                contentType: 'application/pdf',
-                reporte: `ActaValidacion_${clave_colonia}_${fecha}-${hora}.pdf`,
-                buffer: Buffer.concat(buffer)
-            });
-        });
-    } catch (err) {
-        console.error(`Error al generar el Acta de Validación en PDF: ${err}`);
-        res.status(500).json({
-            success: false,
-            msg: 'Error al generar el acta'
-        });
-    }
+        doc.on('end', () => { resolve(Buffer.concat(buffer)) });
+        doc.on('error', reject);
+    });
 }

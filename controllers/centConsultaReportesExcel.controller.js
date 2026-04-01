@@ -42,7 +42,7 @@ export const BaseDatos = async (req = request, res = response) => {
                 success: false,
                 msg: '¡No existe información!'
             });
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         const subtitulo = `CONSULTA DE ${(await ConsultaTipoEleccion(anio)).toUpperCase()}`;
         workbook.xlsx.readFile(path.join(plantillas[2], 'Base_Datos.xlsx'))
             .then(() => {
@@ -104,7 +104,7 @@ export const BaseDatos = async (req = request, res = response) => {
                     success: true,
                     msg: 'Reporte generado correctamente!!!',
                     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_BaseDeDatos-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_BaseDeDatos_CPP_${anio == 2 ? '26' : '27'}_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -140,7 +140,7 @@ export const ProyectosParticipantes = async (req = request, res = response) => {
                 success: false,
                 msg: '¡No existe información!'
             });
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         const subtitulo = `CONSULTA DE ${(await ConsultaTipoEleccion(anio)).toUpperCase()}`;
         workbook.xlsx.readFile(path.join(plantillas[2], 'Proyectos_Participantes.xlsx'))
             .then(() => {
@@ -201,7 +201,7 @@ export const ProyectosParticipantes = async (req = request, res = response) => {
                     success: true,
                     msg: 'Reporte generado correctamente!!!',
                     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_ProyectosParticipantes-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_ProyectosParticipantes_CPP_${anio == 2 ? '26' : '27'}_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -286,9 +286,12 @@ export const ConsultaCiudadanaDetalle = async (req = request, res = response) =>
                 success: false,
                 msg: '¡No existe información!'
             });
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         const subtitulo = `CONSULTA DE ${(await ConsultaTipoEleccion(anio)).toUpperCase()}`;
-        const max = Math.max(...actas.map(acta => JSON.parse(acta.proyectos).length));
+        const proyectosList = [... new Set([...actas.flatMap(acta => JSON.parse(acta.proyectos).map(p => p.secuencial))])].sort((a, b) => a - b);
+        const max = proyectosList.length;
+        const mapaNumeros = new Map(proyectosList.map((n, i) => [n, i]));
+        const actasJSON = actas.map(acta => ({ ...acta, proyectos: JSON.parse(acta.proyectos) }));
         workbook.xlsx.readFile(path.join(plantillas[2], 'Validacion_Resultados_Detalle.xlsx'))
             .then(() => {
                 workbook.creator = autor;
@@ -303,23 +306,23 @@ export const ConsultaCiudadanaDetalle = async (req = request, res = response) =>
                 worksheet.getCell('A6').value = 'VALIDACIÓN DE RESULTADOS DE LA CONSULTA CIUDADANA DETALLE MESA (INCLUYE LOS RESULTADOS DE MRVyO, MECPEP, MECPPP Y SEI)';
                 worksheet.getCell('Q8').value = `Fecha: ${fecha}`;
                 worksheet.getCell('Q9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
-                for (let i = 1; i <= max; i++) {
-                    for (let j = 1; j <= 3; j++)
+                proyectosList.forEach((num, _) => {
+                    for (let i = 1; i <= 3; i++)
                         worksheet.spliceColumns(celda, 0, [null]);
                     if (!worksheet.getCell(11, celda).isMerged)
                         worksheet.mergeCells(11, celda, 11, celda + 2);
-                    for (let j = celda; j <= celda + 2; j++)
-                        worksheet.getCell(11, j).style = contenidoStyle;
-                    worksheet.getCell(11, celda).value = i;
+                    for (let i = celda; i <= celda + 2; i++)
+                        worksheet.getCell(11, i).style = contenidoStyle;
+                    worksheet.getCell(11, celda).value = num;
                     worksheet.getCell(11, celda).style = fill;
                     worksheet.getCell(12, celda).value = 'Opiniones Mesa';
                     worksheet.getCell(12, celda).style = fill;
                     worksheet.getCell(12, celda + 1).value = 'Opiniones (SEI: vía remota)';
                     worksheet.getCell(12, celda + 1).style = fill;
-                    worksheet.getCell(12, celda + 2).value = `Total de Opiniones Proyecto ${i}`;
+                    worksheet.getCell(12, celda + 2).value = `Total de Opiniones Proyecto ${num}`;
                     worksheet.getCell(12, celda + 2).style = fill;
                     celda += 3;
-                }
+                });
                 if (!worksheet.getCell(2, 1).isMerged)
                     worksheet.mergeCells(2, 1, 2, celdasTotales);
                 if (!worksheet.getCell(3, 1).isMerged)
@@ -364,21 +367,32 @@ export const ConsultaCiudadanaDetalle = async (req = request, res = response) =>
                     worksheet.mergeCells(11, 17 + (max * 3), 12, 17 + (max * 3));
                 const imprimir = (index, text) => {
                     worksheet.getCell(fila, index).value = text;
-                    worksheet.getCell(fila, index).style = (index > 5 && index < celdasTotales - 2) || index == celdasTotales - 1 ? { ...contenidoStyle, numFmt: '#,##0' } : contenidoStyle;
-                };
-                const imprimirProyectos = (index, proyectos) => {
+                    worksheet.getCell(fila, index).style = index > 3 && index < celdasTotales + 1 ? { ...contenidoStyle, numFmt: "#,##0" } : contenidoStyle;
+                }
+                const imprimirProyectos= (index, proyectos) => {
                     let i = index;
-                    proyectos.forEach(proyecto => {
-                        Object.entries(proyecto).forEach(([campo, valor]) => {
-                            if (!campo.includes('secuencial')) {
-                                imprimir(i, valor);
+                    const mapaProyectos = new Map(proyectos.map(p => [p.secuencial, p]));
+                    const numeros = proyectos.map(p => p.secuencial);
+                    const maxIndex = Math.max(...numeros.map(sec => mapaNumeros.get(sec) ?? -1));
+                    for (let a = 0; a <= maxIndex; a++) {
+                        const sec = proyectosList[a];
+                        const acta = mapaProyectos.get(sec);
+                        if (acta)
+                            Object.entries(acta).forEach(([campo, valor]) => {
+                                if (!campo.includes('secuencial')) {
+                                    imprimir(i, valor);
+                                    i++;
+                                }
+                            });
+                        else
+                            for (let b = 0; b < 3; b++) {
+                                imprimir(i, '');
                                 i++;
                             }
-                        });
-                    });
+                    }
                     return i;
-                };
-                actas.forEach(acta => {
+                }
+                actasJSON.forEach(acta => {
                     let i = 1;
                     Object.entries(acta).forEach(([campo, valor]) => {
                         if (!campo.match('proyectos')) {
@@ -386,11 +400,12 @@ export const ConsultaCiudadanaDetalle = async (req = request, res = response) =>
                             i++;
                             return;
                         }
-                        i = imprimirProyectos(i, JSON.parse(valor));
-                        const faltantes = max - JSON.parse(valor).length;
+                        i = imprimirProyectos(i, valor);
+                        const maxIndex = Math.max(...valor.map(p => mapaNumeros.get(p.secuencial) ?? -1));
+                        const faltantes = max - (maxIndex + 1);
                         for (let x = 0; x < faltantes * 3; x++) {
                             imprimir(i, '');
-                            i++
+                            i++;
                         }
                     });
                     fila++;
@@ -424,7 +439,7 @@ export const ConsultaCiudadanaDetalle = async (req = request, res = response) =>
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_ConsultaCiudadanaDetalle-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_ConsultaCiudadanaDetalle_CPP_${anio == 2 ? '26' : '27'}_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -499,7 +514,7 @@ export const OpinionesMesa = async (req = request, res = response) => {
                 success: false,
                 msg: '¡No existe información!'
             });
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         const subtitulo = `CONSULTA DE ${(await ConsultaTipoEleccion(anio)).toUpperCase()}`;
         workbook.xlsx.readFile(path.join(plantillas[0], 'Resultados_Opi_Mesa.xlsx'))
             .then(() => {
@@ -579,7 +594,7 @@ export const OpinionesMesa = async (req = request, res = response) => {
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_OpinionesMesa-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_OpinionesMesa_CPP_${anio == 2 ? '26' : '27'}_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -664,7 +679,7 @@ export const ConsultaUnidadTerritorial = async (req = request, res = response) =
                 success: false,
                 msg: '¡No existe información!'
             });
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         const subtitulo = `CONSULTA DE ${(await ConsultaTipoEleccion(anio)).toUpperCase()}`;
         const max = Math.max(...actas.map(acta => JSON.parse(acta.proyectos).length));
         workbook.xlsx.readFile(path.join(plantillas[2], 'Validacion_Resultados.xlsx'))
@@ -796,7 +811,7 @@ export const ConsultaUnidadTerritorial = async (req = request, res = response) =
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_ConsultaUnidadTerritorial-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_ConsultaUnidadTerritorial_CPP_${anio == 2 ? '26' : '27'}_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -873,7 +888,7 @@ export const OpinionesUT = async (req = request, res = response) => {
                 success: false,
                 msg: '¡No existe información!'
             });
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         const subtitulo = `CONSULTA DE ${(await ConsultaTipoEleccion(anio)).toUpperCase()}`;
         workbook.xlsx.readFile(path.join(plantillas[0], 'Resultados_Opi_Mesa.xlsx'))
             .then(() => {
@@ -902,7 +917,7 @@ export const OpinionesUT = async (req = request, res = response) => {
                     const { id_distrito: distrito, nombre_delegacion, clave_colonia, nombre_colonia, mesa, proyectos, bol_nulas, bol_nulas_sei } = acta;
                     for (let proyecto of JSON.parse(proyectos)) {
                         const { secuencial, nom_proyecto, votos, votos_sei, total_votos } = proyecto;
-                        const X = { distrito, nombre_delegacion, clave_colonia, nombre_colonia, mesa, secuencial, nom_proyecto, votos, votos_sei, total_votos };
+                        const X = { distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, mesa, nom_proyecto, votos, votos_sei, total_votos };
                         Object.keys(X).forEach((key, i) => {
                             worksheet.getCell(fila, i + 1).value = X[key];
                             worksheet.getCell(fila, i + 1).style = [7, 8, 9].includes(i) ? { ...contenidoStyle, numFmt: '#,##0' } : contenidoStyle;
@@ -945,7 +960,7 @@ export const OpinionesUT = async (req = request, res = response) => {
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_OpinionesUnidadTerritorial-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_OpinionesUnidadTerritorial_CPP_${anio == 2 ? '26' : '27'}_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -1017,7 +1032,7 @@ export const ProyectosPrimerLugar = async (req = request, res = response) => {
                 success: false,
                 msg: '¡No existe información!'
             });
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         const subtitulo = `CONSULTA DE ${(await ConsultaTipoEleccion(anio)).toUpperCase()}`;
         workbook.xlsx.readFile(path.join(plantillas[2], 'Proyectos-GE.xlsx'))
             .then(() => {
@@ -1087,7 +1102,7 @@ export const ProyectosPrimerLugar = async (req = request, res = response) => {
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_GanadoresPrimerLugar-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_GanadoresPrimerLugar_CPP_${anio == 2 ? '26' : '27'}_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -1159,7 +1174,7 @@ export const ProyectosEmpatePrimerLugar = async (req = request, res = response) 
                 success: false,
                 msg: '¡No existe información!'
             });
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         const subtitulo = `CONSULTA DE ${(await ConsultaTipoEleccion(anio)).toUpperCase()}`;
         workbook.xlsx.readFile(path.join(plantillas[2], 'Proyectos-GE.xlsx'))
             .then(() => {
@@ -1229,7 +1244,7 @@ export const ProyectosEmpatePrimerLugar = async (req = request, res = response) 
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_EmpatadosPrimerLugar-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_EmpatadosPrimerLugar_CPP_${anio == 2 ? '26' : '27'}_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -1283,7 +1298,7 @@ export const ProyectosSinOpiniones = async (req = request, res = response) => {
                 success: false,
                 msg: '¡No existe información!'
             });
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         const subtitulo = `CONSULTA DE ${(await ConsultaTipoEleccion(anio)).toUpperCase()}`;
         workbook.xlsx.readFile(path.join(plantillas[2], 'UTNo_Recibieron_Opiniones.xlsx'))
             .then(() => {
@@ -1344,7 +1359,7 @@ export const ProyectosSinOpiniones = async (req = request, res = response) => {
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_UTNoRecibieronOpiniones-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_UTNoRecibieronOpiniones_CPP_${anio == 2 ? '26' : '27'}_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -1384,7 +1399,7 @@ export const AsistenciaUT = async (req = request, res = response) => {
                 success: false,
                 msg: '¡No existe información!'
             });
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         const subtitulo = `CONSULTA DE ${(await ConsultaTipoEleccion(anio)).toUpperCase()}`;
         workbook.xlsx.readFile(path.join(plantillas[2], 'Reporte_Asistencia.xlsx'))
             .then(() => {
@@ -1434,7 +1449,7 @@ export const AsistenciaUT = async (req = request, res = response) => {
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_AsistenciaUT-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_AsistenciaUT_CPP_${anio == 2 ? '26' : '27'}_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -1473,7 +1488,7 @@ export const MesasConComputo = async (req = request, res = response) => {
                 success: false,
                 msg: '¡No existe información!'
             });
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         const subtitulo = `CONSULTA DE ${(await ConsultaTipoEleccion(anio)).toUpperCase()}`;
         workbook.xlsx.readFile(path.join(plantillas[2], 'Mesas_CSC.xlsx'))
             .then(() => {
@@ -1534,7 +1549,7 @@ export const MesasConComputo = async (req = request, res = response) => {
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd-openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_MesasConComputo-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_MesasConComputo_CPP_${anio == 2 ? '26' : '27'}_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -1573,7 +1588,7 @@ export const MesasSinComputo = async (req = request, res = response) => {
                 success: false,
                 msg: '¡No existe información!'
             });
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         const subtitulo = `CONSULTA DE ${(await ConsultaTipoEleccion(anio)).toUpperCase()}`;
         workbook.xlsx.readFile(path.join(plantillas[2], 'Mesas_CSC.xlsx'))
             .then(() => {
@@ -1634,7 +1649,7 @@ export const MesasSinComputo = async (req = request, res = response) => {
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd-openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_MesasSinComputo-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_MesasSinComputo_CPP_${anio == 2 ? '26' : '27'}_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -1676,7 +1691,7 @@ export const UTConComputoGA = async (req = request, res = response) => {
             GROUP BY id_distrito
         ) AS UTV ON D.id_distrito = UTV.id_distrito
         ORDER BY D.id_distrito ASC`))[0];
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         const subtitulo = `CONSULTA DE ${(await ConsultaTipoEleccion(anio)).toUpperCase()}`;
         workbook.xlsx.readFile(path.join(plantillas[0], 'UT_Avance.xlsx'))
             .then(() => {
@@ -1714,7 +1729,7 @@ export const UTConComputoGA = async (req = request, res = response) => {
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd-openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_UTConComputo(Avance)-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_UTConComputo(Avance)_CPP_${anio == 2 ? '26' : '27'}_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -1751,7 +1766,7 @@ export const OpinionesDistrito = async (req = request, res = response) => {
         LEFT JOIN CA A1 ON D.id_distrito = A1.id_distrito AND A1.modalidad = 1
         LEFT JOIN CA A2 ON D.id_distrito = A2.id_distrito AND A2.modalidad = 2
         ORDER BY D.id_distrito ASC`))[0];
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         const subtitulo = `CONSULTA DE ${(await ConsultaTipoEleccion(anio)).toUpperCase()}`;
         workbook.xlsx.readFile(path.join(plantillas[0], 'Opiniones_Distrito.xlsx'))
             .then(() => {
@@ -1794,7 +1809,7 @@ export const OpinionesDistrito = async (req = request, res = response) => {
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd-openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_OpinionesDistrito-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_OpinionesDistrito_CPP_${anio == 2 ? '26' : '27'}_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -1831,7 +1846,7 @@ export const OpinionesDemarcacion = async (req = request, res = response) => {
         LEFT JOIN CA A1 ON D.id_delegacion = A1.id_delegacion AND A1.modalidad = 1
         LEFT JOIN CA A2 ON D.id_delegacion = A2.id_delegacion AND A2.modalidad = 2
         ORDER BY D.nombre_delegacion ASC`))[0];
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         const subtitulo = `CONSULTA DE ${(await ConsultaTipoEleccion(anio)).toUpperCase()}`;
         workbook.xlsx.readFile(path.join(plantillas[0], 'Opiniones_Demarcacion.xlsx'))
             .then(() => {
@@ -1894,7 +1909,7 @@ export const OpinionesDemarcacion = async (req = request, res = response) => {
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd-openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_OpinionesDemarcacion-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_OpinionesDemarcacion_CPP_${anio == 2 ? '26' : '27'}_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -1966,7 +1981,7 @@ export const ProyectosSegundoLugar = async (req = request, res = response) => {
                 success: false,
                 msg: '¡No existe información!'
             });
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         const subtitulo = `CONSULTA DE ${(await ConsultaTipoEleccion(anio)).toUpperCase()}`;
         workbook.xlsx.readFile(path.join(plantillas[2], 'Proyectos-GE.xlsx'))
             .then(() => {
@@ -2036,7 +2051,7 @@ export const ProyectosSegundoLugar = async (req = request, res = response) => {
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_SegundoaLugar-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_SegundoaLugar_CPP_${anio == 2 ? '26' : '27'}_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -2108,7 +2123,7 @@ export const ProyectosEmpateSegundoLugar = async (req = request, res = response)
                 success: false,
                 msg: '¡No existe información!'
             });
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         const subtitulo = `CONSULTA DE ${(await ConsultaTipoEleccion(anio)).toUpperCase()}`;
         workbook.xlsx.readFile(path.join(plantillas[2], 'Proyectos-GE.xlsx'))
             .then(() => {
@@ -2178,7 +2193,7 @@ export const ProyectosEmpateSegundoLugar = async (req = request, res = response)
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_EmpatadosSegundoLugar-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_EmpatadosSegundoLugar_CPP_${anio == 2 ? '26' : '27'}_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -2216,7 +2231,7 @@ export const LevantadaDistrito = async (req = request, res = response) => {
                 success: false,
                 msg: '¡No existe información!'
             });
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         const subtitulo = `CONSULTA DE ${(await ConsultaTipoEleccion(anio)).toUpperCase()}`;
         workbook.xlsx.readFile(path.join(plantillas[2], 'Reporte_Levantada_Distrito.xlsx'))
             .then(() => {
@@ -2277,7 +2292,7 @@ export const LevantadaDistrito = async (req = request, res = response) => {
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_LevantadaDistrito-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_LevantadaDistrito_CPP_${anio == 2 ? '26' : '27'}_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -2312,7 +2327,7 @@ export const Participacion = async (req = request, res = response) => {
             GROUP BY D.id_distrito, LN.lista_nominal
         ) AS A
         ORDER BY id_distrito ASC`))[0];
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         const subtitulo = `CONSULTA DE ${(await ConsultaTipoEleccion(anio)).toUpperCase()}`;
         workbook.xlsx.readFile(path.join(plantillas[0], 'Reporte_Participacion.xlsx'))
             .then(() => {
@@ -2338,7 +2353,7 @@ export const Participacion = async (req = request, res = response) => {
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_Participacion-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_Participacion_CPP_${anio == 2 ? '26' : '27'}_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })

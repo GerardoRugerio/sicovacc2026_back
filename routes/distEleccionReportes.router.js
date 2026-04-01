@@ -1,7 +1,7 @@
 import { request, Router } from 'express';
 import { body, param } from 'express-validator';
 import { ActasAlerta, CandidaturasEmpate, ComputoTotalUT, ConcentradoParticipantes, LevantadaDistrito, MesasComputadas, MesasNoComputadas, ResultadoComputoTotalMesa, ResultadoComputoTotalUT, ResultadosMesa, UTConComputo, UTSinComputo } from '../controllers/distEleccionReportesExcel.controller.js';
-import { ActaComputoTotalPDF } from '../controllers/distEleccionReportesPDF.controller.js';
+import { ActaComputoTotalPDF, ActasComputoTotalPDFZip } from '../controllers/distEleccionReportesPDF.controller.js';
 import { ActaComputoTotalWord } from '../controllers/distEleccionReporteWord.controller.js';
 import { chkDistrito, StatusReporte } from '../middlewares/dist-middleware.js';
 import { Validator } from '../validators/validator.js';
@@ -120,6 +120,13 @@ router.post('/actaComputoTotal/:id_distrito', [
     else
         ActaComputoTotalWord(req, res);
 });
+
+//? Actas de Cómputo total - PDF - ZIP
+
+router.post('/actasComputoTotalZip/:id_distrito', [
+    param('id_distrito').exists().notEmpty(),
+    chkDistrito('1')
+], ActasComputoTotalPDFZip);
 
 export { router as distEleccionReportesRouter };
 

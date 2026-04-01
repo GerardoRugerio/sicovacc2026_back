@@ -35,24 +35,21 @@ export const EliminarActa = async (req = request, res = response) => {
     const { id_acta, anio } = req.body;
     try {
         let select = '';
-        Array.from({ length: anio == 1 ? 100 : 50 }, (_, idx) => ({ num: idx + 1 })).forEach(({ num }, i) => select += `${anio == 1 ? `participante${num}` : `proyecto${num}_votos`}${i != (anio == 1 ? 100 : 50) - 1 ? ', ' : ''}`);
-        const acta = (await SICOVACC.sequelize.query(`SELECT id_acta,${anio != 1 ? ` anio,` : ''} id_distrito, id_delegacion, clave_colonia, num_mro, tipo_mro, modalidad, CAST(coordinador_sino AS INTEGER) AS coordinador_sino, num_integrantes, bol_recibidas, total_ciudadanos, bol_sobrantes, bol_nulas, opi_total_computada, votacion_total_emitida, CAST(levantada_distrito AS INTEGER) AS levantada_distrito, ${select}, CAST(observador_sino AS INTEGER) AS observador_sino, bol_adicionales, razon_distrital, id_incidencia, id_usuario, CONVERT(VARCHAR(19), fecha_alta, 120) AS fecha_alta, CONVERT(VARCHAR(19), fecha_modif, 120) AS fecha_modif, estatus
-        FROM ${anio == 1 ? 'copaco' : 'consulta'}_actas WHERE id_acta = ${id_acta}`))[0][0];
+        Array.from({ length: 100 }, (_, idx) => ({ num: idx + 1 })).forEach(({ num }, i) => select += `${anio == 1 ? `participante${num}` : `proyecto${num}_votos`}${i != 99 ? ', ' : ''}`);
+        const acta = (await SICOVACC.sequelize.query(`SELECT id_acta, ${anio != 1 ? 'anio, ' : ''}id_distrito, id_delegacion, clave_colonia, num_mro, tipo_mro, modalidad, CAST(coordinador_sino AS INTEGER) AS coordinador_sino, num_integrantes, bol_recibidas, total_ciudadanos, bol_sobrantes, bol_nulas, opi_total_computada, votacion_total_emitida, CAST(levantada_distrito AS INTEGER) AS levantada_distrito, ${select}, CAST(observador_sino AS INTEGER) AS observador_sino, bol_adicionales, razon_distrital, id_incidencia, id_usuario, CONVERT(VARCHAR(19), fecha_alta, 120) AS fecha_alta, CONVERT(VARCHAR(19), fecha_modif, 120) AS fecha_modif, estatus FROM ${anio == 1 ? 'copaco' : 'consulta'}_actas WHERE id_acta = ${id_acta}`))[0][0];
         if (!acta)
             return res.status(404).json({
                 success: false,
                 msg: 'Acta no encontrada'
             });
-        const varchar = ['clave_colonia', 'num_mro', 'observaciones', 'razon_distrital', 'fecha_alta', 'fecha_modif'];
+        const varchar = ['clave_colonia', 'num_mro', 'razon_distrital', 'fecha_alta', 'fecha_modif'];
         let insert = '', values = '';
-        Object.keys(acta).forEach(key => {
-            insert += `${key}${!key.match('estatus') ? ', ' : ''}`;
-            values += `${varchar.includes(key) && acta[key] ? `'${acta[key]}'` : acta[key]}${!key.match('estatus') ? ', ' : ''}`;
+        Object.entries(acta).forEach(([campo, valor]) => {
+            insert += `${campo}${!campo.match('estatus') ? ', ' : ''}`;
+            values += `${varchar.includes(campo) && valor ? `'${valor}'` : valor}${!campo.match('estatus') ? ', ' : ''}`;
         });
         const { clave_colonia, num_mro, tipo_mro } = acta;
-        // await SIVACC.sequelize.query(`INSERT consulta_actas_hist (${insert}) VALUES (${values})`);
-        if (anio != 1)
-            SICOVACC.sequelize.query(`INSERT consulta_Actas_hist (${insert}) VALUES (${values})`);
+        await SICOVACC.sequelize.query(`INSERT ${anio == 1 ? 'copaco' : 'consulta'}_actas_hist (${insert}) VALUES (${values})`);
         await SICOVACC.sequelize.query(`DELETE FROM ${anio == 1 ? 'copaco' : 'consulta'}_actas WHERE id_acta = ${id_acta}`);
         await Audit(id_transaccion, id_usuario, id_distrito, `ELIMINÓ EL ACTA DE LA ${anio == 1 ? 'ELECCIÓN' : 'CONSULTA'}, DE LA UT ${clave_colonia}, MESA M${String(num_mro).padStart(2, '0')}${tipo_mro != 1 ? `, DE TIPO DE MESA ${TipoMesa(tipo_mro)}` : ''}`);
         res.json({

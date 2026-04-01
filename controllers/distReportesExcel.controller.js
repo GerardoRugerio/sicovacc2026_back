@@ -19,7 +19,7 @@ export const InicioCierreValidacion = async (req = request, res = response) => {
                 success: false,
                 msg: '¡No existe información!'
             });
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         workbook.xlsx.readFile(path.join(plantillas[0], 'Inicio-Cierre_Validacion.xlsx'))
             .then(() => {
                 workbook.creator = autor;
@@ -83,7 +83,7 @@ export const InicioCierreValidacion = async (req = request, res = response) => {
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_InicioCierreValidación-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_InicioCierreValidación_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -130,7 +130,7 @@ export const IncidentesDistrito = async (req = request, res = response) => {
                 success: false,
                 msg: '¡No existe información!'
             })
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         workbook.xlsx.readFile(path.join(plantillas[0], 'Incidentes.xlsx'))
             .then(() => {
                 workbook.creator = autor;
@@ -219,7 +219,7 @@ export const IncidentesDistrito = async (req = request, res = response) => {
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_IncidentesDistrito-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_IncidentesDistrito_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })

@@ -482,24 +482,22 @@ export const ActualizarActa = async (req = request, res = response) => {
         //             msg: `La suma de personas que votaron 'No es igual' a los resultados de la votación asentados en el acta. (Incluye Datos SEI)`
         //         });
         // }
-        // Array.from({ length: proyectos }, (_, idx) => ({ num: idx + 1 }))
         let select = '';
-        Array.from({ length: anio == 1 ? 100 : 50 }, (_, idx) => ({ num: idx + 1 })).forEach(({ num }, i) => select += `${anio == 1 ? `participante${num}` : `proyecto${num}_votos`}${i != (anio == 1 ? 100 : 50) - 1 ? ', ' : ''}`)
-        const acta = (await SICOVACC.sequelize.query(`SELECT id_acta,${anio != 1 ? ` anio,` : ''} id_distrito, id_delegacion, clave_colonia, num_mro, tipo_mro, modalidad, CAST(coordinador_sino AS INTEGER) AS coordinador_sino, num_integrantes, bol_recibidas, total_ciudadanos, bol_sobrantes, bol_nulas, opi_total_computada, votacion_total_emitida, CAST(levantada_distrito AS INTEGER) AS levantada_distrito, ${select}, CAST(observador_sino AS INTEGER) AS observador_sino, bol_adicionales, razon_distrital, id_incidencia, id_usuario, CONVERT(VARCHAR(19), fecha_alta, 120) AS fecha_alta, CONVERT(VARCHAR(19), fecha_modif, 120) AS fecha_modif, estatus
-        FROM ${anio == 1 ? 'copaco' : 'consulta'}_actas WHERE id_acta = ${id_acta}`))[0][0];
+        Array.from({ length: 100 }, (_, idx) => ({ num: idx + 1 })).forEach(({ num }, i) => select += `${anio == 1 ? `participante${num}` : `proyecto${num}_votos`}${i != 99 ? ', ' : ''}`);
+        const acta = (await SICOVACC.sequelize.query(`SELECT id_acta, ${anio != 1 ? 'anio, ' : ''}id_distrito, id_delegacion, clave_colonia, num_mro, tipo_mro, modalidad, CAST(coordinador_sino AS INTEGER) AS coordinador_sino, num_integrantes, bol_recibidas, total_ciudadanos, bol_sobrantes, bol_nulas, opi_total_computada, votacion_total_emitida, CAST(levantada_distrito AS INTEGER) AS levantada_distrito, ${select}, CAST(observador_sino AS INTEGER) AS observador_sino, bol_adicionales, razon_distrital, id_incidencia, id_usuario, CONVERT(VARCHAR(19), fecha_alta, 120) AS fecha_alta, CONVERT(VARCHAR(19), fecha_modif, 120) AS fecha_modif, estatus FROM ${anio == 1 ? 'copaco' : 'consulta'}_actas WHERE id_acta = ${id_acta}`))[0][0];
         if (!acta)
             return res.status(404).json({
                 success: false,
                 msg: 'Acta no encontrada'
             });
-        const varchar = ['clave_colonia', 'num_mro', 'observaciones', 'razon_distrital', 'fecha_alta', 'fecha_modif'];
+        const varchar = ['clave_colonia', 'num_mro', 'razon_distrital', 'fecha_alta', 'fecha_modif'];
         let insert = '', values = '';
-        Object.keys(acta).forEach(key => {
-            insert += `${key}${!key.match('estatus') ? ', ' : ''}`;
-            values += `${varchar.includes(key) && acta[key] ? `'${acta[key]}'` : acta[key]}${!key.match('estatus') ? ', ' : ''}`;
+        Object.entries(acta).forEach(([campo, valor]) => {
+            insert += `${campo}${!campo.match('estatus') ? ', ' : ''}`;
+            values += `${varchar.includes(campo) && valor ? `'${valor}'` : valor}${!campo.match('estatus') ? ', ' : ''}`;
         });
         const { clave_colonia, num_mro, tipo_mro } = acta;
-        // await SIVACC.sequelize.query(`INSERT consulta_actas_hist (${insert}) VALUES (${values})`);
+        await SICOVACC.sequelize.query(`INSERT ${anio == 1 ? 'copaco' : 'consulta'}_actas_hist (${insert}) VALUES (${values})`);
         await SICOVACC.sequelize.query(`UPDATE ${anio == 1 ? 'copaco' : 'consulta'}_actas SET coordinador_sino = ${coordinador_sino ? 1 : 0}, num_integrantes = ${num_integrantes ? num_integrantes : 'NULL'}, bol_recibidas = ${tipo_mro == 1 ? 'NULL' : bol_recibidas}, total_ciudadanos = ${total_ciudadanos}, bol_sobrantes = ${bol_sobrantes}, bol_nulas = ${bol_nulas}, votacion_total_emitida = ${bol_total_emitidas}, ${updateVotos.substring(0, updateVotos.length - 2)},
         levantada_distrito = ${levantada_distrito ? 1 : 0}, razon_distrital = ${razon_distrital ? `'${razon_distrital}'` : 'NULL'}, id_incidencia = ${id_incidencia ? id_incidencia : 'NULL'}, observador_sino = ${observador_sino ? 1 : 0}, fecha_modif = CURRENT_TIMESTAMP
         WHERE modalidad = 1 AND estatus = 1 AND id_acta = ${id_acta}`);

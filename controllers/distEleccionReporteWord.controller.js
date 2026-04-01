@@ -14,7 +14,7 @@ export const ActaComputoTotalWord = async (req = request, res = response) => {
     const { id_distrito } = req.params;
     const { clave_colonia } = req.body;
     try {
-        const { fecha, hora } = await FechaServer();
+        const { fechaM, horaM } = await FechaServer();
         const { nombre_delegacion } = await ConsultaDelegacion(id_distrito, clave_colonia);
         const { nombre_colonia } = await ConsultaClaveColonia(clave_colonia);
         const { direccion, coordinador, coordinador_puesto, secretario, secretario_puesto } = await ConsultaDistrito(id_distrito);
@@ -90,7 +90,7 @@ export const ActaComputoTotalWord = async (req = request, res = response) => {
                 success: true,
                 msg: 'Acta de Validación generada correctamente',
                 contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                reporte: `ActaComputoTotal_${clave_colonia}_${fecha}-${hora}.docx`,
+                reporte: `ActaComputoTotal_${clave_colonia}_${fechaM}_${horaM}.docx`,
                 buffer: docx.getZip().generate({ type: 'nodebuffer' })
             });
         })

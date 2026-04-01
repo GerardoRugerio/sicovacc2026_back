@@ -31,7 +31,7 @@ export const ComputoTotalUT = async (req = request, res = response) => {
                 success: false,
                 msg: '¡No existe información!'
             });
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         workbook.xlsx.readFile(path.join(plantillas[1], 'Computo_Total_UT.xlsx'))
             .then(() => {
                 workbook.creator = autor;
@@ -105,7 +105,7 @@ export const ComputoTotalUT = async (req = request, res = response) => {
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_ComputoTotalUT-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_ComputoTotalUT_COPACO_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -189,7 +189,7 @@ export const ResultadoComputoTotalMesa = async (req = request, res = response) =
                 success: false,
                 msg: '¡No existe información!'
             });
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         const participantesList = [... new Set([...actas.flatMap(acta => JSON.parse(acta.participantes).map(p => p.secuencial))])].sort((a, b) => Letras.indexOf(a) - Letras.indexOf(b));
         const max = participantesList.length;
         const mapaLetras = new Map(participantesList.map((l, i) => [l, i]));
@@ -337,7 +337,7 @@ export const ResultadoComputoTotalMesa = async (req = request, res = response) =
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_ResultadosComputoTotalMesa-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_ResultadosComputoTotalMesa_COPACO_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -422,7 +422,7 @@ export const ResultadoComputoTotalUT = async (req = request, res = response) => 
                 success: false,
                 msg: '¡No existe información!'
             });
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         const participantesList = [... new Set([...actas.flatMap(acta => JSON.parse(acta.participantes).map(p => p.secuencial))])].sort((a, b) => Letras.indexOf(a) - Letras.indexOf(b));
         const max = participantesList.length;
         const mapaLetras = new Map(participantesList.map((l, i) => [l, i]));
@@ -442,12 +442,12 @@ export const ResultadoComputoTotalUT = async (req = request, res = response) => 
                 worksheet.getCell('L8').value = `Fecha: ${fecha}`;
                 worksheet.getCell('L9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 participantesList.forEach((sec, _) => {
-                    for (let j = 1; j <= 3; j++)
+                    for (let i = 1; i <= 3; i++)
                         worksheet.spliceColumns(celda, 0, [null]);
                     if (!worksheet.getCell(11, celda).isMerged)
                         worksheet.mergeCells(11, celda, 11, celda + 2);
-                    for (let j = celda; j <= celda + 2; j++)
-                        worksheet.getCell(11, j).style = contenidoStyle;
+                    for (let i = celda; i <= celda + 2; i++)
+                        worksheet.getCell(11, i).style = contenidoStyle;
                     worksheet.getCell(11, celda).value = sec;
                     worksheet.getCell(11, celda).style = fill;
                     worksheet.getCell(12, celda).value = 'Mesa';
@@ -566,7 +566,7 @@ export const ResultadoComputoTotalUT = async (req = request, res = response) => 
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_ResultadosComputoTotalUT-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_ResultadosComputoTotalUT_COPACO_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -604,7 +604,7 @@ export const ConcentradoParticipantes = async (req = request, res = response) =>
                 success: false,
                 msg: '¡No existe información!'
             });
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         workbook.xlsx.readFile(path.join(plantillas[1], 'Concentrado_Participantes.xlsx'))
             .then(() => {
                 workbook.creator = autor;
@@ -664,7 +664,7 @@ export const ConcentradoParticipantes = async (req = request, res = response) =>
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_ConcentradoParticipantes-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_ConcentradoParticipantes_COPACO_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -735,7 +735,7 @@ export const CandidaturasEmpate = async (req = request, res = response) => {
                 success: false,
                 msg: '¡No existe información!'
             });
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         workbook.xlsx.readFile(path.join(plantillas[1], 'Candidaturas_Empate.xlsx'))
             .then(() => {
                 workbook.creator = autor;
@@ -791,7 +791,7 @@ export const CandidaturasEmpate = async (req = request, res = response) => {
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_CandidaturasEmpate-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_CandidaturasEmpate_COPACO_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -865,7 +865,7 @@ export const ResultadosMesa = async (req = request, res = response) => {
                 success: false,
                 msg: '¡No existe información!'
             });
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         workbook.xlsx.readFile(path.join(plantillas[0], 'Resultados_Opi_Mesa.xlsx'))
             .then(() => {
                 workbook.creator = autor;
@@ -947,7 +947,7 @@ export const ResultadosMesa = async (req = request, res = response) => {
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_ResultadoMesa-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_ResultadoMesa_COPACO_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -985,7 +985,7 @@ export const MesasComputadas = async (req = request, res = response) => {
                 success: false,
                 msg: '¡No existe información!'
             });
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         workbook.xlsx.readFile(path.join(plantillas[1], 'Mesas_Computadas.xlsx'))
             .then(() => {
                 workbook.creator = autor;
@@ -1045,7 +1045,7 @@ export const MesasComputadas = async (req = request, res = response) => {
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_MesasComputadas-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_MesasComputadas_COPACO_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -1082,7 +1082,7 @@ export const MesasNoComputadas = async (req = request, res = response) => {
                 success: false,
                 msg: '¡No existe información!'
             });
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         workbook.xlsx.readFile(path.join(plantillas[1], 'Mesas_No_Computadas.xlsx'))
             .then(() => {
                 workbook.creator = autor;
@@ -1142,7 +1142,7 @@ export const MesasNoComputadas = async (req = request, res = response) => {
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_MesasNoComputadas-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_MesasNoComputadas_COPACO_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -1179,7 +1179,7 @@ export const UTConComputo = async (req = request, res = response) => {
                 success: false,
                 msg: '¡No existe información!'
             });
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         workbook.xlsx.readFile(path.join(plantillas[1], 'UT_Computo.xlsx'))
             .then(() => {
                 workbook.creator = autor;
@@ -1239,7 +1239,7 @@ export const UTConComputo = async (req = request, res = response) => {
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_UTConComputo-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_UTConComputo_COPACO_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -1276,7 +1276,7 @@ export const UTSinComputo = async (req = request, res = response) => {
                 success: false,
                 msg: '¡No existe información!'
             });
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         workbook.xlsx.readFile(path.join(plantillas[1], 'UT_Computo.xlsx'))
             .then(() => {
                 workbook.creator = autor;
@@ -1336,7 +1336,7 @@ export const UTSinComputo = async (req = request, res = response) => {
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_UTSinComputo-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_UTSinComputo_COPACO_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -1376,7 +1376,7 @@ export const UTConComputoGA = async (req = request, res = response) => {
             GROUP BY id_distrito
         ) AS UTV ON D.id_distrito = UTV.id_distrito
         ORDER BY D.id_distrito ASC`))[0];
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         workbook.xlsx.readFile(path.join(plantillas[0], 'UT_Avance.xlsx'))
             .then(() => {
                 workbook.creator = autor;
@@ -1413,7 +1413,7 @@ export const UTConComputoGA = async (req = request, res = response) => {
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_UTConnComputo(Avance)-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_UTConnComputo(Avance)_COPACO_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -1450,7 +1450,7 @@ export const LevantadaDistrito = async (req = request, res = response) => {
                 success: false,
                 msg: '¡No existe información!'
             });
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         workbook.xlsx.readFile(path.join(plantillas[1], 'Levantada_Distrito.xlsx'))
             .then(() => {
                 workbook.creator = autor;
@@ -1510,7 +1510,7 @@ export const LevantadaDistrito = async (req = request, res = response) => {
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_LevantadaDistrito-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_LevantadaDistrito_COPACO_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -1546,7 +1546,7 @@ export const VotacionDistrito = async (req = request, res = response) => {
         LEFT JOIN CA A1 ON D.id_distrito = A1.id_distrito AND A1.modalidad = 1
         LEFT JOIN CA A2 ON D.id_distrito = A2.id_distrito AND A2.modalidad = 2
         ORDER BY D.id_distrito ASC`))[0];
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         workbook.xlsx.readFile(path.join(plantillas[0], 'Opiniones_Distrito.xlsx'))
             .then(() => {
                 workbook.creator = autor;
@@ -1592,7 +1592,7 @@ export const VotacionDistrito = async (req = request, res = response) => {
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_VotacionDistrito-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_VotacionDistrito_COPACO_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -1628,7 +1628,7 @@ export const VotacionDemarcacion = async (req = request, res = response) => {
         LEFT JOIN CA A1 ON D.id_delegacion = A1.id_delegacion AND A1.modalidad = 1
         LEFT JOIN CA A2 ON D.id_delegacion = A2.id_delegacion AND A2.modalidad = 2
         ORDER BY D.nombre_delegacion ASC`))[0];
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         workbook.xlsx.readFile(path.join(plantillas[0], 'Opiniones_Demarcacion.xlsx'))
             .then(() => {
                 workbook.creator = autor;
@@ -1694,7 +1694,7 @@ export const VotacionDemarcacion = async (req = request, res = response) => {
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_VotacionDemarcacion-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_VotacionDemarcacion_COPACO_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -1727,7 +1727,7 @@ export const Participacion = async (req = request, res = response) => {
             LEFT JOIN (SELECT id_distrito, SUM(lista_nominal) AS lista_nominal FROM consulta_mros WHERE estatus = 1 GROUP BY id_distrito) AS LN ON D.id_distrito = LN.id_distrito
         ) AS A
         ORDER BY id_distrito ASC`))[0];
-        const { fecha, hora } = await FechaServer();
+        const { fecha, fechaM, hora, horaM } = await FechaServer();
         workbook.xlsx.readFile(path.join(plantillas[0], 'Reporte_Participacion.xlsx'))
             .then(() => {
                 workbook.creator = autor;
@@ -1752,7 +1752,7 @@ export const Participacion = async (req = request, res = response) => {
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_Participacion-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_Participacion_COPACO_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })
@@ -1790,7 +1790,7 @@ export const ActasAlerta = async (req = request, res = response) => {
                 success: false,
                 msg: '¡No existe información!'
             });
-        const { fecha, hora } = await FechaServer();
+        const { fechaM, horaM } = await FechaServer();
         workbook.xlsx.readFile(path.join(plantillas[1], 'Actas_Alerta.xlsx'))
             .then(() => {
                 workbook.creator = autor;
@@ -1848,7 +1848,7 @@ export const ActasAlerta = async (req = request, res = response) => {
                     success: true,
                     msg: 'Reporte generado correctamente',
                     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    reporte: `Reporte_ActasAlerta-${fecha}-${hora}.xlsx`,
+                    reporte: `Reporte_ActasAlerta_COPACO_${fechaM}_${horaM}.xlsx`,
                     buffer
                 });
             })

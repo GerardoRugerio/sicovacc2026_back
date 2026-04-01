@@ -2,8 +2,10 @@ import { SICOVACC } from '../models/consulta_usuarios_sicovacc.model.js';
 
 //? Regresa la fecha del servidor
 export const FechaServer = async () => {
-    const fecha_server = await SICOVACC.sequelize.query(`SELECT CONVERT(VARCHAR(10), GETDATE(), 103) AS fecha, CONVERT(VARCHAR(8), GETDATE(), 114) AS hora`);
-    return fecha_server[0][0]
+    const {fecha, hora} = (await SICOVACC.sequelize.query(`SELECT CONVERT(VARCHAR(10), GETDATE(), 103) AS fecha, CONVERT(VARCHAR(8), GETDATE(), 114) AS hora`))[0][0];
+    const f = fecha.split('/');
+    const fechaM = `${f[2]}-${f[1]}-${f[0]}`, horaM = hora.replace(/:/g, '-');
+    return { fecha, fechaM, hora, horaM };
 }
 
 //? Regresa el número de proyecto mas alto para saber cuantos proyectos tiene el distrito y/o la Unidad Territorial (Se necesita tener captradas todas las mesas de la UT)

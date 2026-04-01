@@ -1,7 +1,7 @@
 import { request, response, Router } from 'express';
 import { body, param, query } from 'express-validator';
 import { LevantadaDistrito, ListadoProyectos, MesasConComputo, MesasSinComputo, ProyectosEmpatePrimerLugar, ProyectosEmpateSegundoLugar, ProyectosOpinar, ProyectosPrimerLugar, ProyectosSegundoLugar, ProyectosUTSinOpiniones, ResultadosOpiMesa, UTPorValidar, UTValidadas, ValidacionResultados, ValidacionResultadosDetalle, ValidacionResultadosNombre, ValidacionResultadosNombreDetalle } from '../controllers/distConsultaReportesExcel.controller.js';
-import { ActaValidacionPDF, ProyectosParticipantes } from '../controllers/distConsultaReportesPDF.controller.js';
+import { ActasValidacionZip, ActaValidacionPDF, ProyectosParticipantes } from '../controllers/distConsultaReportesPDF.controller.js';
 import { ActaValidacionWord } from '../controllers/distConsultaReportesWord.controller.js';
 import { chkDistrito, StatusReporte } from '../middlewares/dist-middleware.js';
 import { Validator } from '../validators/validator.js';
@@ -210,6 +210,13 @@ router.post('/actaValidacion/:id_distrito', [
     else
         ActaValidacionWord(req, res);
 });
+
+router.post('/actasValidacionZip/:id_distrito', [
+    param('id_distrito').exists().notEmpty(),
+    chkDistrito('1'),
+    body('anio').exists().notEmpty().isInt({ min: 2, max: 3 }).withMessage('El valor debe de ser 2 al 3'),
+    Validator
+], ActasValidacionZip);
 
 export { router as distConsultaReportesRouter };
 
