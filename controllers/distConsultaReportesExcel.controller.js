@@ -299,7 +299,9 @@ export const ValidacionResultados = async (req = request, res = response) => {
             WHERE A.id_distrito = ${id_distrito}${clave_colonia ? ` AND A.clave_colonia = '${clave_colonia}'` : ''} AND A.estatus = 1 AND A.anio = ${anio}
         ),
         LD AS (
-            SELECT id_distrito, clave_colonia, SUM(CASE levantada_distrito WHEN 0 THEN total_ciudadanos ELSE 0 END) AS ciudadania, SUM(CASE levantada_distrito WHEN 1 THEN total_ciudadanos ELSE 0 END) AS distrito
+            SELECT id_distrito, clave_colonia,
+            SUM(CASE levantada_distrito WHEN 0 THEN total_ciudadanos ELSE 0 END) AS ciudadania,
+            SUM(CASE levantada_distrito WHEN 1 THEN total_ciudadanos ELSE 0 END) AS distrito
             FROM CA
             GROUP BY id_distrito, clave_colonia
         ),
@@ -537,8 +539,8 @@ export const ValidacionResultadosDetalle = async (req = request, res = response)
         ),
         LD AS (
             SELECT id_distrito, clave_colonia, num_mro, tipo_mro,
-            SUM(CASE WHEN levantada_distrito > 0 AND bol_recibidas = 0 THEN 0 ELSE total_ciudadanos END) AS ciudadania,
-            SUM(CASE WHEN levantada_distrito > 0 AND bol_recibidas = 0 THEN total_ciudadanos ELSE 0 END) AS distrito
+            SUM(CASE levantada_distrito WHEN 0 THEN total_ciudadanos ELSE 0 END) AS ciudadania,
+            SUM(CASE levantada_distrito WHEN 1 THEN total_ciudadanos ELSE 0 END) AS distrito
             FROM CA
             GROUP BY id_distrito, clave_colonia, num_mro, tipo_mro
         ),
@@ -774,7 +776,9 @@ export const ValidacionResultadosNombre = async (req = request, res = response) 
             WHERE A.id_distrito = ${id_distrito} AND A.clave_colonia = '${clave_colonia}' AND A.estatus = 1 AND A.anio = ${anio}
         ),
         LD AS (
-            SELECT id_distrito, clave_colonia, SUM(CASE levantada_distrito WHEN 0 THEN total_ciudadanos ELSE 0 END) AS ciudadania, SUM(CASE levantada_distrito WHEN 1 THEN total_ciudadanos ELSE 0 END) AS distrito
+            SELECT id_distrito, clave_colonia,
+            SUM(CASE levantada_distrito WHEN 0 THEN total_ciudadanos ELSE 0 END) AS ciudadania,
+            SUM(CASE levantada_distrito WHEN 1 THEN total_ciudadanos ELSE 0 END) AS distrito
             FROM CA
             GROUP BY id_distrito, clave_colonia
         ),
@@ -1003,9 +1007,11 @@ export const ValidacionResultadosNombreDetalle = async (req = request, res = res
             WHERE A.id_distrito = ${id_distrito} AND A.clave_colonia = '${clave_colonia}' AND A.estatus = 1 AND A.anio = ${anio}
         ),
         LD AS (
-            SELECT id_distrito, clave_colonia, num_mro, tipo_mro, CASE WHEN levantada_distrito > 0 AND bol_recibidas = 0 THEN 0 ELSE total_ciudadanos END AS ciudadania, CASE WHEN levantada_distrito > 0 AND bol_recibidas = 0 THEN total_ciudadanos ELSE 0 END AS distrito
+            SELECT id_distrito, clave_colonia, num_mro, tipo_mro,
+            SUM(CASE levantada_distrito WHEN 0 THEN total_ciudadanos ELSE 0 END) AS ciudadania,
+            SUM(CASE levantada_distrito WHEN 1 THEN total_ciudadanos ELSE 0 END) AS distrito
             FROM CA
-            WHERE modalidad = 1
+            GROUP BY id_distrito, clave_colonia, num_mro, tipo_mro
         ),
         MesasEsperadas aS (
             SELECT id_distrito, clave_colonia, COUNT(*) AS total
