@@ -784,7 +784,7 @@ export const CandidaturasEmpate = async (req = request, res = response) => {
                     fila++;
                 });
                 worksheet.columns.forEach((column, i) => {
-                    if ([0, 2, 3].includes(i)) {
+                    if ([0, 2, 4].includes(i)) {
                         let maxLength = 0;
                         column.eachCell({ includeEmpty: false }, (cell, j) => {
                             if (j >= 12)
