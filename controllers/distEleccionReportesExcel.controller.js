@@ -730,23 +730,23 @@ export const CandidaturasEmpate = async (req = request, res = response) => {
             WHERE C.capturadas = E.total
         ),
         ActasValidadas AS (
-            SELECT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, nombreC, total_votos
+            SELECT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, nombreC, total_votos
             FROM copaco_actas_VVS V
             WHERE EXISTS (SELECT 1 FROM Mesas WHERE id_distrito = V.id_distrito AND clave_Colonia = V.clave_colonia) AND estatus = 1
         ),
         Votos AS (
-            SELECT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, nombreC, SUM(total_votos) AS total_votos
+            SELECT id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, nombreC, SUM(total_votos) AS total_votos
             FROM ActasValidadas
-            GROUP BY id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, nombreC
+            GROUP BY id_distrito, nombre_delegacion, clave_colonia, nombre_colonia, secuencial, nombreC
         ),
         RANKING AS (
         	SELECT *, COUNT(*) OVER (PARTITION BY clave_colonia, total_votos) AS empate
             FROM Votos
         )
-        SELECT nombre_delegacion, clave_colonia, nombre_colonia, nombreC, total_votos
+        SELECT nombre_delegacion, clave_colonia, nombre_colonia, secuencial, nombreC, total_votos
         FROM RANKING
         WHERE empate > 1 AND total_votos > 0
-        ORDER BY nombre_delegacion, nombre_colonia`))[0];
+        ORDER BY nombre_delegacion, nombre_colonia, LEN(secuencial), secuencial ASC`))[0];
         if (!candidatos.length)
             return res.status(404).json({
                 success: false,
@@ -766,16 +766,16 @@ export const CandidaturasEmpate = async (req = request, res = response) => {
                 worksheet.getCell('A5').value = 'ELECCIÓN DE COMISIONES DE PARTICIPACIÓN COMUNITARIA 2026';
                 worksheet.getCell('A6').value = 'CANDIDATURAS EN LAS QUE SE PRESENTA EMPATE';
                 worksheet.getCell('A8').value = `DIRECCIÓN DISTRITAL: ${id_distrito}`;
-                worksheet.getCell('E8').value = `Fecha: ${fecha}`;
-                worksheet.getCell('E9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
+                worksheet.getCell('F8').value = `Fecha: ${fecha}`;
+                worksheet.getCell('F9').value = `Hora: ${hora.substring(0, hora.length - 3)}`;
                 if (!worksheet.getCell('A2').isMerged)
-                    worksheet.mergeCells('A2:E2');
+                    worksheet.mergeCells('A2:F2');
                 if (!worksheet.getCell('A3').isMerged)
-                    worksheet.mergeCells('A3:E3');
+                    worksheet.mergeCells('A3:F3');
                 if (!worksheet.getCell('A5').isMerged)
-                    worksheet.mergeCells('A5:E5');
+                    worksheet.mergeCells('A5:F5');
                 if (!worksheet.getCell('A6').isMerged)
-                    worksheet.mergeCells('A6:E6');
+                    worksheet.mergeCells('A6:F6');
                 candidatos.forEach(candidato => {
                     Object.keys(candidato).forEach((key, index) => {
                         worksheet.getCell(fila, index + 1).value = candidato[key];
@@ -787,7 +787,7 @@ export const CandidaturasEmpate = async (req = request, res = response) => {
                     if ([0, 2, 3].includes(i)) {
                         let maxLength = 0;
                         column.eachCell({ includeEmpty: false }, (cell, j) => {
-                            if (j >= 10)
+                            if (j >= 12)
                                 if (cell.value) {
                                     const length = cell.value.toString().length;
                                     if (length > maxLength)
