@@ -978,7 +978,7 @@ export const MesasComputadas = async (req = request, res = response) => {
         LEFT JOIN consulta_cat_delegacion D ON M.id_delegacion = D.id_delegacion
         LEFT JOIN consulta_cat_colonia_cc1 C ON M.clave_colonia = C.clave_colonia
         LEFT JOIN consulta_tipo_mesa_V TP ON M.tipo_mro = TP.tipo_mro
-        WHERE M.estatus = 1 AND EXISTS (SELECT 1 FROM copaco_actas WHERE modalidad = 1 AND estatus = 1 AND clave_colonia = M.clave_colonia AND num_mro = M.num_mro AND tipo_mro = M.tipo_mro)${id_distrito != 0 ? ` AND M.id_distrito = ${id_distrito}` : ''}
+        WHERE M.estatus = 1 AND C.estatus_copaco = 1 AND EXISTS (SELECT 1 FROM copaco_actas WHERE modalidad = 1 AND estatus = 1 AND clave_colonia = M.clave_colonia AND num_mro = M.num_mro AND tipo_mro = M.tipo_mro)${id_distrito != 0 ? ` AND M.id_distrito = ${id_distrito}` : ''}
         ORDER BY M.id_distrito, D.nombre_delegacion, C.nombre_colonia, M.num_mro, M.tipo_mro`))[0];
         if (!mesas.length)
             return res.status(404).json({
@@ -1075,7 +1075,7 @@ export const MesasNoComputadas = async (req = request, res = response) => {
         FROM consulta_mros M
         LEFT JOIN consulta_cat_colonia_cc1 C ON M.clave_colonia = C.clave_colonia
         LEFT JOIN consulta_tipo_mesa_V TP ON M.tipo_mro = TP.tipo_mro
-        WHERE M.estatus = 1 AND NOT EXISTS (SELECT 1 FROM copaco_actas WHERE modalidad = 1 AND estatus = 1 AND clave_colonia = M.clave_colonia AND num_mro = M.num_mro AND tipo_mro = M.tipo_mro)${id_distrito != 0 ? ` AND M.id_distrito = ${id_distrito}` : ''}
+        WHERE M.estatus = 1 AND C.estatus_copaco = 1 AND NOT EXISTS (SELECT 1 FROM copaco_actas WHERE modalidad = 1 AND estatus = 1 AND clave_colonia = M.clave_colonia AND num_mro = M.num_mro AND tipo_mro = M.tipo_mro)${id_distrito != 0 ? ` AND M.id_distrito = ${id_distrito}` : ''}
         ORDER BY M.id_distrito, C.nombre_colonia, M.num_mro, M.tipo_mro`))[0];
         if (!mesas.length)
             return res.status(404).json({
@@ -1171,7 +1171,7 @@ export const UTConComputo = async (req = request, res = response) => {
         const utc = (await SICOVACC.sequelize.query(`SELECT C.id_distrito, UPPER(D.nombre_delegacion) AS nombre_delegacion, C.clave_colonia, UPPER(C.nombre_colonia) AS nombre_colonia
         FROM consulta_cat_colonia_cc1 C
         LEFT JOIN consulta_cat_delegacion D ON C.id_delegacion = D.id_delegacion
-        WHERE${id_distrito != 0 ? ` C.id_distrito = ${id_distrito} AND` : ''} EXISTS (SELECT 1 FROM copaco_actas A WHERE modalidad = 1 AND estatus = 1 AND clave_colonia = C.clave_colonia GROUP BY clave_colonia HAVING COUNT(*) = (SELECT COUNT(*) FROM consulta_mros WHERE estatus = 1 AND clave_colonia = A.clave_colonia))
+        WHERE${id_distrito != 0 ? ` C.id_distrito = ${id_distrito} AND` : ''} C.estatus_copaco = 1 AND EXISTS (SELECT 1 FROM copaco_actas A WHERE modalidad = 1 AND estatus = 1 AND clave_colonia = C.clave_colonia GROUP BY clave_colonia HAVING COUNT(*) = (SELECT COUNT(*) FROM consulta_mros WHERE estatus = 1 AND clave_colonia = A.clave_colonia))
         AND EXISTS (SELECT 1 FROM consulta_mros WHERE id_distrito = C.id_distrito AND clave_colonia = C.clave_colonia AND estatus = 1)
         ORDER BY C.id_distrito, nombre_delegacion, nombre_colonia`))[0];
         if (!utc.length)
@@ -1268,7 +1268,7 @@ export const UTSinComputo = async (req = request, res = response) => {
         const utc = (await SICOVACC.sequelize.query(`SELECT C.id_distrito, UPPER(D.nombre_delegacion) AS nombre_delegacion, C.clave_colonia, UPPER(C.nombre_colonia) AS nombre_colonia
         FROM consulta_cat_colonia_cc1 C
         LEFT JOIN consulta_cat_delegacion D ON C.id_delegacion = D.id_delegacion
-        WHERE${id_distrito != 0 ? ` C.id_distrito = ${id_distrito} AND` : ''} NOT EXISTS (SELECT 1 FROM copaco_actas A WHERE modalidad = 1 AND estatus = 1 AND clave_colonia = C.clave_colonia GROUP BY clave_colonia HAVING COUNT(*) = (SELECT COUNT(*) FROM consulta_mros WHERE estatus = 1 AND clave_colonia = A.clave_colonia))
+        WHERE${id_distrito != 0 ? ` C.id_distrito = ${id_distrito} AND` : ''} C.estatus_copaco = 1 AND NOT EXISTS (SELECT 1 FROM copaco_actas A WHERE modalidad = 1 AND estatus = 1 AND clave_colonia = C.clave_colonia GROUP BY clave_colonia HAVING COUNT(*) = (SELECT COUNT(*) FROM consulta_mros WHERE estatus = 1 AND clave_colonia = A.clave_colonia))
         AND EXISTS (SELECT 1 FROM consulta_mros WHERE id_distrito = C.id_distrito AND clave_colonia = C.clave_colonia AND estatus = 1)
         ORDER BY C.id_distrito, nombre_delegacion, nombre_colonia`))[0];
         if (!utc.length)
@@ -1363,7 +1363,7 @@ export const UTConComputoGA = async (req = request, res = response) => {
     try {
         const avances = (await SICOVACC.sequelize.query(`SELECT D.id_distrito, M.UTTotal, COALESCE(UTV.UTValidadas, 0) AS UTValidadas, ROUND((CAST(COALESCE(UTV.UTValidadas, 0) AS FLOAT) * 100) / CAST(M.UTTotal AS FLOAT), 2) AS avance
         FROM consulta_cat_distrito D
-        LEFT JOIN (SELECT id_distrito, COUNT(DISTINCT clave_colonia) AS UTTotal FROM consulta_mros WHERE estatus = 1 GROUP BY id_distrito) AS M ON D.id_distrito = M.id_distrito
+        LEFT JOIN (SELECT id_distrito, COUNT(DISTINCT clave_colonia) AS UTTotal FROM consulta_mros M WHERE estatus = 1 AND EXISTS (SELECT 1 FROM consulta_cat_colonia_cc1 C WHERE C.estatus_copaco = 1 AND C.clave_colonia = M.clave_colonia) GROUP BY id_distrito) AS M ON D.id_distrito = M.id_distrito
         LEFT JOIN (
             SELECT id_distrito, COUNT(*) AS UTValidadas
             FROM consulta_cat_colonia_cc1 C

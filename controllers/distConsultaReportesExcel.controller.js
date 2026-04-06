@@ -25,7 +25,7 @@ export const  UTValidadas = async (req = request, res = response) => {
                 HAVING COUNT(*) = (SELECT COUNT(*) FROM consulta_mros WHERE estatus = 1 AND clave_colonia = A.clave_colonia)
             ) X
             WHERE X.clave_colonia = C.clave_colonia
-        ) AND EXISTS (SELECT 1 FROM consulta_mros WHERE id_distrito = C.id_distrito AND clave_colonia = C.clave_colonia AND estatus = 1)
+        ) AND C.${aniosCAT[0][anio]} = 1 AND EXISTS (SELECT 1 FROM consulta_mros WHERE id_distrito = C.id_distrito AND clave_colonia = C.clave_colonia AND estatus = 1)
         ORDER BY nombre_delegacion, nombre_colonia`))[0]
         if (!colonias.length)
             return res.status(404).json({
@@ -112,7 +112,7 @@ export const UTPorValidar = async (req = request, res = response) => {
                 HAVING COUNT(*) = (SELECT COUNT(*) FROM consulta_mros WHERE estatus = 1 AND clave_colonia = A.clave_colonia)
             ) X
             WHERE X.clave_colonia = C.clave_colonia
-        ) AND EXISTS (SELECT 1 FROM consulta_mros WHERE id_distrito = C.id_distrito AND clave_colonia = C.clave_colonia AND estatus = 1)
+        ) AND C.${aniosCAT[0][anio]} = 1 AND EXISTS (SELECT 1 FROM consulta_mros WHERE id_distrito = C.id_distrito AND clave_colonia = C.clave_colonia AND estatus = 1)
         ORDER BY nombre_delegacion, nombre_colonia`))[0];
         if (!colonias.length)
             return res.status(404).json({
@@ -1240,7 +1240,7 @@ export const MesasConComputo = async (req = request, res = response) => {
         LEFT JOIN consulta_tipo_mesa_V TP ON M.tipo_mro = TP.tipo_mro
         LEFT JOIN consulta_cat_delegacion D ON M.id_delegacion = D.id_delegacion
         LEFT JOIN consulta_cat_colonia_cc1 C ON M.clave_colonia = C.clave_colonia
-        WHERE M.estatus = 1 AND M.id_distrito = ${id_distrito} AND EXISTS (SELECT 1 FROM consulta_actas WHERE modalidad = 1 AND estatus = 1 AND anio = ${anio} AND clave_colonia = M.clave_colonia AND num_mro = M.num_mro AND tipo_mro = M.tipo_mro)
+        WHERE M.estatus = 1 AND C.${aniosCAT[0][anio]} = 1 AND M.id_distrito = ${id_distrito} AND EXISTS (SELECT 1 FROM consulta_actas WHERE modalidad = 1 AND estatus = 1 AND anio = ${anio} AND clave_colonia = M.clave_colonia AND num_mro = M.num_mro AND tipo_mro = M.tipo_mro)
         ORDER BY D.nombre_delegacion, C.nombre_colonia, M.num_mro, M.tipo_mro ASC`))[0];
         if (!resultado.length)
             return res.status(404).json({
@@ -1342,7 +1342,7 @@ export const MesasSinComputo = async (req = request, res = response) => {
         LEFT JOIN consulta_tipo_mesa_V TP ON M.tipo_mro = TP.tipo_mro
         LEFT JOIN consulta_cat_delegacion D ON M.id_delegacion = D.id_delegacion
         LEFT JOIN consulta_cat_colonia_cc1 C ON M.clave_colonia = C.clave_colonia
-        WHERE M.estatus = 1 AND M.id_distrito = ${id_distrito} AND NOT EXISTS (SELECT 1 FROM consulta_actas WHERE modalidad = 1 AND estatus = 1 AND anio = ${anio} AND clave_colonia = M.clave_colonia AND num_mro = M.num_mro AND tipo_mro = M.tipo_mro)
+        WHERE M.estatus = 1 AND C.${aniosCAT[0][anio]} = 1 AND M.id_distrito = ${id_distrito} AND NOT EXISTS (SELECT 1 FROM consulta_actas WHERE modalidad = 1 AND estatus = 1 AND anio = ${anio} AND clave_colonia = M.clave_colonia AND num_mro = M.num_mro AND tipo_mro = M.tipo_mro)
         ORDER BY D.nombre_delegacion, C.nombre_colonia, M.num_mro, M.tipo_mro ASC`))[0];
         if (!resultado.length)
             return res.status(404).json({

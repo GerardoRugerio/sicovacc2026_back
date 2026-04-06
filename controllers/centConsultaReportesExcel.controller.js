@@ -1498,7 +1498,7 @@ export const MesasConComputo = async (req = request, res = response) => {
         LEFT JOIN consulta_tipo_mesa_V TP ON M.tipo_mro = TP.tipo_mro
         LEFT JOIN consulta_cat_delegacion D ON M.id_delegacion = D.id_delegacion
         LEFT JOIN consulta_cat_colonia_cc1 C ON M.clave_colonia = C.clave_colonia
-        WHERE M.estatus = 1 AND EXISTS (SELECT 1 FROM consulta_actas WHERE modalidad = 1 AND estatus = 1 AND anio = ${anio} AND clave_colonia = M.clave_colonia AND num_mro = M.num_mro AND tipo_mro = M.tipo_mro)${id_distrito != 0 ? ` AND M.id_distrito = ${id_distrito}` : ''}
+        WHERE M.estatus = 1 AND C.${aniosCAT[0][anio]} = 1 AND EXISTS (SELECT 1 FROM consulta_actas WHERE modalidad = 1 AND estatus = 1 AND anio = ${anio} AND clave_colonia = M.clave_colonia AND num_mro = M.num_mro AND tipo_mro = M.tipo_mro)${id_distrito != 0 ? ` AND M.id_distrito = ${id_distrito}` : ''}
         ORDER BY M.id_distrito, D.nombre_delegacion, C.nombre_colonia, M.num_mro, M.tipo_mro ASC`))[0];
         if (!resultado.length)
             return res.status(404).json({
@@ -1598,7 +1598,7 @@ export const MesasSinComputo = async (req = request, res = response) => {
         LEFT JOIN consulta_tipo_mesa_V TP ON M.tipo_mro = TP.tipo_mro
         LEFT JOIN consulta_cat_delegacion D ON M.id_delegacion = D.id_delegacion
         LEFT JOIN consulta_cat_colonia_cc1 C ON M.clave_colonia = C.clave_colonia
-        WHERE M.estatus = 1 AND NOT EXISTS (SELECT 1 FROM consulta_actas WHERE modalidad = 1 AND estatus = 1 AND anio = ${anio} AND clave_colonia = M.clave_colonia AND num_mro = M.num_mro AND tipo_mro = M.tipo_mro)${id_distrito != 0 ? ` AND M.id_distrito = ${id_distrito}` : ''}
+        WHERE M.estatus = 1 AND C.${aniosCAT[0][anio]} = 1 AND NOT EXISTS (SELECT 1 FROM consulta_actas WHERE modalidad = 1 AND estatus = 1 AND anio = ${anio} AND clave_colonia = M.clave_colonia AND num_mro = M.num_mro AND tipo_mro = M.tipo_mro)${id_distrito != 0 ? ` AND M.id_distrito = ${id_distrito}` : ''}
         ORDER BY M.id_distrito, D.nombre_delegacion, C.nombre_colonia, M.num_mro, M.tipo_mro ASC`))[0];
         if (!resultado.length)
             return res.status(404).json({
@@ -1695,7 +1695,7 @@ export const UTConComputoGA = async (req = request, res = response) => {
     try {
         const avances = (await SICOVACC.sequelize.query(`SELECT D.id_distrito, M.UTTotal, COALESCE(UTV.UTValidadas, 0) AS UTValidadas, ROUND((CAST(COALESCE(UTV.UTValidadas, 0) AS FLOAT) * 100) / CAST(M.UTTotal AS FLOAT), 2) AS avance
         FROM consulta_cat_distrito D
-        LEFT JOIN (SELECT id_distrito, COUNT(DISTINCT clave_colonia) AS UTTotal FROM consulta_mros WHERE estatus = 1 GROUP BY id_distrito) AS M ON D.id_distrito = M.id_distrito
+        LEFT JOIN (SELECT id_distrito, COUNT(DISTINCT clave_colonia) AS UTTotal FROM consulta_mros M WHERE estatus = 1 AND EXISTS (SELECT 1 FROM consulta_cat_colonia_cc1 C WHERE C.${aniosCAT[0][anio]} = 1 AND C.clave_colonia = M.clave_colonia) GROUP BY id_distrito) AS M ON D.id_distrito = M.id_distrito
         LEFT JOIN (
             SELECT id_distrito, COUNT(*) AS UTValidadas
             FROM consulta_cat_colonia_cc1 C

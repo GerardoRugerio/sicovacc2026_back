@@ -1,7 +1,7 @@
 import ExcelJs from 'exceljs';
 import { request, response } from 'express';
 import path from 'path';
-import { autor, contenidoStyle, fill, IECMLogo, Letras, plantillas, titulos } from '../helpers/Constantes.js';
+import { aniosCAT, autor, contenidoStyle, fill, IECMLogo, Letras, plantillas, titulos } from '../helpers/Constantes.js';
 import { FechaServer } from '../helpers/Consultas.js';
 import { SICOVACC } from '../models/consulta_usuarios_sicovacc.model.js';
 
@@ -996,7 +996,7 @@ export const MesasComputadas = async (req = request, res = response) => {
         LEFT JOIN consulta_cat_delegacion D ON M.id_delegacion = D.id_delegacion
         LEFT JOIN consulta_cat_colonia_cc1 C ON M.clave_colonia = C.clave_colonia
         LEFT JOIN consulta_tipo_mesa_V TP ON M.tipo_mro = TP.tipo_mro
-        WHERE M.estatus = 1 AND EXISTS (SELECT 1 FROM copaco_actas WHERE modalidad = 1 AND estatus = 1 AND clave_colonia = M.clave_colonia AND num_mro = M.num_mro AND tipo_mro = M.tipo_mro) AND M.id_distrito = ${id_distrito}
+        WHERE M.estatus = 1 AND C.estatus_copaco = 1 AND EXISTS (SELECT 1 FROM copaco_actas WHERE modalidad = 1 AND estatus = 1 AND clave_colonia = M.clave_colonia AND num_mro = M.num_mro AND tipo_mro = M.tipo_mro) AND M.id_distrito = ${id_distrito}
         ORDER BY D.nombre_delegacion, C.nombre_colonia, M.num_mro, M.tipo_mro`))[0];
         if (!mesas.length)
             return res.status(404).json({
@@ -1095,7 +1095,7 @@ export const MesasNoComputadas = async (req = request, res = response) => {
         FROM consulta_mros M
         LEFT JOIN consulta_cat_colonia_cc1 C ON M.clave_colonia = C.clave_colonia
         LEFT JOIN consulta_tipo_mesa_V TP ON M.tipo_mro = TP.tipo_mro
-        WHERE M.estatus = 1 AND NOT EXISTS (SELECT 1 FROM copaco_actas WHERE modalidad = 1 AND estatus = 1 AND clave_colonia = M.clave_colonia AND num_mro = M.num_mro AND tipo_mro = M.tipo_mro) AND M.id_distrito = ${id_distrito}
+        WHERE M.estatus = 1 AND C.estatus_copaco = 1 AND NOT EXISTS (SELECT 1 FROM copaco_actas WHERE modalidad = 1 AND estatus = 1 AND clave_colonia = M.clave_colonia AND num_mro = M.num_mro AND tipo_mro = M.tipo_mro) AND M.id_distrito = ${id_distrito}
         ORDER BY C.nombre_colonia, M.num_mro, M.tipo_mro`))[0];
         if (!mesas.length)
             return res.status(404).json({
