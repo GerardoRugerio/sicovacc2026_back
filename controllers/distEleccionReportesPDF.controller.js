@@ -58,17 +58,24 @@ export const ActasComputoTotalPDFZip = async (req = request, res = response) => 
             });
         const { fechaM, horaM } = await FechaServer();
         const generarZipBuffer = async (colonias) => {
-            return new Promise(async (resolve, reject) => {
+            return new Promise((resolve, reject) => {
                 const archive = archiver('zip', { zlib: { level: 9 } });
                 const buffer = [];
-                for (const clave_colonia of colonias) {
-                    const pdfBuffer = await GeneradorActaPDF(id_distrito, clave_colonia);
-                    archive.append(pdfBuffer, { name: `ActaComputoTotal_${clave_colonia}_${fechaM}_${horaM}.pdf` });
-                }
-                await archive.finalize();
                 archive.on('data', buffer.push.bind(buffer));
                 archive.on('end', () => resolve(Buffer.concat(buffer)));
                 archive.on('error', reject);
+                archive.on('warning', err => { if (err.code !== 'ENDENT') reject(err) });
+                (async () => {
+                    try {
+                        for (const clave_colonia of colonias) {
+                            const pdfBuffer = await GeneradorActaPDF(id_distrito, clave_colonia);
+                            archive.append(pdfBuffer, { name: `ActaComputoTotal_${clave_colonia}_${fechaM}_${horaM}.pdf` });
+                        }
+                        await archive.finalize();
+                    } catch (err) {
+                        reject(err);
+                    }
+                })();
             });
         };
         res.json({
@@ -194,6 +201,9 @@ const GeneradorActaPDF = async (id_distrito, clave_colonia) => {
     ];
     return new Promise((resolve, reject) => {
         const doc = new PDFDocument({ bufferPages: true, autoFirstPage: false, size: 'A3', layout: 'portrait', margin: 30 });
+        doc.on('data', buffer.push.bind(buffer));
+        doc.on('end', () => { resolve(Buffer.concat(buffer)) });
+        doc.on('error', reject);
         doc.info.Author = autor;
         doc.addPage();
         const textos = [
@@ -306,8 +316,5 @@ const GeneradorActaPDF = async (id_distrito, clave_colonia) => {
                 doc.font('Helvetica', 10).text(`Hoja ${i + 1} de ${paginas}`, 50, doc.page.height - 45, { width: 740, align: 'center' });
             }
         doc.end();
-        doc.on('data', buffer.push.bind(buffer));
-        doc.on('end', () => { resolve(Buffer.concat(buffer)) });
-        doc.on('error', reject);
     });
 }

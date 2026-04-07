@@ -1,7 +1,7 @@
 import { request, response } from 'express';
 import PDFDocument from 'pdfkit';
 import { CalcularAltoAncho, DibujarTablaPDF, TextoMultiFuente } from '../helpers/ActasPDF.js';
-import { anioN, autor, AveAzteca, IECMLogo, IECMLogoBN, SerpienteAzteca } from '../helpers/Constantes.js';
+import { anioN, aniosCAT, autor, AveAzteca, IECMLogo, IECMLogoBN, SerpienteAzteca } from '../helpers/Constantes.js';
 import { ConsultaClaveColonia, ConsultaDelegacion, ConsultaDistrito, ConsultaTipoEleccion, FechaHoraActa, FechaServer, InformacionConstancia } from '../helpers/Consultas.js';
 import { DividirArreglo, NumAMes, NumAText } from '../helpers/Funciones.js';
 import { SICOVACC } from '../models/consulta_usuarios_sicovacc.model.js';
@@ -250,7 +250,7 @@ export const ActasValidacionZip = async (req = request, res = response) => {
         MesasEsperadas AS (
             SELECT CM.clave_colonia, COUNT(*) AS total
             FROM I
-            LEFT JOIN consulta_mros CM ON I.id_distrito = CM.id_distrito
+            LEFT JOIN consulta_mros CM ON I.id_distrito = CM.id_distrito AND EXISTS (SELECT 1 FROM consulta_cat_colonia_cc1 C WHERE C.${aniosCAT[0][anio]} = 1 AND C.clave_colonia = CM.clave_colonia)
             GROUP BY CM.clave_colonia
         ),
         MesasCapturadas AS (
@@ -271,17 +271,24 @@ export const ActasValidacionZip = async (req = request, res = response) => {
             });
         const { fechaM, horaM } = await FechaServer();
         const generarZipBuffer = async (colonias) => {
-            return new Promise(async (resolve, reject) => {
+            return new Promise((resolve, reject) => {
                 const archive = archiver('zip', { zlib: { level: 9 } });
                 const buffer = [];
-                for (const clave_colonia of colonias) {
-                    const pdfBuffer = await GeneradorActaPDF(anio, id_distrito, clave_colonia);
-                    archive.append(pdfBuffer, { name: `ActaValidacion_${clave_colonia}_${anio == 2 ? '2026' : '2027'}_${fechaM}_${horaM}.pdf` });
-                }
-                await archive.finalize();
                 archive.on('data', buffer.push.bind(buffer));
                 archive.on('end', () => resolve(Buffer.concat(buffer)));
                 archive.on('error', reject);
+                archive.on('warning', err => { if (err.code !== 'ENDENT') reject(err) });
+                (async () => {
+                    try {
+                        for (const clave_colonia of colonias) {
+                            const pdfBuffer = await GeneradorActaPDF(anio, id_distrito, clave_colonia);
+                            archive.append(pdfBuffer, { name: `ActaValidacion_${clave_colonia}_${anio == 2 ? '2026' : '2027'}_${fechaM}_${horaM}.pdf` });
+                        }
+                        await archive.finalize();
+                    } catch (err) {
+                        reject(err);
+                    }
+                })();
             });
         };
         res.json({
@@ -377,6 +384,9 @@ const GeneradorActaPDF = async (anio, id_distrito, clave_colonia) => {
     ];
     return new Promise((resolve, reject) => {
         const doc = new PDFDocument({ bufferPages: true, autoFirstPage: false, size: 'A3', layout: 'portrait', margin: 30 });
+        doc.on('data', buffer.push.bind(buffer));
+        doc.on('end', () => { resolve(Buffer.concat(buffer)) });
+        doc.on('error', reject);
         doc.info.Author = autor;
         doc.addPage();
         doc.font('Helvetica', 10).fillColor('#000');
@@ -498,8 +508,5 @@ const GeneradorActaPDF = async (anio, id_distrito, clave_colonia) => {
                 doc.font('Helvetica', 10).text(`Hoja ${i + 1} de ${paginas}`, 50, doc.page.height - 45, { width: 740, align: 'center' });
             }
         doc.end();
-        doc.on('data', buffer.push.bind(buffer));
-        doc.on('end', () => { resolve(Buffer.concat(buffer)) });
-        doc.on('error', reject);
     });
 }
