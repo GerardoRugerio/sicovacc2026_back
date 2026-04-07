@@ -42,7 +42,7 @@ export const ActaComputoTotalWord = async (req = request, res = response) => {
             SELECT orden, secuencial, votos, votos_sei, total_votos
             FROM Acta
         ) X
-        ORDER BY orden`))[0];
+        ORDER BY LEN(secuencial), secuencial ASC`))[0];
         const { votos: nulas, votos_sei: nulas_sei, total_votos: total_nulas } = consulta.find(participante => participante.secuencial == '0');
         const totalN = consulta.reduce((sum, participante) => sum + participante.votos, 0);
         const totalNS = consulta.reduce((sum, participante) => sum + participante.votos_sei, 0);
