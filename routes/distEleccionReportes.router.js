@@ -5,6 +5,7 @@ import { ActaComputoTotalPDF, ActasComputoTotalPDFZip } from '../controllers/dis
 import { ActaComputoTotalWord } from '../controllers/distEleccionReporteWord.controller.js';
 import { chkDistrito, StatusReporte } from '../middlewares/dist-middleware.js';
 import { Validator } from '../validators/validator.js';
+import { chkToken, dataToken } from '../middlewares/auth-middleware.js';
 
 const router = Router();
 
@@ -124,6 +125,8 @@ router.post('/actaComputoTotal/:id_distrito', [
 //? Actas de Cómputo total - PDF - ZIP
 
 router.post('/actasComputoTotalZip/:id_distrito', [
+    chkToken(),
+    dataToken,
     param('id_distrito').exists().notEmpty(),
     chkDistrito('1')
 ], ActasComputoTotalPDFZip);

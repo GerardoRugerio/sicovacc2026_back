@@ -6,7 +6,9 @@ module.exports = {
         name: 'SICOVACC',                           //? Nombre de la app
         namespace: 'IECM',                          //? Opcional: agrupa procesos
         script: './index.js',                       //? Punto de entrada del backend
-        node_args: '--max-old-space-size=2048',
+        node_args: [
+            '--max-old-space-size=2048'
+        ],
         exec_mode: isProd ? 'cluster' : 'fork',      //? Modo fork = un solo proceso; 'cluster' para escalar
         ...(isProd ? { instances: 2 } : {}),         //? max para usar todos los nucleos 
         watch: !isProd,

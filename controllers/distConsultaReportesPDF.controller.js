@@ -1,11 +1,12 @@
+import archiver from 'archiver';
 import { request, response } from 'express';
+import pLimit from 'p-limit';
 import PDFDocument from 'pdfkit';
 import { CalcularAltoAncho, DibujarTablaPDF, TextoMultiFuente } from '../helpers/ActasPDF.js';
 import { anioN, aniosCAT, autor, AveAzteca, IECMLogo, IECMLogoBN, SerpienteAzteca } from '../helpers/Constantes.js';
 import { ConsultaClaveColonia, ConsultaDelegacion, ConsultaDistrito, ConsultaTipoEleccion, FechaHoraActa, FechaServer, InformacionConstancia } from '../helpers/Consultas.js';
 import { DividirArreglo, NumAMes, NumAText } from '../helpers/Funciones.js';
 import { SICOVACC } from '../models/consulta_usuarios_sicovacc.model.js';
-import archiver from 'archiver';
 
 //? Proyectos Participantes Dictaminados Favorablemente
 
@@ -13,7 +14,7 @@ export const ProyectosParticipantes = async (req = request, res = response) => {
     const { id_distrito } = req.params;
     const { clave_colonia, anio } = req.body;
     try {
-        const consulta = (await SICOVACC.sequelize.query(`SELECT secuencial, folio, destino_recursos, nom_proyecto
+        const consulta = (await SICOVACC.sequelize.query(`SELECT secuencial, folio, destino_recursos_final, nom_proyecto
         FROM consulta_prelacion_proyectos_VVS
         WHERE id_distrito = ${id_distrito} AND clave_colonia = '${clave_colonia}' AND anio = ${anio}
         ORDER BY secuencial ASC`))[0];
@@ -231,7 +232,7 @@ export const ActaValidacionPDF = async (req = request, res = response) => {
             msg: 'Reporte generado correctamente',
             contentType: 'application/pdf',
             reporte: `ActaValidacion_${clave_colonia}_${anio == 2 ? '2026' : '2027'}__${fechaM}_${horaM}.pdf`,
-            buffer: await GeneradorActaPDF(anio, id_distrito, clave_colonia)
+            buffer: (await streamToBuffer(await GeneradorActaPDF(anio, id_distrito, clave_colonia)))
         });
     } catch (err) {
         console.error(`Error al generar el Acta de Validación en PDF: ${err}`);
@@ -244,6 +245,7 @@ export const ActaValidacionPDF = async (req = request, res = response) => {
 
 export const ActasValidacionZip = async (req = request, res = response) => {
     const { id_distrito } = req.params;
+    const { id_transaccion } = req.data;
     const { anio } = req.body;
     try {
         const colonias = (await SICOVACC.sequelize.query(`;WITH I AS (SELECT ${id_distrito} AS id_distrito),
@@ -270,20 +272,52 @@ export const ActasValidacionZip = async (req = request, res = response) => {
                 msg: 'No hay Unidades Territoriales validadas'
             });
         const { fechaM, horaM } = await FechaServer();
+        const isProd = process.env.NODE_ENV?.match('prod') ?? false;
+        const sufix = isProd ? '-redis' : '';
+        const { BuscarUsuarioID } = await import(`../sockets/usuarios${sufix}.js`);
+        const { id } = isProd ? await BuscarUsuarioID(id_transaccion) : BuscarUsuarioID(id_transaccion);
+        const { getSocketServerInstance } = await import(`../sockets/sockets${sufix}.js`);
+        const io = getSocketServerInstance();
         const generarZipBuffer = async (colonias) => {
             return new Promise((resolve, reject) => {
                 const archive = archiver('zip', { zlib: { level: 9 } });
                 const buffer = [];
+                const limit = pLimit(colonias.length > 30 ? 3 : 5);
+                let procesadas = 0, faseActual = 'generando';
+                archive.on('progress', progress => {
+                    if (faseActual !== 'comprimiendo') return;
+                    const { total, processed } = progress.entries;
+                    const porcentaje = Math.round((processed / total) * 100);
+                    io.to(id).emit('descarga-zip', {
+                        fase: 'comprimiendo',
+                        porcentaje
+                    });
+                });
                 archive.on('data', buffer.push.bind(buffer));
                 archive.on('end', () => resolve(Buffer.concat(buffer)));
                 archive.on('error', reject);
                 archive.on('warning', err => { if (err.code !== 'ENDENT') reject(err) });
                 (async () => {
                     try {
-                        for (const clave_colonia of colonias) {
-                            const pdfBuffer = await GeneradorActaPDF(anio, id_distrito, clave_colonia);
-                            archive.append(pdfBuffer, { name: `ActaValidacion_${clave_colonia}_${anio == 2 ? '2026' : '2027'}_${fechaM}_${horaM}.pdf` });
-                        }
+                        await Promise.all(
+                            colonias.map(clave_colonia =>
+                                limit(async () => {
+                                    const stream = await GeneradorActaPDF(anio, id_distrito, clave_colonia);
+                                    return new Promise((resolve, reject) => {
+                                        stream.on('end', resolve);
+                                        stream.on('error', reject);
+                                        archive.append(stream, { name: `ActaValidacion_${clave_colonia}_${anio == 2 ? '2026' : '2027'}_${fechaM}_${horaM}.pdf` });
+                                        procesadas++;
+                                        const porcentaje = Math.round((procesadas / colonias.length) * 100);
+                                        io.to(id).emit('descarga-zip', {
+                                            fase: 'generando',
+                                            porcentaje
+                                        });
+                                    });
+                                })
+                            )
+                        );
+                        faseActual = 'comprimiendo';
                         await archive.finalize();
                     } catch (err) {
                         reject(err);
@@ -336,6 +370,15 @@ export const ActasValidacionZip = async (req = request, res = response) => {
     }
 }
 
+const streamToBuffer = (stream) => {
+    return new Promise((resolve, reject) => {
+        const buffer = [];
+        stream.on('data', buffer.push.bind(buffer));
+        stream.on('end', () => { resolve(Buffer.concat(buffer)) });
+        stream.on('error', reject);
+    });
+}
+
 const GeneradorActaPDF = async (anio, id_distrito, clave_colonia) => {
     const { nombre_delegacion } = await ConsultaDelegacion(id_distrito, clave_colonia);
     const { nombre_colonia } = await ConsultaClaveColonia(clave_colonia);
@@ -382,131 +425,132 @@ const GeneradorActaPDF = async (anio, id_distrito, clave_colonia) => {
         { width: 100, align: 'center' },
         { width: 540, align: 'center' }
     ];
-    return new Promise((resolve, reject) => {
-        const doc = new PDFDocument({ bufferPages: true, autoFirstPage: false, size: 'A3', layout: 'portrait', margin: 30 });
-        doc.on('data', buffer.push.bind(buffer));
-        doc.on('end', () => { resolve(Buffer.concat(buffer)) });
-        doc.on('error', reject);
-        doc.info.Author = autor;
-        doc.addPage();
-        doc.font('Helvetica', 10).fillColor('#000');
-        const textos = [
-            `DEMARCACIÓN: ${nombre_delegacion}`,
-            `DD: ${id_distrito}`,
-            `UT (clave): ${clave_colonia}`,
-            `UT (nombre): ${nombre_colonia}`
-        ];
-        const widths = textos.map(t => doc.widthOfString(t));
-        const espacio = (740 - widths.reduce((acum, width) => acum + width, 0)) / 3;
-        let x = 0, y = 0;
-        for (let i = 0; i < datos.length; i++) {
-            if (newPage) {
-                doc.rect(50, 50, 740, 70).fillAndStroke('#000', '#000');
-                TextoMultiFuente(doc, 180, 68, 425, 16, [
-                    { text: 'ACTA DE VALIDACIÓN DE RESULTADOS', font: 'Helvetica-Bold' },
-                    { text: `DE LA CONSULTA DE ${eleccion.toUpperCase()}`, font: 'Helvetica' }
-                ], {
-                    fillColor: '#FFF',
-                    lineHeight: 1.5,
-                    align: 'center'
-                });
-                doc.font('Helvetica-Bold').fillColor('#FFF').text(`AP${anio == 2 ? '26' : '27'}\n05`, 710, 70, { width: 80, align: 'center' });
-                doc.image(IECMLogoBN, 40, 55, {
-                    fit: [150, 60],
-                    align: 'center',
-                    valign: 'center'
-                });
-                doc.image(anio == 2 ? AveAzteca : SerpienteAzteca, 580, 55, {
-                    fit: [150, 60],
-                    align: 'center',
-                    valign: 'center'
-                });
-                doc.rect(50, 140, 740, 20).fillAndStroke('#F2F2F2', '#BFBFBF').fontSize(14).fillColor('#000').text('INFORMACIÓN DE LA UT', 50, 145, { width: 740, align: 'center' });
-                doc.font('Helvetica', 10).fillColor('#000');
-                x = 50;
-                for (let j = 0; j < textos.length; j++) {
-                    doc.text(textos[j], x, 165);
-                    if (j < 3)
-                        x += widths[j] + espacio;
-                }
-                doc.rect(50, 185, 740, 20).fillAndStroke('#F2F2F2', '#BFBFBF').font('Helvetica-Bold', 14).fillColor('#000').text('INFORMACIÓN DE LA VALIDACIÓN', 50, 190, { width: 740, align: 'center' });
-                TextoMultiFuente(doc, 50, 210, 740, 10, [
-                    { text: 'En la Ciudad de México, siendo las', font: 'Helvetica' },
-                    { text: `${horaActa}`, font: 'Helvetica' },
-                    { text: ' horas del', font: 'Helvetica' },
-                    { text: `${fechaActa.split('/')[0]}`, font: 'Helvetica' },
-                    { text: ' de', font: 'Helvetica' },
-                    { text: `${NumAMes(+fechaActa.split('/')[1]).toLowerCase()}`, font: 'Helvetica' },
-                    { text: ' de', font: 'Helvetica' },
-                    { text: `${fechaActa.split('/')[2]}`, font: 'Helvetica' },
-                    { text: ', en el domicilio que ocupa la Dirección Distrital', font: 'Helvetica' },
-                    { text: `${id_distrito}`, font: 'Helvetica' },
-                    { text: ', situada en', font: 'Helvetica' },
-                    { text: `${direccion}`, font: 'Helvetica' },
-                    { text: ', se realizó el', font: 'Helvetica' },
-                    { text: 'cómputo total', font: 'Helvetica-Bold' },
-                    { text: 'de la Unidad Territorial referida en la presente acta, correspondiente a la', font: 'Helvetica' },
-                    { text: `Consulta de ${eleccion}`, font: 'Helvetica-Bold' },
-                    { text: '.', font: 'Helvetica' }
-                ], {
-                    fillColor: '#000',
-                    lineHeight: 1.5,
-                    align: 'justify'
-                });
-                y = doc.y + 20;
-                TextoMultiFuente(doc, 50, y, 740, 10, [
-                    { text: 'Por lo anterior,', font: 'Helvetica' },
-                    { text: 'las personas funcionarias que suscriben la presente, hacen constar los siguientes resultados', font: 'Helvetica-Bold', },
-                    { text: ':', font: 'Helvetica', }
-                ], {
-                    fillColor: '#000',
-                    lineHeight: 1.5,
-                    align: 'left'
-                });
-                y += 25;
-                doc.rect(50, y, 740, 20).fillAndStroke('#F2F2F2', '#BFBFBF').font('Helvetica-Bold', 14).fillColor('#000').text('RESULTADOS', 50, y + 5, { width: 740, align: 'center' });
-                newPage = false;
-                altura = 0;
-                altura += DibujarTablaPDF(doc, 50, doc.y - 2, encabezados, columnas, undefined);
-                y = doc.y - 11;
+    // return new Promise((resolve, reject) => {
+    const doc = new PDFDocument({ bufferPages: true, autoFirstPage: false, size: 'A3', layout: 'portrait', margin: 30 });
+    // doc.on('data', buffer.push.bind(buffer));
+    // doc.on('end', () => { resolve(Buffer.concat(buffer)) });
+    // doc.on('error', reject);
+    doc.info.Author = autor;
+    doc.addPage();
+    doc.font('Helvetica', 10).fillColor('#000');
+    const textos = [
+        `DEMARCACIÓN: ${nombre_delegacion}`,
+        `DD: ${id_distrito}`,
+        `UT (clave): ${clave_colonia}`,
+        `UT (nombre): ${nombre_colonia}`
+    ];
+    const widths = textos.map(t => doc.widthOfString(t));
+    const espacio = (740 - widths.reduce((acum, width) => acum + width, 0)) / 3;
+    let x = 0, y = 0;
+    for (let i = 0; i < datos.length; i++) {
+        if (newPage) {
+            doc.rect(50, 50, 740, 70).fillAndStroke('#000', '#000');
+            TextoMultiFuente(doc, 180, 68, 425, 16, [
+                { text: 'ACTA DE VALIDACIÓN DE RESULTADOS', font: 'Helvetica-Bold' },
+                { text: `DE LA CONSULTA DE ${eleccion.toUpperCase()}`, font: 'Helvetica' }
+            ], {
+                fillColor: '#FFF',
+                lineHeight: 1.5,
+                align: 'center'
+            });
+            doc.font('Helvetica-Bold').fillColor('#FFF').text(`AP${anio == 2 ? '26' : '27'}\n05`, 710, 70, { width: 80, align: 'center' });
+            doc.image(IECMLogoBN, 40, 55, {
+                fit: [150, 60],
+                align: 'center',
+                valign: 'center'
+            });
+            doc.image(anio == 2 ? AveAzteca : SerpienteAzteca, 580, 55, {
+                fit: [150, 60],
+                align: 'center',
+                valign: 'center'
+            });
+            doc.rect(50, 140, 740, 20).fillAndStroke('#F2F2F2', '#BFBFBF').fontSize(14).fillColor('#000').text('INFORMACIÓN DE LA UT', 50, 145, { width: 740, align: 'center' });
+            doc.font('Helvetica', 10).fillColor('#000');
+            x = 50;
+            for (let j = 0; j < textos.length; j++) {
+                doc.text(textos[j], x, 165);
+                if (j < 3)
+                    x += widths[j] + espacio;
             }
-            altura += DibujarTablaPDF(doc, 50, y + altura, undefined, columnas, [datos[i]]);
-            if (doc.y >= 980) {
-                newPage = true;
-                doc.addPage();
-            }
+            doc.rect(50, 185, 740, 20).fillAndStroke('#F2F2F2', '#BFBFBF').font('Helvetica-Bold', 14).fillColor('#000').text('INFORMACIÓN DE LA VALIDACIÓN', 50, 190, { width: 740, align: 'center' });
+            TextoMultiFuente(doc, 50, 210, 740, 10, [
+                { text: 'En la Ciudad de México, siendo las', font: 'Helvetica' },
+                { text: `${horaActa}`, font: 'Helvetica' },
+                { text: ' horas del', font: 'Helvetica' },
+                { text: `${fechaActa.split('/')[0]}`, font: 'Helvetica' },
+                { text: ' de', font: 'Helvetica' },
+                { text: `${NumAMes(+fechaActa.split('/')[1]).toLowerCase()}`, font: 'Helvetica' },
+                { text: ' de', font: 'Helvetica' },
+                { text: `${fechaActa.split('/')[2]}`, font: 'Helvetica' },
+                { text: ', en el domicilio que ocupa la Dirección Distrital', font: 'Helvetica' },
+                { text: `${id_distrito}`, font: 'Helvetica' },
+                { text: ', situada en', font: 'Helvetica' },
+                { text: `${direccion}`, font: 'Helvetica' },
+                { text: ', se realizó el', font: 'Helvetica' },
+                { text: 'cómputo total', font: 'Helvetica-Bold' },
+                { text: 'de la Unidad Territorial referida en la presente acta, correspondiente a la', font: 'Helvetica' },
+                { text: `Consulta de ${eleccion}`, font: 'Helvetica-Bold' },
+                { text: '.', font: 'Helvetica' }
+            ], {
+                fillColor: '#000',
+                lineHeight: 1.5,
+                align: 'justify'
+            });
+            y = doc.y + 20;
+            TextoMultiFuente(doc, 50, y, 740, 10, [
+                { text: 'Por lo anterior,', font: 'Helvetica' },
+                { text: 'las personas funcionarias que suscriben la presente, hacen constar los siguientes resultados', font: 'Helvetica-Bold', },
+                { text: ':', font: 'Helvetica', }
+            ], {
+                fillColor: '#000',
+                lineHeight: 1.5,
+                align: 'left'
+            });
+            y += 25;
+            doc.rect(50, y, 740, 20).fillAndStroke('#F2F2F2', '#BFBFBF').font('Helvetica-Bold', 14).fillColor('#000').text('RESULTADOS', 50, y + 5, { width: 740, align: 'center' });
+            newPage = false;
+            altura = 0;
+            altura += DibujarTablaPDF(doc, 50, doc.y - 2, encabezados, columnas, undefined);
+            y = doc.y - 11;
         }
-        const paginas = doc.bufferedPageRange().count;
-        const coorA = CalcularAltoAncho(doc, [{ text: coordinador_puesto, font: 'Helvetica', fontSize: 10 }], 0, 280, 23, 1.15).totalHeight;
-        const secA = CalcularAltoAncho(doc, [{ text: secretario_puesto, font: 'Helvetica', fontSize: 10 }], 0, 280, 23, 1.15).totalHeight;
-        y = doc.page.height - (120 + coorA + secA) - (paginas > 1 ? 15 : 0);
-        doc.rect(50, y, 740, 20).fillAndStroke('#F2F2F2', '#BFBFBF').font('Helvetica-Bold', 14).fillColor('#000').text('POR LA DIRECCIÓN DISTRITAL, SUSCRIBEN:', 50, y + 5, { width: 740, align: 'center' });
-        DibujarTablaPDF(doc, 50, y + 20, [
-            [{ text: 'CARGO', font: 'Helvetica-Bold', fontSize: 14, background: '#F2F2F2', strokeColor: '#BFBFBF' }],
-            [{ text: 'NOMBRE COMPLETO', font: 'Helvetica-Bold', fontSize: 14, background: '#F2F2F2', strokeColor: '#BFBFBF' }],
-            [{ text: 'FIRMA', font: 'Helvetica-Bold', fontSize: 14, background: '#F2F2F2', strokeColor: '#BFBFBF' }]
-        ], [
-            { width: 280, align: 'center' },
-            { width: 330, align: 'center' },
-            { width: 130, align: 'center' }
-        ], [
-            [
-                [{ text: coordinador_puesto, font: 'Helvetica', fontSize: 10, strokeColor: '#BFBFBF' }],
-                [{ text: coordinador, font: 'Helvetica', fontSize: 10, strokeColor: '#BFBFBF' }],
-                [{ text: '', font: 'Helvetica', fontSize: 10, strokeColor: '#BFBFBF' }]
-            ],
-            [
-                [{ text: secretario_puesto, font: 'Helvetica', fontSize: 10, strokeColor: '#BFBFBF' }],
-                [{ text: secretario, font: 'Helvetica', fontSize: 10, strokeColor: '#BFBFBF' }],
-                [{ text: '', font: 'Helvetica', fontSize: 10, strokeColor: '#BFBFBF' }]
-            ]
-        ], { height: 23 });
-        doc.font('Helvetica', 8).text('SE LEVANTA LA PRESENTE ACTA CON FUNDAMENTO EN LOS ARTÍCULOS 6 FRACCIÓN I, 36 PÁRRAFO PRIMERO, 113 FRACCIÓN V, 362 PRIMER Y SEGUNDO PÁRRAFO Y 367 DEL CÓDIGO DE INSTITUCIONES Y PROCEDIMIENTOS ELECTORALES DE LA CIUDAD DE MÉXICO; 116, 124 FRACCIÓN IV Y 129 FRACCIÓN II DE LA LEY DE PARTICIPACIÓN CIUDADANA DE LA CIUDAD DE MÉXICO; ASÍ COMO DEL NUMERAL 16 DE LAS DISPOSICIONES GENERALES DE LA CONVOCATORIA ÚNICA APROBADA POR EL CONSEJO GENERAL DEL INSTITUTO ELECTORAL DE LA CIUDAD DE MÉXICO MEDIANTE ACUERDO IECM/ACU-CG-004/2026 DE FECHA 09 DE ENERO DE 2026.', 50, doc.y + (secA / 2) + 9, { width: 740, align: 'justify' });
-        if (paginas > 1)
-            for (let i = 0; i < paginas; i++) {
-                doc.switchToPage(i);
-                doc.font('Helvetica', 10).text(`Hoja ${i + 1} de ${paginas}`, 50, doc.page.height - 45, { width: 740, align: 'center' });
-            }
-        doc.end();
-    });
+        altura += DibujarTablaPDF(doc, 50, y + altura, undefined, columnas, [datos[i]]);
+        if (doc.y >= 980) {
+            newPage = true;
+            doc.addPage();
+        }
+    }
+    const paginas = doc.bufferedPageRange().count;
+    const coorA = CalcularAltoAncho(doc, [{ text: coordinador_puesto, font: 'Helvetica', fontSize: 10 }], 0, 280, 23, 1.15).totalHeight;
+    const secA = CalcularAltoAncho(doc, [{ text: secretario_puesto, font: 'Helvetica', fontSize: 10 }], 0, 280, 23, 1.15).totalHeight;
+    y = doc.page.height - (120 + coorA + secA) - (paginas > 1 ? 15 : 0);
+    doc.rect(50, y, 740, 20).fillAndStroke('#F2F2F2', '#BFBFBF').font('Helvetica-Bold', 14).fillColor('#000').text('POR LA DIRECCIÓN DISTRITAL, SUSCRIBEN:', 50, y + 5, { width: 740, align: 'center' });
+    DibujarTablaPDF(doc, 50, y + 20, [
+        [{ text: 'CARGO', font: 'Helvetica-Bold', fontSize: 14, background: '#F2F2F2', strokeColor: '#BFBFBF' }],
+        [{ text: 'NOMBRE COMPLETO', font: 'Helvetica-Bold', fontSize: 14, background: '#F2F2F2', strokeColor: '#BFBFBF' }],
+        [{ text: 'FIRMA', font: 'Helvetica-Bold', fontSize: 14, background: '#F2F2F2', strokeColor: '#BFBFBF' }]
+    ], [
+        { width: 280, align: 'center' },
+        { width: 330, align: 'center' },
+        { width: 130, align: 'center' }
+    ], [
+        [
+            [{ text: coordinador_puesto, font: 'Helvetica', fontSize: 10, strokeColor: '#BFBFBF' }],
+            [{ text: coordinador, font: 'Helvetica', fontSize: 10, strokeColor: '#BFBFBF' }],
+            [{ text: '', font: 'Helvetica', fontSize: 10, strokeColor: '#BFBFBF' }]
+        ],
+        [
+            [{ text: secretario_puesto, font: 'Helvetica', fontSize: 10, strokeColor: '#BFBFBF' }],
+            [{ text: secretario, font: 'Helvetica', fontSize: 10, strokeColor: '#BFBFBF' }],
+            [{ text: '', font: 'Helvetica', fontSize: 10, strokeColor: '#BFBFBF' }]
+        ]
+    ], { height: 23 });
+    doc.font('Helvetica', 8).text('SE LEVANTA LA PRESENTE ACTA CON FUNDAMENTO EN LOS ARTÍCULOS 6 FRACCIÓN I, 36 PÁRRAFO PRIMERO, 113 FRACCIÓN V, 362 PRIMER Y SEGUNDO PÁRRAFO Y 367 DEL CÓDIGO DE INSTITUCIONES Y PROCEDIMIENTOS ELECTORALES DE LA CIUDAD DE MÉXICO; 116, 124 FRACCIÓN IV Y 129 FRACCIÓN II DE LA LEY DE PARTICIPACIÓN CIUDADANA DE LA CIUDAD DE MÉXICO; ASÍ COMO DEL NUMERAL 16 DE LAS DISPOSICIONES GENERALES DE LA CONVOCATORIA ÚNICA APROBADA POR EL CONSEJO GENERAL DEL INSTITUTO ELECTORAL DE LA CIUDAD DE MÉXICO MEDIANTE ACUERDO IECM/ACU-CG-004/2026 DE FECHA 09 DE ENERO DE 2026.', 50, doc.y + (secA / 2) + 9, { width: 740, align: 'justify' });
+    if (paginas > 1)
+        for (let i = 0; i < paginas; i++) {
+            doc.switchToPage(i);
+            doc.font('Helvetica', 10).text(`Hoja ${i + 1} de ${paginas}`, 50, doc.page.height - 45, { width: 740, align: 'center' });
+        }
+    doc.end();
+    return doc;
+    // });
 }

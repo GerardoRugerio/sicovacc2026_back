@@ -20,6 +20,7 @@ router.post('/importarProyectos', [
     chkToken([99]),
     dataToken,
     body('id_distrito').exists(),
+    body('anio').exists().notEmpty().isInt().isIn([0, 2, 3]).withMessage('El valor debe de ser 0, 2 o 3'),
     Validator,
     chkDistrito(undefined, true)
 ], ImportarProyectosAprobados);

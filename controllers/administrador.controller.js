@@ -74,9 +74,8 @@ export const ImportarVotosSEI = async (req = request, res = response) => {
 
 export const ImportarProyectosAprobados = async (req = request, res = response) => {
     const { id_transaccion, id_usuario, id_distrito: distrito } = req.data;
-    const { id_distrito } = req.body;
+    const { id_distrito, anio } = req.body;
     try {
-        let proyectos = {};
         const agent = new Agent({ connect: { rejectUnauthorized: false } });
         const myHeaders = new Headers();
         //? Configuración del header con la API
@@ -87,31 +86,23 @@ export const ImportarProyectosAprobados = async (req = request, res = response) 
             dispatcher: agent
         };
         //? Se hace la peticion al WebService y se transforma a JSON
+        let proyectos = {};
         proyectos = await fetch('https://aplicaciones2.iecm.mx/siproe-aleatorio-2026-2027/api/reportdata/exportar', requestOptions).then(response => response.json());
-        // await SICOVACC.sequelize.query(`EXEC BorrarProyectos ${id_distrito == 'TODOS' ? 0 : id_distrito}`);
-        if (id_distrito != 'TODOS')
-            proyectos = proyectos.filter(proyecto => proyecto.distrito == id_distrito);
+        await SICOVACC.sequelize.query(`EXEC BorrarProyectos ${id_distrito == 'TODOS' ? 0 : id_distrito}, ${anio}`);
+        proyectos = proyectos.filter(proyecto => (id_distrito === 'TODOS' || proyecto.distrito === id_distrito) && (anio === 0 || proyecto.ejer_fis === anioN[anio]));
         for (const proyecto of proyectos) {
-            const { id, distrito, id_demarcacion, ut, numero_aleatorio, nombre, destino_recursos, ut_mejoramiento, ut_infraestructura, ut_obras, ut_servicios, ut_act_dep, ut_act_rec, ut_act_cul,
-                uh_mejoramiento, uh_mantenimiento, uh_obras, uh_reparaciones, uh_servicios, uh_act_dep, uh_act_rec, uh_act_cul, ciudadano_proponente, presupuesto_aut, destRecursos, destRecursosMedia, destRecursosFinal, pe_toda,
-                pe_per_may, pe_nna, pe_jovenes, pe_mujeres, pe_hombres, pe_otra, pe_desc_otra, pe_per_disc, tipo_ubicacion, calles, num_ext, fecha_alta, descripcion, folio, sorteo, ejer_fis
+            const { id, distrito, id_demarcacion, ut, numero_aleatorio, nombre, destRecursos, destRecursosMedia, destRecursosFinal, ciudadano_proponente, presupuesto_aut, pe_toda,
+                pe_per_may, pe_per_disc, pe_nna, pe_jovenes, pe_mujeres, pe_hombres, pe_otra, pe_desc_otra, tipo_ubicacion, fecha_alta, descripcion, folio, sorteo, ejer_fis
             } = proyecto;
-            // console.log(`INSERT consulta_prelacion_proyectos (id_prelacion, id_distrito, id_delegacion, clave_colonia, num_proyecto, nom_proyecto, destino_recursos, destino_recursos_media, destino_recursos_final, tipo_rubro, rubro1, rubro2, rubro3, rubro4, rubro5, rubro6,
-            // rubro7, rubro8,propuesto_por, ciudadano_presenta, costo_aproximado, poblacion_benef, pob1, pob2, pob3, pob4, pob5, pob6, pob7, pob8, ubicacion_exacta, fecha_presenta, opinion_favorable, descripcion, folio_proy_web, id_sorteo, anio, fecha_alta, id_usuario, estatus) 
-            // VALUES (${id}, ${distrito}, ${id_demarcacion}, '${ut}', ${numero_aleatorio}, UPPER('${Comillas(nombre)}'), UPPER('${destRecursos}'), UPPER('${destRecursosMedia}'), UPPER('${destRecursosFinal}'), ${destino_recursos}, ${destino_recursos == 1 ? ut_mejoramiento : uh_mejoramiento},
-            // ${destino_recursos == 1 ? ut_infraestructura : uh_mantenimiento}, ${destino_recursos == 1 ? ut_obras : uh_obras}, ${destino_recursos == 1 ? ut_servicios : uh_reparaciones}, ${destino_recursos == 1 ? ut_act_dep : uh_servicios}, ${destino_recursos == 1 ? ut_act_rec : uh_act_dep},
-            // ${destino_recursos == 1 ? ut_act_cul : uh_act_rec}, ${destino_recursos == 1 ? 0 : uh_act_cul}, UPPER('${ciudadano_proponente}'), UPPER('${ciudadano_proponente}'), '${presupuesto_aut}', NULL, ${pe_toda}, ${pe_per_may}, ${pe_per_disc}, ${pe_nna}, ${pe_jovenes}, ${pe_mujeres},
-            // ${pe_hombres}, ${pe_otra ? `UPPER('${pe_desc_otra}')` : 'NULL'}, ${tipo_ubicacion == 1 ? "'TODA LA UT'" : `UPPER('${calles}, ${num_ext}')`}, '${fecha_alta}', 'SI', UPPER('${Comillas(descripcion)}'), '${folio}', ${sorteo}, ${Object.keys(anioN).find(key => anioN[key] === ejer_fis)}, CURRENT_TIMESTAMP, ${id_usuario}, 1)`);
             const existe = (await SICOVACC.sequelize.query(`SELECT * FROM consulta_prelacion_proyectos WHERE id_prelacion = ${id} AND id_distrito = ${distrito} AND id_delegacion = ${id_demarcacion} AND clave_colonia = '${ut}'`))[0];
             if (existe == 0)
-                await SICOVACC.sequelize.query(`INSERT consulta_prelacion_proyectos (id_prelacion, id_distrito, id_delegacion, clave_colonia, num_proyecto, nom_proyecto, tipo_rubro, rubro1, rubro2, rubro3, rubro4, rubro5, rubro6, rubro7, rubro8, propuesto_por, ciudadano_presenta,
-                costo_aproximado, poblacion_benef, pob1, pob2, pob3, pob4, pob5, pob6, pob7, pob8, ubicacion_exacta, fecha_presenta, opinion_favorable, descripcion, folio_proy_web, id_sorteo, anio, fecha_alta, id_usuario, estatus) VALUES (${id}, ${distrito}, ${id_demarcacion}, '${ut}', ${numero_aleatorio}, UPPER('${Comillas(nombre)}'),
-                ${destino_recursos}, ${destino_recursos == 1 ? ut_mejoramiento : uh_mejoramiento}, ${destino_recursos == 1 ? ut_infraestructura : uh_mantenimiento}, ${destino_recursos == 1 ? ut_obras : uh_obras}, ${destino_recursos == 1 ? ut_servicios : uh_reparaciones}, ${destino_recursos == 1 ? ut_act_dep : uh_servicios},
-                ${destino_recursos == 1 ? ut_act_rec : uh_act_dep}, ${destino_recursos == 1 ? ut_act_cul : uh_act_rec}, ${destino_recursos == 1 ? 0 : uh_act_cul}, UPPER('${ciudadano_proponente}'), UPPER('${ciudadano_proponente}'), '${presupuesto_aut}', NULL, ${pe_toda}, ${pe_per_may}, ${pe_per_disc}, ${pe_nna},
-                ${pe_jovenes}, ${pe_mujeres}, ${pe_hombres}, ${pe_otra ? `UPPER('${pe_desc_otra}')` : 'NULL'}, ${tipo_ubicacion == 1 ? "'TODA LA UT'" : `UPPER('${calles}, ${num_ext}')`}, '${fecha_alta}', 'SI', UPPER('${Comillas(descripcion)}'), '${folio}', ${sorteo},
-                ${Object.keys(anioN).find(key => anioN[key] === ejer_fis)}, CURRENT_TIMESTAMP, ${id_usuario}, 1)`);
+                await SICOVACC.sequelize.query(`INSERT consulta_prelacion_proyectos (id_prelacion, id_distrito, id_delegacion, clave_colonia, num_proyecto, nom_proyecto, destino_recursos, destino_recursos_media, destino_recursos_final,
+                propuesto_por, ciudadano_presenta, costo_aproximado, pob1, pob2, pob3, pob4, pob5, pob6, pob7, pob8, ubicacion_exacta, fecha_presenta, opinion_favorable, descripcion, folio_proy_web, id_sorteo, anio, fecha_alta, id_usuario, estatus)
+                VALUES (${id}, ${distrito}, ${id_demarcacion}, '${ut}', ${numero_aleatorio}, UPPER('${Comillas(nombre)}'), ${destRecursos ? `UPPER('${destRecursos}')` : 'NULL'}, ${destRecursosMedia ? `UPPER('${destRecursosMedia}')` : 'NULL'}, ${destRecursosFinal ? `UPPER('${destRecursosFinal}')` : 'NULL'},
+                UPPER('${ciudadano_proponente}'), UPPER('${ciudadano_proponente}'), ${presupuesto_aut}, ${pe_toda}, ${pe_per_may}, ${pe_per_disc}, ${pe_nna}, ${pe_jovenes}, ${pe_mujeres}, ${pe_hombres}, ${pe_otra ? `UPPER('${pe_desc_otra}')` : 'NULL'}, UPPER('${tipo_ubicacion}'), '${fecha_alta}', 'SI',
+                UPPER('${Comillas(descripcion)}'), '${folio}', ${sorteo}, ${Object.keys(anioN).find(key => anioN[key] === ejer_fis)}, CURRENT_TIMESTAMP, ${id_usuario}, 1)`);
         }
-        await Audit(id_transaccion, id_usuario, distrito, `IMPORTÓ LOS PROYECTOS DE SIPROE${id_distrito != 'TODOS' ? ` DEL DISTRITO ${id_distrito}` : ''}`);
+        await Audit(id_transaccion, id_usuario, distrito, `IMPORTÓ LOS PROYECTOS DE SIPROE${id_distrito != 'TODOS' ? ` DEL DISTRITO ${id_distrito}` : ''}${anio != 0 ? `, DE LA ELECCIÓN DE ${(await ConsultaTipoEleccion(anio)).toUpperCase()}` : ''}`);
         res.json({
             success: true,
             msg: 'Proyectos importados con exito'
@@ -121,15 +112,46 @@ export const ImportarProyectosAprobados = async (req = request, res = response) 
         res.status(500).json({
             success: false,
             msg: 'Error desconocido'
-        })
+        });
     }
 }
 
 export const ImportarParticipantesAprobados = async (req = request, res = response) => {
-    res.json({
-        success: false,
-        msg: 'En preparación me encuentro'
-    });
+    const { id_transaccion, id_usuario, id_distrito: distrito } = req.data;
+    const { id_distrito } = req.body;
+    try {
+        const agent = new Agent({ connect: { rejectUnauthorized: false } });
+        //? Configuración del header
+        const requestOptions = {
+            method: 'GET',
+            dispatcher: agent
+        };
+        //? Se hace la petición al WebService y se transforma a JSON
+        let candidatos = {};
+        candidatos = (await fetch('https://aplicaciones2.iecm.mx/siresca2026/api/v1/candidatos/sicovacc', requestOptions).then(response => response.json())).data;
+        await SICOVACC.sequelize.query(`EXEC BorrarParticipantes ${id_distrito == 'TODOS' ? 0 : id_distrito}`);
+        candidatos = candidatos.filter(candidato => (id_distrito === 'TODOS' || candidato.distritoId === id_distrito));
+        for (const candidato of candidatos) {
+            const { demarcacionTerritorial, claveUT, distritoId, primerApellidoPersonaCandidata, segundoApellidoPersonaCandidata, nombrePersonaCandidata, edad, generoInicial, curp, folioCandidatura, discapacidad, letraCandidatura } = candidato
+            const existe = (await SICOVACC.sequelize.query(`SELECT * FROM copaco_formulas WHERE id_distrito = ${distritoId} AND id_delegacion = ${demarcacionTerritorial} AND clave_colonia = '${claveUT}' AND secuencial = '${letraCandidatura}'`))[0];
+            if (existe == 0)
+                await SICOVACC.sequelize.query(`INSERT copaco_formulas (id_delegacion, clave_colonia, id_distrito, paterno, materno, nombre, edad, genero, curp, estatus, folio, discapacidad, tipo_discapacidad, fecha_alta, secuencial, sorteoConfirmado)
+                VALUES (${demarcacionTerritorial}, '${claveUT}', ${distritoId}, UPPER('${primerApellidoPersonaCandidata}'), UPPER('${segundoApellidoPersonaCandidata}'), UPPER('${nombrePersonaCandidata}'), ${edad}, '${generoInicial}', '${curp}', 1,
+                '${folioCandidatura}', ${discapacidad ? 1 : 0}, ${discapacidad ? `UPPER('${discapacidad}')` : 'NULL'}, CURRENT_TIMESTAMP, '${letraCandidatura}', 1)`);
+        }
+        await Audit(id_transaccion, id_usuario, distrito, `IMPORTÓ LAS CANDIDATURAS DEL SIRESCA${id_distrito != 'TODOS' ? ` DEL DISTRITO ${id_distrito}` : ''}`);
+        res.json({
+            success: true,
+            msg: 'Candidatos importados con exito'
+        });
+    } catch (err) {
+        console.log(err)
+        console.error(`Error en ImportarParticipantesAprobados: ${err}`);
+        res.status(500).json({
+            success: false,
+            msg: 'Error desconocido'
+        });
+    }
 }
 
 export const DatosProyectos = async (req = request, res = response) => {
@@ -189,8 +211,8 @@ export const DatosParticipantes = async (req = request, res = response) => {
         const datos = (await SICOVACC.sequelize.query(`SELECT idFormulas, UPPER(D.nombre_delegacion) AS nombre_delegacion, secuencial, CONCAT(nombre, ' ', paterno, ' ', materno) AS nombre, folio
         FROM copaco_formulas F
         LEFT JOIN consulta_cat_delegacion D ON F.id_delegacion = D.id_delegacion
-        WHERE estatus = 1 AND secuencial IS NOT NULL AND id_distrito = ${id_distrito} AND clave_colonia = '${clave_colonia}'
-        ORDER BY secuencial ASC`))[0];
+        WHERE F.estatus = 1 AND F.secuencial IS NOT NULL AND F.id_distrito = ${id_distrito} AND F.clave_colonia = '${clave_colonia}'
+        ORDER BY LEN(secuencial), secuencial ASC`))[0];
         if (!datos.length)
             return res.status(404).json({
                 success: false,
@@ -214,6 +236,7 @@ export const EliminarParticipante = async (req = request, res = response) => {
     const { idFormulas } = req.body;
     try {
         const resp = SICOVACC.sequelize.query(`UPDATE copaco_formulas SET estatus = 0 WHERE idFormulas = ${idFormulas}`);
+        // const resp = await SICOVACC.sequelize.query(`DELETE FROM copaco_formulas WHERE idFormulas = ${idFormulas}`);
         if (resp[1] == 0)
             return res.status(404).json({
                 success: false,
